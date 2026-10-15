@@ -2,7 +2,7 @@
 
 export type Role = "ADMIN" | "IT" | "USER";
 
-/** Business unit branding (logo, color, text). */
+/** Business unit branding (logo, color, text) as part of the logged-in user. */
 export interface Branding {
   unitId: number;
   code: string;
@@ -158,4 +158,113 @@ export interface DashboardStats {
   byUnit: Array<{ code: string; name: string; n: number }>;
   /** Up to five of the oldest overdue tickets. */
   overdueTickets: TicketSummary[];
+}
+
+// ---------------- User Directory ----------------
+
+/** One person in the User Directory. */
+export interface ManagedUser {
+  id: number;
+  email: string;
+  name: string;
+  role: Role;
+  is_active: boolean;
+  business_unit_id: number | null;
+  unit_code: string | null;
+  unit_name: string | null;
+  created_at: string;
+}
+
+export interface UserListResponse {
+  users: ManagedUser[];
+  total: number;
+  page: number;
+  pageSize: number;
+}
+
+export interface UserQuery {
+  q: string;
+  role: "" | Role;
+  status: "" | "active" | "disabled";
+  unit: string; // '' = all, 'none' = no unit, or a unit id
+  page: number;
+}
+
+// ---------------- Branding (Settings) ----------------
+
+/** A business unit with its branding, as shown in Settings (snake_case, straight from the server). */
+export interface UnitBranding {
+  id: number;
+  code: string;
+  name: string;
+  brand_color: string;
+  brand_text: string;
+  logo_version: number;
+  has_logo: boolean;
+}
+
+// ---------------- Knowledge Base ----------------
+
+export type ArticleStatus = "DRAFT" | "PUBLISHED" | "ARCHIVED";
+
+/** One card in the article list. */
+export interface ArticleSummary {
+  id: number;
+  title: string;
+  status: ArticleStatus;
+  tags: string[];
+  business_unit_id: number | null; // null = global (all units)
+  unit_code: string | null;
+  unit_name: string | null;
+  created_by: number;
+  author_name: string;
+  updated_by: number;
+  editor_name: string;
+  created_at: string;
+  updated_at: string;
+  excerpt: string;
+}
+
+/** A whole article. can_edit is only a hint for showing buttons; the server decides. */
+export interface ArticleDetail extends Omit<ArticleSummary, "excerpt"> {
+  body: string;
+  can_edit: boolean;
+}
+
+export interface ArticleFile {
+  id: number;
+  original_name: string;
+  mime: string;
+  size_bytes: number;
+  created_at: string;
+  uploaded_by: number;
+  uploader_name: string;
+}
+
+export interface ArticleDetailResponse {
+  article: ArticleDetail;
+  files: ArticleFile[];
+}
+
+export interface ArticleListResponse {
+  articles: ArticleSummary[];
+  total: number;
+  page: number;
+  pageSize: number;
+}
+
+export interface ArticleQuery {
+  q: string;
+  status: "" | ArticleStatus;
+  unit: string; // '' = all, 'global' = global only, or a unit id
+  page: number;
+}
+
+/** What the editor sends. business_unit_id: null = global (ADMIN only). */
+export interface ArticleInput {
+  title: string;
+  body: string;
+  status: ArticleStatus;
+  tags: string[];
+  business_unit_id?: number | null;
 }

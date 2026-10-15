@@ -2,17 +2,27 @@
 // plus the two ticket windows (Create Ticket and the ticket itself).
 // - the active tab is saved, and checked against your role when the app loads
 // - the sidebar's collapsed state is saved too
+// - every page and window sits inside an ErrorBoundary, so a crash shows a friendly card, not a blank page
 // NOTE: hiding tabs is only cosmetic. The server decides what each role may do.
-import { useCallback, useEffect, useMemo, useState } from "react";
+import {
+  useCallback,
+  useEffect,
+  useMemo,
+  useState,
+  type ReactNode,
+} from "react";
 import type { TabKey, User } from "../../types";
 import { TAB_STORAGE_KEY, defaultTabFor, tabsForRole } from "../../lib/nav";
 import { getStored, setStored } from "../../lib/storage";
 import { useAuth } from "../../hooks/useAuth";
 import DashboardPage from "../../pages/DashboardPage";
-import PlaceholderPage from "../../pages/PlaceholderPage";
+import KnowledgeBasePage from "../../pages/KnowledgeBasePage";
+import SettingsPage from "../../pages/SettingsPage";
 import TicketsPage from "../../pages/TicketsPage";
+import UsersPage from "../../pages/UsersPage";
 import CreateTicketModal from "../tickets/CreateTicketModal";
 import TicketModal from "../tickets/TicketModal";
+import ErrorBoundary from "../ui/ErrorBoundary";
 import Sidebar from "./Sidebar";
 import TopBar from "./TopBar";
 
@@ -62,6 +72,31 @@ export default function AppShell({ user }: { user: User }) {
 
   const current = tabs.find((t) => t.key === tab) ?? tabs[0];
 
+  /** The page for the active tab. */
+  function page(): ReactNode {
+    switch (current.key) {
+      case "tickets":
+        return (
+          <TicketsPage
+            user={user}
+            version={version}
+            onOpen={setSelectedId}
+            onCreate={() => setCreateOpen(true)}
+          />
+        );
+      case "dashboard":
+        return (
+          <DashboardPage user={user} version={version} onOpen={setSelectedId} />
+        );
+      case "kb":
+        return <KnowledgeBasePage user={user} />;
+      case "users":
+        return <UsersPage user={user} />;
+      case "settings":
+        return <SettingsPage user={user} />;
+    }
+  }
+
   return (
     <div className="flex h-dvh overflow-hidden bg-slate-50">
       {/* Dark backdrop behind the phone drawer */}
@@ -92,53 +127,38 @@ export default function AppShell({ user }: { user: User }) {
           onLogout={logout}
         />
         <main className="flex-1 overflow-y-auto p-4 sm:p-6">
-          {/* key={tab}: switching tabs replays a soft fade-in */}
+          {/* key={tab}: switching tabs replays a soft fade-in. resetKey: a crashed page recovers when you change tab. */}
           <div key={current.key} className="mx-auto max-w-6xl animate-fade-in">
-            {current.key === "tickets" ? (
-              <TicketsPage
-                user={user}
-                version={version}
-                onOpen={setSelectedId}
-                onCreate={() => setCreateOpen(true)}
-              />
-            ) : current.key === "dashboard" ? (
-              <DashboardPage
-                user={user}
-                version={version}
-                onOpen={setSelectedId}
-              />
-            ) : (
-              <PlaceholderPage
-                title={current.label}
-                description={current.soon}
-                icon={current.icon}
-              />
-            )}
+            <ErrorBoundary resetKey={current.key}>{page()}</ErrorBoundary>
           </div>
         </main>
       </div>
 
       {createOpen && (
-        <CreateTicketModal
-          user={user}
-          onClose={() => setCreateOpen(false)}
-          onCreated={(id) => {
-            setCreateOpen(false);
-            setTab("tickets"); // show the new ticket in the list...
-            refresh();
-            setSelectedId(id); // ...and open it
-          }}
-        />
+        <ErrorBoundary onClose={() => setCreateOpen(false)}>
+          <CreateTicketModal
+            user={user}
+            onClose={() => setCreateOpen(false)}
+            onCreated={(id) => {
+              setCreateOpen(false);
+              setTab("tickets"); // show the new ticket in the list...
+              refresh();
+              setSelectedId(id); // ...and open it
+            }}
+          />
+        </ErrorBoundary>
       )}
 
       {selectedId !== null && (
-        <TicketModal
-          key={selectedId}
-          ticketId={selectedId}
-          user={user}
-          onClose={() => setSelectedId(null)}
-          onChanged={refresh}
-        />
+        <ErrorBoundary onClose={() => setSelectedId(null)}>
+          <TicketModal
+            key={selectedId}
+            ticketId={selectedId}
+            user={user}
+            onClose={() => setSelectedId(null)}
+            onChanged={refresh}
+          />
+        </ErrorBoundary>
       )}
     </div>
   );

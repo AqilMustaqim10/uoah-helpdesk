@@ -1,20 +1,30 @@
-// Files already saved on a ticket: picture thumbnails and PDF chips.
+// Files already saved on a ticket or an article: picture thumbnails and PDF chips.
 //  - click opens the file in a new tab (the server checks you may see it)
 //  - the delete button needs two clicks (the first one turns it red)
+// New in step D: it works for any kind of file list (hrefBase says where the files are served from).
 import { useEffect, useState } from "react";
 import { FileText, ImageOff, Loader2, Trash2 } from "lucide-react";
-import type { TicketFile } from "../../types";
 import { formatBytes, isImage } from "../../lib/files";
 import { cn } from "../../lib/cn";
 
-interface Props {
-  files: TicketFile[];
-  canDelete: (file: TicketFile) => boolean;
-  onDelete: (file: TicketFile) => Promise<void>;
+/** The smallest description of a file this grid needs (ticket and article files both fit). */
+export interface GridFile {
+  id: number;
+  original_name: string;
+  mime: string;
+  size_bytes: number;
+}
+
+interface Props<T extends GridFile> {
+  files: T[];
+  canDelete: (file: T) => boolean;
+  onDelete: (file: T) => Promise<void>;
+  /** Where files are served from. Tickets use the default; the knowledge base passes '/api/kb/files'. */
+  hrefBase?: string;
 }
 
 /** A picture thumbnail. If it cannot load, a small placeholder icon is shown instead. */
-function ImageThumb({ file }: { file: TicketFile }) {
+function ImageThumb({ file, hrefBase }: { file: GridFile; hrefBase: string }) {
   const [failed, setFailed] = useState(false);
   return failed ? (
     <div className="flex h-20 w-20 items-center justify-center rounded-lg border border-slate-200 bg-slate-100 text-slate-400">
@@ -22,7 +32,7 @@ function ImageThumb({ file }: { file: TicketFile }) {
     </div>
   ) : (
     <img
-      src={`/api/files/${file.id}`}
+      src={`${hrefBase}/${file.id}`}
       alt={file.original_name}
       loading="lazy"
       onError={() => setFailed(true)}
@@ -31,7 +41,12 @@ function ImageThumb({ file }: { file: TicketFile }) {
   );
 }
 
-export default function AttachmentGrid({ files, canDelete, onDelete }: Props) {
+export default function AttachmentGrid<T extends GridFile>({
+  files,
+  canDelete,
+  onDelete,
+  hrefBase = "/api/files",
+}: Props<T>) {
   const [confirmId, setConfirmId] = useState<number | null>(null);
   const [busyId, setBusyId] = useState<number | null>(null);
 
@@ -42,7 +57,7 @@ export default function AttachmentGrid({ files, canDelete, onDelete }: Props) {
     return () => window.clearTimeout(t);
   }, [confirmId]);
 
-  async function remove(file: TicketFile) {
+  async function remove(file: T) {
     if (confirmId !== file.id) {
       setConfirmId(file.id);
       return;
@@ -96,17 +111,17 @@ export default function AttachmentGrid({ files, canDelete, onDelete }: Props) {
           <li key={f.id} className="group relative animate-fade-in">
             {isImage(f.mime) ? (
               <a
-                href={`/api/files/${f.id}`}
+                href={`${hrefBase}/${f.id}`}
                 target="_blank"
                 rel="noopener noreferrer"
                 className="block"
                 title={`${f.original_name} (${formatBytes(f.size_bytes)})`}
               >
-                <ImageThumb file={f} />
+                <ImageThumb file={f} hrefBase={hrefBase} />
               </a>
             ) : (
               <a
-                href={`/api/files/${f.id}`}
+                href={`${hrefBase}/${f.id}`}
                 target="_blank"
                 rel="noopener noreferrer"
                 className="flex h-20 w-44 items-center gap-2 rounded-lg border border-slate-200 bg-white px-3 pr-8 transition hover:bg-slate-50"
