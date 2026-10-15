@@ -5,10 +5,13 @@ import cors from "cors";
 import { config } from "./config/env";
 import { query } from "./db/pool";
 import { ah, HttpError } from "./lib/http";
+import { requireAuth } from "./middleware/auth";
 import { errorHandler } from "./middleware/errorHandler";
 import { originCheck } from "./middleware/originCheck";
 import { apiLimiter } from "./middleware/rateLimit";
 import authRoutes from "./routes/auth";
+import ticketRoutes from "./routes/tickets";
+import commentRoutes from "./routes/comments";
 
 const app = express();
 
@@ -40,7 +43,10 @@ app.get(
 );
 
 app.use("/api/auth", authRoutes);
-// ---- Later phases mount more routes here (tickets, users, kb, ...) ----
+
+// Everything below needs a logged-in user (requireAuth runs first)
+app.use("/api/tickets", requireAuth, ticketRoutes, commentRoutes);
+// ---- Later steps mount more routes here (files, stats, export, users, units, kb) ----
 
 // Any other /api address does not exist
 app.use("/api", (_req, _res, next) => next(new HttpError(404, "Not found")));

@@ -1,14 +1,17 @@
-// The signed-in layout: sidebar + top bar + the page for the active tab.
+// The signed-in layout: sidebar + top bar + the page for the active tab,
+// plus the two ticket windows (Create Ticket and the ticket itself).
 // - the active tab is saved, and checked against your role when the app loads
 // - the sidebar's collapsed state is saved too
 // NOTE: hiding tabs is only cosmetic. The server decides what each role may do.
-import { useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 import type { TabKey, User } from "../../types";
 import { TAB_STORAGE_KEY, defaultTabFor, tabsForRole } from "../../lib/nav";
 import { getStored, setStored } from "../../lib/storage";
 import { useAuth } from "../../hooks/useAuth";
-import { useToast } from "../../hooks/useToast";
 import PlaceholderPage from "../../pages/PlaceholderPage";
+import TicketsPage from "../../pages/TicketsPage";
+import CreateTicketModal from "../tickets/CreateTicketModal";
+import TicketModal from "../tickets/TicketModal";
 import Sidebar from "./Sidebar";
 import TopBar from "./TopBar";
 
@@ -16,7 +19,6 @@ const COLLAPSED_KEY = "sidebarCollapsed";
 
 export default function AppShell({ user }: { user: User }) {
   const { logout } = useAuth();
-  const toast = useToast();
 
   const tabs = useMemo(() => tabsForRole(user.role), [user.role]);
 
@@ -30,6 +32,12 @@ export default function AppShell({ user }: { user: User }) {
     () => getStored(COLLAPSED_KEY) === "1",
   );
   const [mobileOpen, setMobileOpen] = useState(false);
+
+  // Ticket windows + "reload the list" counter
+  const [createOpen, setCreateOpen] = useState(false);
+  const [selectedId, setSelectedId] = useState<number | null>(null);
+  const [version, setVersion] = useState(0);
+  const refresh = useCallback(() => setVersion((v) => v + 1), []);
 
   // Safety net: if the current tab is not allowed for this role, go to the default one
   useEffect(() => {
@@ -79,22 +87,52 @@ export default function AppShell({ user }: { user: User }) {
           title={current.label}
           user={user}
           onOpenMenu={() => setMobileOpen(true)}
-          onCreateTicket={() =>
-            toast.info("Creating tickets arrives in the next step.")
-          }
+          onCreateTicket={() => setCreateOpen(true)}
           onLogout={logout}
         />
         <main className="flex-1 overflow-y-auto p-4 sm:p-6">
           {/* key={tab}: switching tabs replays a soft fade-in */}
           <div key={current.key} className="mx-auto max-w-6xl animate-fade-in">
-            <PlaceholderPage
-              title={current.label}
-              description={current.soon}
-              icon={current.icon}
-            />
+            {current.key === "tickets" ? (
+              <TicketsPage
+                user={user}
+                version={version}
+                onOpen={setSelectedId}
+                onCreate={() => setCreateOpen(true)}
+              />
+            ) : (
+              <PlaceholderPage
+                title={current.label}
+                description={current.soon}
+                icon={current.icon}
+              />
+            )}
           </div>
         </main>
       </div>
+
+      {createOpen && (
+        <CreateTicketModal
+          user={user}
+          onClose={() => setCreateOpen(false)}
+          onCreated={(id) => {
+            setCreateOpen(false);
+            setTab("tickets"); // show the new ticket in the list...
+            refresh();
+            setSelectedId(id); // ...and open it
+          }}
+        />
+      )}
+
+      {selectedId !== null && (
+        <TicketModal
+          key={selectedId}
+          ticketId={selectedId}
+          user={user}
+          onClose={() => setSelectedId(null)}
+          onChanged={refresh}
+        />
+      )}
     </div>
   );
 }

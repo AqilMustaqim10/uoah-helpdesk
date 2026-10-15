@@ -43,3 +43,18 @@ export const apiLimiter = rateLimit({
   legacyHeaders: false,
   message: { error: "Too many requests. Please slow down." },
 });
+
+/**
+ * Creating tickets and comments: max 100 per 15 minutes PER LOGGED-IN USER
+ * (not per IP, so colleagues behind one office address don't share a limit).
+ */
+export const writeLimiter = rateLimit({
+  windowMs: FIFTEEN_MIN,
+  limit: 100,
+  standardHeaders: true,
+  legacyHeaders: false,
+  keyGenerator: (req) => `user-${req.user?.id ?? "anon"}`,
+  message: {
+    error: "You are doing that too often. Please wait a few minutes.",
+  },
+});
