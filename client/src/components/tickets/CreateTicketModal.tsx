@@ -1,19 +1,23 @@
 // The "Create Ticket" window.
-//  - everyone: title + description
+//  - everyone: title + description (+ optional pictures or PDFs)
 //  - IT / ADMIN: can also choose a priority (a USER's ticket is always Medium; the server enforces it)
 //  - ADMIN: can also choose the business unit (everyone else uses their own unit)
+// Files are sent right after the ticket exists (two requests), so the server needs no special "create with files" route.
 import { useEffect, useState, type FormEvent } from "react";
 import { authApi } from "../../api/auth";
 import { ApiError } from "../../api/client";
 import { ticketsApi } from "../../api/tickets";
 import { useToast } from "../../hooks/useToast";
+import { pickValidFiles, summarizeProblems } from "../../lib/files";
 import { PRIORITY_LIST, PRIORITY_META } from "../../lib/ticketMeta";
 import { ticketRef } from "../../lib/format";
 import type { Priority, UnitOption, User } from "../../types";
 import Button from "../ui/Button";
+import FileDropzone from "../ui/FileDropzone";
 import FormError from "../ui/FormError";
 import Input from "../ui/Input";
 import Modal from "../ui/Modal";
+import PendingFileList from "../ui/PendingFileList";
 import Select from "../ui/Select";
 import Textarea from "../ui/Textarea";
 
@@ -37,6 +41,7 @@ export default function CreateTicketModal({ user, onClose, onCreated }: Props) {
     user.business_unit_id ? String(user.business_unit_id) : "",
   );
   const [units, setUnits] = useState<UnitOption[]>([]);
+  const [pending, setPending] = useState<File[]>([]);
   const [errors, setErrors] = useState<{
     title?: string;
     description?: string;
@@ -60,6 +65,12 @@ export default function CreateTicketModal({ user, onClose, onCreated }: Props) {
     };
   }, [isAdmin]);
 
+  function addPending(chosen: File[]) {
+    const { accepted, problems } = pickValidFiles(chosen, pending.length);
+    if (problems.length > 0) toast.error(summarizeProblems(problems));
+    if (accepted.length > 0) setPending((p) => [...p, ...accepted]);
+  }
+
   async function submit(e: FormEvent) {
     e.preventDefault();
     if (busy) return;
@@ -75,6 +86,9 @@ export default function CreateTicketModal({ user, onClose, onCreated }: Props) {
 
     setBusy(true);
     setFormError("");
+
+    // Step 1: create the ticket
+    let newId: number;
     try {
       const r = await ticketsApi.create({
         title: title.trim(),
@@ -82,8 +96,7 @@ export default function CreateTicketModal({ user, onClose, onCreated }: Props) {
         ...(staff ? { priority } : {}),
         ...(isAdmin ? { business_unit_id: Number(unitId) } : {}),
       });
-      toast.success(`${ticketRef(r.ticket.id)} created`);
-      onCreated(r.ticket.id);
+      newId = r.ticket.id;
     } catch (err) {
       setFormError(
         err instanceof ApiError
@@ -91,7 +104,25 @@ export default function CreateTicketModal({ user, onClose, onCreated }: Props) {
           : "Something went wrong. Please try again.",
       );
       setBusy(false);
+      return;
     }
+
+    // Step 2: attach the files. If this fails the ticket still exists, so we say so clearly.
+    if (pending.length > 0) {
+      try {
+        await ticketsApi.uploadFiles(newId, pending);
+        toast.success(
+          `${ticketRef(newId)} created with ${pending.length} file${pending.length === 1 ? "" : "s"}`,
+        );
+      } catch {
+        toast.error(
+          `${ticketRef(newId)} was created, but the files could not be attached. You can add them in the ticket.`,
+        );
+      }
+    } else {
+      toast.success(`${ticketRef(newId)} created`);
+    }
+    onCreated(newId);
   }
 
   return (
@@ -165,6 +196,23 @@ export default function CreateTicketModal({ user, onClose, onCreated }: Props) {
             )}
           </div>
         )}
+
+        <div className="space-y-2">
+          <p className="text-sm font-medium text-slate-700">
+            Attachments{" "}
+            <span className="font-normal text-slate-400">(optional)</span>
+          </p>
+          <PendingFileList
+            files={pending}
+            onRemove={(i) => setPending((p) => p.filter((_, idx) => idx !== i))}
+          />
+          <FileDropzone
+            compact
+            onFiles={addPending}
+            disabled={busy}
+            label="Add pictures or PDFs"
+          />
+        </div>
 
         <div className="flex justify-end gap-2 pt-2">
           <Button variant="secondary" onClick={onClose} disabled={busy}>

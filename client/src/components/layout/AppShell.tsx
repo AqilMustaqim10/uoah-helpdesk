@@ -8,6 +8,7 @@ import type { TabKey, User } from "../../types";
 import { TAB_STORAGE_KEY, defaultTabFor, tabsForRole } from "../../lib/nav";
 import { getStored, setStored } from "../../lib/storage";
 import { useAuth } from "../../hooks/useAuth";
+import DashboardPage from "../../pages/DashboardPage";
 import PlaceholderPage from "../../pages/PlaceholderPage";
 import TicketsPage from "../../pages/TicketsPage";
 import CreateTicketModal from "../tickets/CreateTicketModal";
@@ -33,7 +34,7 @@ export default function AppShell({ user }: { user: User }) {
   );
   const [mobileOpen, setMobileOpen] = useState(false);
 
-  // Ticket windows + "reload the list" counter
+  // Ticket windows + "reload the data" counter (the list and the dashboard both listen to it)
   const [createOpen, setCreateOpen] = useState(false);
   const [selectedId, setSelectedId] = useState<number | null>(null);
   const [version, setVersion] = useState(0);
@@ -99,6 +100,12 @@ export default function AppShell({ user }: { user: User }) {
                 version={version}
                 onOpen={setSelectedId}
                 onCreate={() => setCreateOpen(true)}
+              />
+            ) : current.key === "dashboard" ? (
+              <DashboardPage
+                user={user}
+                version={version}
+                onOpen={setSelectedId}
               />
             ) : (
               <PlaceholderPage

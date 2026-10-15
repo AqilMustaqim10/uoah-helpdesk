@@ -1,4 +1,4 @@
-// Server calls for tickets (they match server/src/routes/tickets.ts and comments.ts).
+// Server calls for tickets (they match server/src/routes/tickets.ts, comments.ts, ticketFiles.ts, files.ts, export.ts).
 import { api } from "./client";
 import type {
   Assignee,
@@ -9,15 +9,15 @@ import type {
   TicketStatus,
 } from "../types";
 
-/** Turns the filters into "?q=...&status=..." (empty filters are left out). */
-function toQueryString(q: TicketQuery): string {
+/** Turns the filters into "q=...&status=..." (empty filters are left out). */
+function toQueryString(q: TicketQuery, withPage = true): string {
   const p = new URLSearchParams();
   if (q.q.trim()) p.set("q", q.q.trim());
   if (q.status) p.set("status", q.status);
   if (q.priority) p.set("priority", q.priority);
   if (q.unit) p.set("unit", q.unit);
   if (q.assignee) p.set("assignee", q.assignee);
-  p.set("page", String(q.page));
+  if (withPage) p.set("page", String(q.page));
   return p.toString();
 }
 
@@ -45,9 +45,40 @@ export const ticketsApi = {
   assignees: (id: number) =>
     api.get<{ assignees: Assignee[] }>(`/tickets/${id}/assignees`),
 
-  addComment: (id: number, body: string, is_internal: boolean) =>
-    api.post<TicketDetailResponse>(`/tickets/${id}/comments`, {
-      body,
-      is_internal,
-    }),
+  /** Text only -> JSON. With files -> a form (multipart), which is how files travel. */
+  addComment: (
+    id: number,
+    body: string,
+    is_internal: boolean,
+    files: File[] = [],
+  ) => {
+    if (files.length === 0) {
+      return api.post<TicketDetailResponse>(`/tickets/${id}/comments`, {
+        body,
+        is_internal,
+      });
+    }
+    const form = new FormData();
+    form.append("body", body);
+    form.append("is_internal", String(is_internal));
+    files.forEach((f) => form.append("files", f));
+    return api.post<TicketDetailResponse>(`/tickets/${id}/comments`, form);
+  },
+
+  /** Attach files to the ticket itself. */
+  uploadFiles: (id: number, files: File[]) => {
+    const form = new FormData();
+    files.forEach((f) => form.append("files", f));
+    return api.post<TicketDetailResponse>(`/tickets/${id}/files`, form);
+  },
+
+  deleteFile: (fileId: number) =>
+    api.del<TicketDetailResponse>(`/files/${fileId}`),
+
+  /** CSV of the tickets that match the current filters (IT/ADMIN only). */
+  exportCsv: (q: TicketQuery) =>
+    api.download(
+      `/export/tickets.csv?${toQueryString(q, false)}`,
+      "tickets.csv",
+    ),
 };

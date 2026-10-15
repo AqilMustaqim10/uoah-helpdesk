@@ -86,6 +86,18 @@ export interface CommentItem {
   author_role: Role;
 }
 
+/** An attachment. comment_id = null means it is attached to the ticket itself. */
+export interface TicketFile {
+  id: number;
+  comment_id: number | null;
+  original_name: string;
+  mime: string;
+  size_bytes: number;
+  created_at: string;
+  uploaded_by: number;
+  uploader_name: string;
+}
+
 export interface HistoryItem {
   id: number;
   action: string;
@@ -98,6 +110,7 @@ export interface HistoryItem {
 export interface TicketDetailResponse {
   ticket: TicketDetail;
   comments: CommentItem[];
+  files: TicketFile[];
   /** null for USER (history is IT/ADMIN only). */
   history: HistoryItem[] | null;
 }
@@ -125,4 +138,24 @@ export interface TicketQuery {
   unit: string;
   assignee: "" | "unassigned" | "me";
   page: number;
+}
+
+// ---------------- Dashboard ----------------
+
+export interface DashboardStats {
+  kpis: {
+    total: number;
+    open: number;
+    in_progress: number;
+    resolved: number;
+    closed: number;
+    urgent: number;
+    overdue: number;
+  };
+  /** Active tickets (Open + In progress) per priority. */
+  byPriority: Record<Priority, number>;
+  /** Active tickets per business unit (ADMIN only; empty for IT). */
+  byUnit: Array<{ code: string; name: string; n: number }>;
+  /** Up to five of the oldest overdue tickets. */
+  overdueTickets: TicketSummary[];
 }

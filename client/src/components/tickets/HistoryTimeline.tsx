@@ -30,6 +30,10 @@ function describe(h: HistoryItem): string {
         : "cleared the due date";
     case "COMMENT_ADDED":
       return d.internal ? "added an internal note" : "replied";
+    case "FILE_ADDED":
+      return `attached ${d.name ?? "a file"}`;
+    case "FILE_REMOVED":
+      return `removed ${d.name ?? "a file"}`;
     default:
       return h.action.toLowerCase().replace(/_/g, " ");
   }

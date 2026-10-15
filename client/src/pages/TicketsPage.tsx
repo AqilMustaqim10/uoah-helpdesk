@@ -1,10 +1,12 @@
-// The Tickets tab: filters, the list, and paging. Clicking a row opens the ticket window
-// (which AppShell shows). The list reloads whenever `version` changes.
+// The Tickets tab: filters, the list, paging, and (for IT/ADMIN) the CSV export.
+// Clicking a row opens the ticket window (which AppShell shows). The list reloads whenever `version` changes.
 import { useEffect, useRef, useState } from "react";
-import { SearchX, Ticket as TicketIcon } from "lucide-react";
+import { Download, SearchX, Ticket as TicketIcon } from "lucide-react";
 import { authApi } from "../api/auth";
 import { ApiError } from "../api/client";
 import { ticketsApi } from "../api/tickets";
+import { useToast } from "../hooks/useToast";
+import { saveBlob } from "../lib/download";
 import type {
   TicketListResponse,
   TicketQuery,
@@ -43,11 +45,15 @@ export default function TicketsPage({
   onOpen,
   onCreate,
 }: Props) {
+  const toast = useToast();
+  const staff = user.role !== "USER";
+
   const [query, setQuery] = useState<TicketQuery>(EMPTY_QUERY);
   const [data, setData] = useState<TicketListResponse | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
   const [units, setUnits] = useState<UnitOption[]>([]);
+  const [exporting, setExporting] = useState(false);
   const [filterKey, setFilterKey] = useState(0); // changing it resets the search box
   const requestId = useRef(0);
 
@@ -99,6 +105,25 @@ export default function TicketsPage({
     setFilterKey((k) => k + 1);
   }
 
+  /** Downloads a CSV of the tickets that match the current filters. */
+  async function exportCsv() {
+    if (exporting) return;
+    setExporting(true);
+    try {
+      const { blob, filename } = await ticketsApi.exportCsv(query);
+      saveBlob(blob, filename);
+      toast.success("CSV downloaded");
+    } catch (err) {
+      toast.error(
+        err instanceof ApiError
+          ? err.message
+          : "Could not export. Please try again.",
+      );
+    } finally {
+      setExporting(false);
+    }
+  }
+
   const filtersActive = !!(
     query.q ||
     query.status ||
@@ -135,6 +160,24 @@ export default function TicketsPage({
         </div>
       ) : data && data.tickets.length > 0 ? (
         <>
+          {/* Ticket count on the left, export button (IT/ADMIN) on the right */}
+          <div className="flex items-center justify-between">
+            <p className="text-sm text-slate-500">
+              {data.total} ticket{data.total === 1 ? "" : "s"}
+            </p>
+            {staff && (
+              <Button
+                variant="secondary"
+                size="sm"
+                icon={<Download className="h-4 w-4" />}
+                loading={exporting}
+                onClick={() => void exportCsv()}
+              >
+                Export CSV
+              </Button>
+            )}
+          </div>
+
           {/* Slightly dimmed while a new page is loading */}
           <div className={cn("transition-opacity", loading && "opacity-60")}>
             <TicketList

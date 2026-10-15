@@ -1,60 +1,98 @@
-// Adds a reply or an internal note to a ticket. Also mounted at /api/tickets.
+// Adds a reply or an internal note to a ticket, optionally with attached files.
+// Accepts JSON (text only) OR multipart form data (text + files). Mounted at /api/tickets.
 import { Router } from "express";
 import { pool, withTx } from "../db/pool";
 import { audit } from "../db/audit";
 import { ah, HttpError } from "../lib/http";
 import { cleanText, idParam } from "../lib/validate";
+import { FILE_LIMITS } from "../config/constants";
 import { writeLimiter } from "../middleware/rateLimit";
+import { ticketVisible } from "../middleware/ticketGuard";
 import { canSeeInternal, getScopedTicket } from "../security/scope";
+import { insertTicketFiles } from "../services/attachments";
 import { buildDetail } from "../services/ticketQueries";
+import {
+  prepareFiles,
+  removeStored,
+  upload,
+  writeFiles,
+} from "../services/upload";
 
 const router = Router();
 
-// POST /api/tickets/:id/comments   { body, is_internal? }
+// POST /api/tickets/:id/comments   { body, is_internal?, files? }
 router.post(
   "/:id/comments",
   writeLimiter,
+  ticketVisible, // 404 first if the ticket is not yours to see
+  upload.array("files", FILE_LIMITS.maxFilesPerItem), // does nothing for plain JSON requests
   ah(async (req, res) => {
     const user = req.user!;
     const id = idParam(req.params.id);
-    const body = cleanText(req.body?.body, "Comment", {
-      min: 1,
-      max: 10000,
-      multiline: true,
-    });
-    const internal = req.body?.is_internal === true;
 
-    await withTx(async (c) => {
-      // 404 first if the ticket is out of scope; the row is locked so a close can't race us
-      const t = await getScopedTicket(c, user, id, true);
+    // In a multipart form every value is text, so "true" arrives as the string 'true'
+    const internal =
+      req.body?.is_internal === true || req.body?.is_internal === "true";
 
-      // Only IT/ADMIN may write internal notes
-      if (internal && !canSeeInternal(user))
-        throw new HttpError(403, "Only IT staff can add internal notes.");
-      // Closed tickets are read-only
-      if (t.status === "CLOSED")
-        throw new HttpError(
-          409,
-          "This ticket is closed and cannot be changed.",
+    // Only IT/ADMIN may write internal notes (checked before anything is saved)
+    if (internal && !canSeeInternal(user))
+      throw new HttpError(403, "Only IT staff can add internal notes.");
+
+    // Check every file's real type
+    const prepared = prepareFiles(
+      req.files as Express.Multer.File[] | undefined,
+    );
+
+    // A comment needs text. If someone sends only files, we store a short placeholder line.
+    const rawBody = typeof req.body?.body === "string" ? req.body.body : "";
+    const body =
+      rawBody.trim() === "" && prepared.length > 0
+        ? "Attached file(s)."
+        : cleanText(rawBody, "Comment", {
+            min: 1,
+            max: 10000,
+            multiline: true,
+          });
+
+    const stored = await writeFiles(prepared);
+    try {
+      await withTx(async (c) => {
+        // Row lock: a ticket being closed at the same moment cannot slip a comment in
+        const t = await getScopedTicket(c, user, id, true);
+        if (t.status === "CLOSED")
+          throw new HttpError(
+            409,
+            "This ticket is closed and cannot be changed.",
+          );
+
+        const ins = await c.query(
+          `INSERT INTO comments (ticket_id, author_id, body, is_internal, source)
+           VALUES ($1, $2, $3, $4, 'WEB') RETURNING id`,
+          [id, user.id, body, internal],
         );
-
-      const ins = await c.query(
-        `INSERT INTO comments (ticket_id, author_id, body, is_internal, source)
-         VALUES ($1, $2, $3, $4, 'WEB') RETURNING id`,
-        [id, user.id, body, internal],
-      );
-      await c.query("UPDATE tickets SET updated_at = now() WHERE id = $1", [
-        id,
-      ]);
-      await audit(c, {
-        actorId: user.id,
-        action: "COMMENT_ADDED",
-        entityType: "comment",
-        entityId: ins.rows[0].id,
-        ticketId: id,
-        details: { internal }, // the text itself is not copied into the audit log
+        const commentId: number = ins.rows[0].id;
+        await c.query("UPDATE tickets SET updated_at = now() WHERE id = $1", [
+          id,
+        ]);
+        await audit(c, {
+          actorId: user.id,
+          action: "COMMENT_ADDED",
+          entityType: "comment",
+          entityId: commentId,
+          ticketId: id,
+          details: { internal, files: stored.length }, // the text itself is not copied into the audit log
+        });
+        await insertTicketFiles(c, {
+          actorId: user.id,
+          ticketId: id,
+          commentId,
+          files: stored,
+        });
       });
-    });
+    } catch (err) {
+      await removeStored(stored.map((s) => s.storedName)); // do not leave orphan files behind
+      throw err;
+    }
 
     // Phase 6: public replies are emailed (to the requester if IT replied, to the assignee if the
     // requester replied). Internal notes are NEVER emailed. Sent after commit, never blocking.

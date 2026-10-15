@@ -1,17 +1,21 @@
-// Starts the API server (port 3000). Later phases add more routes in the marked spot.
+// Starts the API server (port 3000). Later steps add more routes in the marked spot.
 import express from "express";
 import cookieParser from "cookie-parser";
 import cors from "cors";
 import { config } from "./config/env";
 import { query } from "./db/pool";
 import { ah, HttpError } from "./lib/http";
-import { requireAuth } from "./middleware/auth";
+import { requireAuth, requireRole } from "./middleware/auth";
 import { errorHandler } from "./middleware/errorHandler";
 import { originCheck } from "./middleware/originCheck";
 import { apiLimiter } from "./middleware/rateLimit";
 import authRoutes from "./routes/auth";
 import ticketRoutes from "./routes/tickets";
 import commentRoutes from "./routes/comments";
+import ticketFileRoutes from "./routes/ticketFiles";
+import fileRoutes from "./routes/files";
+import statsRoutes from "./routes/stats";
+import exportRoutes from "./routes/export";
 
 const app = express();
 
@@ -45,8 +49,18 @@ app.get(
 app.use("/api/auth", authRoutes);
 
 // Everything below needs a logged-in user (requireAuth runs first)
-app.use("/api/tickets", requireAuth, ticketRoutes, commentRoutes);
-// ---- Later steps mount more routes here (files, stats, export, users, units, kb) ----
+app.use(
+  "/api/tickets",
+  requireAuth,
+  ticketRoutes,
+  commentRoutes,
+  ticketFileRoutes,
+);
+app.use("/api/files", requireAuth, fileRoutes);
+// Dashboard numbers and CSV export: IT and ADMIN only (a USER gets "not found")
+app.use("/api/stats", requireAuth, requireRole("ADMIN", "IT"), statsRoutes);
+app.use("/api/export", requireAuth, requireRole("ADMIN", "IT"), exportRoutes);
+// ---- Later steps mount more routes here (users, units, kb) ----
 
 // Any other /api address does not exist
 app.use("/api", (_req, _res, next) => next(new HttpError(404, "Not found")));
