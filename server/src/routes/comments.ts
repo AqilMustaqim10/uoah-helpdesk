@@ -1,5 +1,6 @@
 // Adds a reply or an internal note to a ticket, optionally with attached files.
 // Accepts JSON (text only) OR multipart form data (text + files). Mounted at /api/tickets.
+// New in step E: a PUBLIC reply is emailed after the commit. Internal notes are never emailed.
 import { Router } from "express";
 import { pool, withTx } from "../db/pool";
 import { audit } from "../db/audit";
@@ -10,6 +11,7 @@ import { writeLimiter } from "../middleware/rateLimit";
 import { ticketVisible } from "../middleware/ticketGuard";
 import { canSeeInternal, getScopedTicket } from "../security/scope";
 import { insertTicketFiles } from "../services/attachments";
+import { notifyReply } from "../services/notify";
 import { buildDetail } from "../services/ticketQueries";
 import {
   prepareFiles,
@@ -55,8 +57,9 @@ router.post(
           });
 
     const stored = await writeFiles(prepared);
+    let newCommentId: number;
     try {
-      await withTx(async (c) => {
+      newCommentId = await withTx(async (c) => {
         // Row lock: a ticket being closed at the same moment cannot slip a comment in
         const t = await getScopedTicket(c, user, id, true);
         if (t.status === "CLOSED")
@@ -88,14 +91,17 @@ router.post(
           commentId,
           files: stored,
         });
+        return commentId;
       });
     } catch (err) {
       await removeStored(stored.map((s) => s.storedName)); // do not leave orphan files behind
       throw err;
     }
 
-    // Phase 6: public replies are emailed (to the requester if IT replied, to the assignee if the
-    // requester replied). Internal notes are NEVER emailed. Sent after commit, never blocking.
+    // Public replies are emailed (to the requester if IT replied, to the assignee if the requester
+    // replied). Internal notes are NEVER emailed. Sent after the commit, in the background.
+    if (!internal) notifyReply(id, newCommentId, user.id);
+
     res.status(201).json(await buildDetail(pool, user, id));
   }),
 );

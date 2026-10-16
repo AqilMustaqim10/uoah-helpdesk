@@ -1,5 +1,6 @@
 // Ticket list, create, view, and the changes only IT/ADMIN may make
 // (status, priority, assignee, due date). Mounted at /api/tickets (login required).
+// New in step E: emails are sent AFTER each change is committed (never blocking the action).
 import { Router } from "express";
 import { pool, query, withTx } from "../db/pool";
 import { audit } from "../db/audit";
@@ -21,6 +22,11 @@ import {
   getScopedTicket,
   ticketScope,
 } from "../security/scope";
+import {
+  notifyAssigned,
+  notifyStatusChanged,
+  notifyTicketCreated,
+} from "../services/notify";
 import {
   SUMMARY_COLUMNS,
   TICKET_JOINS,
@@ -215,8 +221,8 @@ router.post(
       return ticketId;
     });
 
-    // Phase 6 will send the acknowledgment email (with [HD-n] in the subject) right here,
-    // AFTER the transaction has committed, without waiting for it.
+    // Acknowledgment email (with [HD-n] in the subject): sent in the background, AFTER the commit
+    notifyTicketCreated(id);
 
     res.status(201).json(await buildDetail(pool, user, id));
   }),
@@ -262,7 +268,7 @@ router.patch(
     const id = idParam(req.params.id);
     const to = oneOf(req.body?.status, STATUSES, "status");
 
-    await withTx(async (c) => {
+    const previous = await withTx(async (c) => {
       const t = await getScopedTicket(c, user, id, true); // locks the row; 404 if out of scope
       requireStaff(user);
 
@@ -290,9 +296,12 @@ router.patch(
         ticketId: id,
         details: { from, to },
       });
+      return from;
     });
 
-    // Phase 6: email the requester about the status change (after commit, never blocking).
+    // Email the requester (unless they made the change themselves): after commit, never blocking
+    notifyStatusChanged(id, user.id, previous, to);
+
     res.json(await buildDetail(pool, user, id));
   }),
 );
@@ -348,11 +357,11 @@ router.patch(
       );
     const newId = raw === null ? null : bodyId(raw, "assignee");
 
-    await withTx(async (c) => {
+    const changed = await withTx(async (c) => {
       const t = await getScopedTicket(c, user, id, true);
       requireStaff(user);
       ensureNotClosed(t);
-      if ((t.assigned_to ?? null) === newId) return; // nothing to change
+      if ((t.assigned_to ?? null) === newId) return false; // nothing to change
 
       // Re-check on the server: active IT of THIS ticket's unit, or any active ADMIN.
       let newName: string | null = null;
@@ -396,9 +405,12 @@ router.patch(
           to_name: newName,
         },
       });
+      return true;
     });
 
-    // Phase 6: email the new assignee (after commit, never blocking).
+    // Email the new assignee (unless they assigned it to themselves): after commit, never blocking
+    if (changed && newId !== null) notifyAssigned(id, user.id, newId);
+
     res.json(await buildDetail(pool, user, id));
   }),
 );
