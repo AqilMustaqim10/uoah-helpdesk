@@ -3,6 +3,7 @@
 //  - the first ever run only records what is already in the mailbox ("baseline"), no tickets
 //  - every message is CLAIMED and acted on inside ONE database transaction
 //  - a database lock makes sure two workers never run at the same time
+// New in step G: real attachments and larger pasted pictures are saved with the ticket or reply.
 import { simpleParser, type ParsedMail } from "mailparser";
 import { DEFAULT_PRIORITY } from "../config/constants";
 import { audit } from "../db/audit";
@@ -11,13 +12,20 @@ import type { Db } from "../db/pool";
 import { ticketRef } from "../lib/sql";
 import { isAllowedDomain, tryNormEmail } from "../lib/validate";
 import { canSeeTicketRow } from "../security/scope";
+import { insertTicketFiles } from "../services/attachments";
 import {
   notifyReply,
   notifyTicketCreated,
   sendRejectionEmail,
 } from "../services/notify";
+import {
+  removeStored,
+  writeFiles,
+  type PreparedFile,
+} from "../services/upload";
 import { classifyMessage } from "./classify";
 import { cleanBody, cleanSubject, sanitizeBody } from "./cleaner";
+import { pickMailFiles, type PickedFiles } from "./mailFiles";
 import { Pop3Client, pop3FromConfig, type MailboxEntry } from "./pop3";
 import { config } from "../config/env";
 
@@ -45,10 +53,12 @@ interface KnownUser {
 const BASELINE_KEY = "__helpdesk_baseline_done__";
 const LOCK_KEY = 727_001; // any fixed number; shared by every worker
 const MAX_PER_RUN = 50; // at most this many new messages per pass
-const MAX_MESSAGE_BYTES = 10 * 1024 * 1024; // bigger messages are skipped (attachments are not imported)
+const MAX_MESSAGE_BYTES = 10 * 1024 * 1024; // bigger messages are skipped
 const MAX_ATTEMPTS = 3; // a message that keeps failing is skipped after this many tries
+const IDLE_LOG_EVERY_MS = 5 * 60 * 1000; // "no new mail" is logged at most this often
 
 const failures = new Map<string, number>();
+let lastIdleLog = 0;
 
 // ---------------------------------------------------------------------------
 // small helpers
@@ -75,11 +85,40 @@ async function recordSkip(uidl: string, from: string | null): Promise<void> {
   );
 }
 
+/**
+ * Saves the picked files to disk, then records them in the database (inside the caller's transaction).
+ * The stored names are added to `written`, so the caller can delete the files again if the transaction fails.
+ * Returns how many files were saved.
+ */
+async function saveMailFiles(
+  c: Db,
+  written: string[],
+  actorId: number,
+  ticketId: number,
+  commentId: number | null,
+  files: PreparedFile[],
+): Promise<number> {
+  if (files.length === 0) return 0;
+  const stored = await writeFiles(files);
+  written.push(...stored.map((s) => s.storedName));
+  await insertTicketFiles(c, { actorId, ticketId, commentId, files: stored });
+  return stored.length;
+}
+
+/** " [2 file(s) saved, 1 file(s) skipped]" for the log line. */
+function fileNote(saved: number, picked: PickedFiles): string {
+  const parts: string[] = [];
+  if (saved > 0) parts.push(`${saved} file(s) saved`);
+  if (picked.skipped > 0) parts.push(`${picked.skipped} file(s) skipped`);
+  if (picked.ignoredSmall > 0)
+    parts.push(`${picked.ignoredSmall} small inline picture(s) ignored`);
+  return parts.length > 0 ? ` [${parts.join(", ")}]` : "";
+}
+
 // ---------------------------------------------------------------------------
 // creating a ticket or a reply from an email (inside the claim transaction)
 // ---------------------------------------------------------------------------
 
-// CHANGED: new parameter "names" (the sender's names, used to spot their signature)
 async function addComment(
   c: Db,
   u: KnownUser,
@@ -88,7 +127,7 @@ async function addComment(
   names: string[],
 ): Promise<number> {
   const body =
-    sanitizeBody(cleanBody(text, { names }), 10000) || "(empty message)"; // CHANGED
+    sanitizeBody(cleanBody(text, { names }), 10000) || "(empty message)";
   const raw = sanitizeBody(text, 100000) || null;
 
   const ins = await c.query(
@@ -110,7 +149,6 @@ async function addComment(
   return ins.rows[0].id as number;
 }
 
-// CHANGED: new parameter "names"
 async function createTicket(
   c: Db,
   u: KnownUser,
@@ -123,7 +161,7 @@ async function createTicket(
   if (title.length < 3) title = "Email request";
 
   let description =
-    sanitizeBody(cleanBody(text, { names }), 19000) || "Email without text."; // CHANGED
+    sanitizeBody(cleanBody(text, { names }), 19000) || "Email without text.";
   if (followUpOf)
     description = `Follow-up to ${ticketRef(followUpOf)} (closed).\n\n${description}`;
   const raw = sanitizeBody(text, 100000) || null;
@@ -168,108 +206,137 @@ async function handleMessage(uidl: string, mail: ParsedMail): Promise<void> {
   const text = mail.text ?? "";
   const verdict = classifyMessage(mail);
 
-  const result: Done | null = await withTx(async (c) => {
-    // CLAIM: if another process already handled this message, the insert does nothing and we stop
-    const claim = await c.query(
-      `INSERT INTO processed_messages (uidl, outcome, from_email) VALUES ($1, 'ERROR_SKIPPED', $2)
-       ON CONFLICT (uidl) DO NOTHING RETURNING id`,
-      [uidl, from],
-    );
-    if (!claim.rows[0]) return null;
-    const claimId: number = claim.rows[0].id;
+  // Chosen BEFORE the transaction (it only looks at the message, nothing is saved yet)
+  const picked = pickMailFiles(mail);
+  // Names of files written to disk during the transaction, so they can be removed if it fails
+  const written: string[] = [];
 
-    const finish = (outcome: Outcome, ticketId: number | null = null) =>
-      c.query(
-        "UPDATE processed_messages SET outcome = $2, ticket_id = $3 WHERE id = $1",
-        [claimId, outcome, ticketId],
+  let result: Done | null;
+  try {
+    result = await withTx(async (c) => {
+      // CLAIM: if another process already handled this message, the insert does nothing and we stop
+      const claim = await c.query(
+        `INSERT INTO processed_messages (uidl, outcome, from_email) VALUES ($1, 'ERROR_SKIPPED', $2)
+         ON CONFLICT (uidl) DO NOTHING RETURNING id`,
+        [uidl, from],
       );
+      if (!claim.rows[0]) return null;
+      const claimId: number = claim.rows[0].id;
 
-    // 1) Automatic mail, or no usable sender: ignore (and never answer it)
-    if (verdict.auto || !from) {
-      await finish("IGNORED_AUTO");
-      return {
-        note: `ignored automatic mail (${verdict.reason ?? "no valid sender"})`,
-      };
-    }
-
-    // 2) Who is the sender? Disabled people count as unknown.
-    const found = await c.query(
-      "SELECT id, email, name, role, is_active, business_unit_id FROM users WHERE email = $1",
-      [from],
-    );
-    const u = found.rows[0];
-
-    if (!u || !u.is_active) {
-      // Unknown sender: only addresses on an allowed domain get ONE polite reply per 24 hours
-      if (isAllowedDomain(from)) {
-        const slot = await c.query(
-          `INSERT INTO email_rejections (email, last_sent_at) VALUES ($1, now())
-           ON CONFLICT (email) DO UPDATE SET last_sent_at = now()
-             WHERE email_rejections.last_sent_at < now() - interval '24 hours'
-           RETURNING email`,
-          [from],
+      const finish = (outcome: Outcome, ticketId: number | null = null) =>
+        c.query(
+          "UPDATE processed_messages SET outcome = $2, ticket_id = $3 WHERE id = $1",
+          [claimId, outcome, ticketId],
         );
-        if (slot.rows[0]) {
-          await finish("UNKNOWN_REJECTED");
-          return {
-            note: `unknown sender ${from}: rejection email queued`,
-            after: () => sendRejectionEmail(from),
-          };
-        }
+
+      // 1) Automatic mail, or no usable sender: ignore (and never answer it). No files are saved.
+      if (verdict.auto || !from) {
+        await finish("IGNORED_AUTO");
+        return {
+          note: `ignored automatic mail (${verdict.reason ?? "no valid sender"})`,
+        };
       }
-      await finish("UNKNOWN_IGNORED");
-      return { note: `unknown sender ${from}: ignored` };
-    }
 
-    const user: KnownUser = u;
-
-    // CHANGED: the names a signature may start with (the account name and the name in the From header)
-    const names = [user.name, mail.from?.value?.[0]?.name ?? ""];
-
-    // 3) A reply to an existing ticket? Only if the sender may SEE that ticket.
-    const threadId = threadedTicketId(subject);
-    let target: { id: number; status: string } | null = null;
-    if (threadId) {
-      const t = await c.query(
-        "SELECT id, status, created_by, business_unit_id FROM tickets WHERE id = $1 FOR UPDATE",
-        [threadId],
+      // 2) Who is the sender? Disabled people count as unknown.
+      const found = await c.query(
+        "SELECT id, email, name, role, is_active, business_unit_id FROM users WHERE email = $1",
+        [from],
       );
-      const row = t.rows[0];
-      if (row && canSeeTicketRow(user, row))
-        target = { id: row.id, status: row.status };
-      // otherwise: treated as a brand new ticket (nothing is revealed about the other ticket)
-    }
+      const u = found.rows[0];
 
-    if (target && target.status !== "CLOSED") {
-      const commentId = await addComment(c, user, target.id, text, names); // CHANGED
-      await finish("COMMENT_ADDED", target.id);
-      return {
-        note: `reply added to ${ticketRef(target.id)} from ${from}`,
-        after: () => notifyReply(target!.id, commentId, user.id),
-      };
-    }
+      if (!u || !u.is_active) {
+        // Unknown sender: only addresses on an allowed domain get ONE polite reply per 24 hours.
+        // Their files are never saved.
+        if (isAllowedDomain(from)) {
+          const slot = await c.query(
+            `INSERT INTO email_rejections (email, last_sent_at) VALUES ($1, now())
+             ON CONFLICT (email) DO UPDATE SET last_sent_at = now()
+               WHERE email_rejections.last_sent_at < now() - interval '24 hours'
+             RETURNING email`,
+            [from],
+          );
+          if (slot.rows[0]) {
+            await finish("UNKNOWN_REJECTED");
+            return {
+              note: `unknown sender ${from}: rejection email queued`,
+              after: () => sendRejectionEmail(from),
+            };
+          }
+        }
+        await finish("UNKNOWN_IGNORED");
+        return { note: `unknown sender ${from}: ignored` };
+      }
 
-    // 4) A new ticket (also used for replies to CLOSED tickets: closed tickets stay read-only)
-    if (user.business_unit_id == null) {
-      await finish("ERROR_SKIPPED");
+      const user: KnownUser = u;
+
+      // The names a signature may start with (the account name and the name in the From header)
+      const names = [user.name, mail.from?.value?.[0]?.name ?? ""];
+
+      // 3) A reply to an existing ticket? Only if the sender may SEE that ticket.
+      const threadId = threadedTicketId(subject);
+      let target: { id: number; status: string } | null = null;
+      if (threadId) {
+        const t = await c.query(
+          "SELECT id, status, created_by, business_unit_id FROM tickets WHERE id = $1 FOR UPDATE",
+          [threadId],
+        );
+        const row = t.rows[0];
+        if (row && canSeeTicketRow(user, row))
+          target = { id: row.id, status: row.status };
+        // otherwise: treated as a brand new ticket (nothing is revealed about the other ticket)
+      }
+
+      if (target && target.status !== "CLOSED") {
+        const commentId = await addComment(c, user, target.id, text, names);
+        const saved = await saveMailFiles(
+          c,
+          written,
+          user.id,
+          target.id,
+          commentId,
+          picked.files,
+        );
+        await finish("COMMENT_ADDED", target.id);
+        return {
+          note: `reply added to ${ticketRef(target.id)} from ${from}${fileNote(saved, picked)}`,
+          after: () => notifyReply(target!.id, commentId, user.id),
+        };
+      }
+
+      // 4) A new ticket (also used for replies to CLOSED tickets: closed tickets stay read-only)
+      if (user.business_unit_id == null) {
+        await finish("ERROR_SKIPPED");
+        return {
+          note: `skipped mail from ${from}: the account has no business unit`,
+        };
+      }
+      const ticketId = await createTicket(
+        c,
+        user,
+        subject,
+        text,
+        target ? target.id : null,
+        names,
+      );
+      const saved = await saveMailFiles(
+        c,
+        written,
+        user.id,
+        ticketId,
+        null,
+        picked.files,
+      );
+      await finish("TICKET_CREATED", ticketId);
       return {
-        note: `skipped mail from ${from}: the account has no business unit`,
+        note: `${ticketRef(ticketId)} created from ${from}${fileNote(saved, picked)}`,
+        after: () => notifyTicketCreated(ticketId),
       };
-    }
-    const ticketId = await createTicket(
-      c,
-      user,
-      subject,
-      text,
-      target ? target.id : null,
-      names,
-    ); // CHANGED
-    await finish("TICKET_CREATED", ticketId);
-    return {
-      note: `${ticketRef(ticketId)} created from ${from}`,
-      after: () => notifyTicketCreated(ticketId),
-    };
-  });
+    });
+  } catch (err) {
+    // The database rolled everything back, so the files written meanwhile must not stay behind
+    await removeStored(written);
+    throw err;
+  }
 
   if (result) {
     console.log(`[ingest] ${result.note}`);
@@ -361,7 +428,13 @@ async function doRun(): Promise<void> {
     const fresh = messages.filter((m) => !done.has(m.uidl));
 
     if (fresh.length === 0) {
-      console.log("[ingest] no new mail");
+      // With a check every few seconds this would flood the window, so it is logged only now and then
+      if (Date.now() - lastIdleLog > IDLE_LOG_EVERY_MS) {
+        console.log(
+          "[ingest] checking, no new mail (this line appears at most every 5 minutes)",
+        );
+        lastIdleLog = Date.now();
+      }
     } else {
       console.log(
         `[ingest] ${fresh.length} new message(s)${fresh.length > MAX_PER_RUN ? `, handling the first ${MAX_PER_RUN}` : ""}`,

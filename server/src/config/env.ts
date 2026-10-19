@@ -86,8 +86,7 @@ export const config = {
     pass: optional("POP3_PASS"),
   },
   // How often the worker checks the mailbox (never faster than every 30 seconds)
-  ingestIntervalSeconds: Math.max(30, intOf("INGEST_INTERVAL_SECONDS", 60)),
-  // First admin account (used only by the seed script)
+  ingestIntervalSeconds: Math.max(10, intOf("INGEST_INTERVAL_SECONDS", 10)), // First admin account (used only by the seed script)
   seed: {
     email: optional("SEED_ADMIN_EMAIL").toLowerCase(),
     name: optional("SEED_ADMIN_NAME", "Administrator"),

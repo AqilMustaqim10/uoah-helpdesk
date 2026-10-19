@@ -2,14 +2,15 @@
 import { useEffect, useState } from "react";
 import { Ticket as TicketIcon } from "lucide-react";
 import { ApiError } from "../api/client";
-import { dashboardApi } from "../api/dashboard";
+import { dashboardApi, type DashboardData } from "../api/dashboard";
 import { PRIORITY_LIST, PRIORITY_META, STATUS_META } from "../lib/ticketMeta";
-import type { DashboardStats, User } from "../types";
+import type { User } from "../types";
 import BreakdownBars, {
   type BarItem,
 } from "../components/dashboard/BreakdownBars";
 import KpiCards from "../components/dashboard/KpiCards";
 import OverdueBanner from "../components/dashboard/OverdueBanner";
+import TrendChart from "../components/dashboard/TrendChart";
 import EmptyState from "../components/ui/EmptyState";
 import FormError from "../components/ui/FormError";
 import Skeleton from "../components/ui/Skeleton";
@@ -29,7 +30,7 @@ const PRIORITY_BAR: Record<string, string> = {
 };
 
 export default function DashboardPage({ user, version, onOpen }: Props) {
-  const [data, setData] = useState<DashboardStats | null>(null);
+  const [data, setData] = useState<DashboardData | null>(null);
   const [error, setError] = useState("");
 
   useEffect(() => {
@@ -68,6 +69,7 @@ export default function DashboardPage({ user, version, onOpen }: Props) {
             <Skeleton key={i} className="h-24" />
           ))}
         </div>
+        <Skeleton className="h-64" />
         <Skeleton className="h-48" />
       </div>
     );
@@ -84,6 +86,7 @@ export default function DashboardPage({ user, version, onOpen }: Props) {
   }
 
   const { kpis } = data;
+  const trend = data.trend ?? []; // an old server without the trend simply shows no chart
 
   const statusItems: BarItem[] = [
     { label: STATUS_META.OPEN.label, value: kpis.open, bar: "bg-emerald-500" },
@@ -125,6 +128,8 @@ export default function DashboardPage({ user, version, onOpen }: Props) {
         onOpen={onOpen}
       />
       <KpiCards kpis={kpis} />
+
+      {trend.length > 1 && <TrendChart points={trend} />}
 
       <div className="grid gap-4 lg:grid-cols-2">
         <BreakdownBars
