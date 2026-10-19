@@ -1,5 +1,6 @@
 // The "Create Ticket" window.
-//  - everyone: title + description (+ optional pictures or PDFs)
+//  - everyone: title + description (+ optional pictures or PDFs; you can paste a screenshot with Ctrl+V)
+//  - while you type the title, matching knowledge base articles are suggested
 //  - IT / ADMIN: can also choose a priority (a USER's ticket is always Medium; the server enforces it)
 //  - ADMIN: can also choose the business unit (everyone else uses their own unit)
 // Files are sent right after the ticket exists (two requests), so the server needs no special "create with files" route.
@@ -9,6 +10,7 @@ import { ApiError } from "../../api/client";
 import { ticketsApi } from "../../api/tickets";
 import { useToast } from "../../hooks/useToast";
 import { pickValidFiles, summarizeProblems } from "../../lib/files";
+import { filesFromPaste } from "../../lib/paste";
 import { PRIORITY_LIST, PRIORITY_META } from "../../lib/ticketMeta";
 import { ticketRef } from "../../lib/format";
 import type { Priority, UnitOption, User } from "../../types";
@@ -20,6 +22,7 @@ import Modal from "../ui/Modal";
 import PendingFileList from "../ui/PendingFileList";
 import Select from "../ui/Select";
 import Textarea from "../ui/Textarea";
+import SuggestedArticles from "./SuggestedArticles";
 
 interface Props {
   user: User;
@@ -66,6 +69,7 @@ export default function CreateTicketModal({ user, onClose, onCreated }: Props) {
   }, [isAdmin]);
 
   function addPending(chosen: File[]) {
+    if (busy) return;
     const { accepted, problems } = pickValidFiles(chosen, pending.length);
     if (problems.length > 0) toast.error(summarizeProblems(problems));
     if (accepted.length > 0) setPending((p) => [...p, ...accepted]);
@@ -154,14 +158,32 @@ export default function CreateTicketModal({ user, onClose, onCreated }: Props) {
           placeholder="Short summary, e.g. Printer on level 3 is offline"
           autoFocus
         />
+
+        {/* Matching knowledge base articles appear here while you type the title */}
+        <SuggestedArticles
+          title={title}
+          onSolved={() => {
+            toast.success("Glad that helped! No ticket was created.");
+            onClose();
+          }}
+        />
+
         <Textarea
           label="Description"
           value={description}
           onChange={(e) => setDescription(e.target.value)}
+          // Ctrl+V with a screenshot on the clipboard attaches it. Ordinary text pastes as usual.
+          onPaste={(e) => {
+            const pasted = filesFromPaste(e);
+            if (pasted.length > 0) {
+              e.preventDefault();
+              addPending(pasted);
+            }
+          }}
           error={errors.description}
           maxLength={20000}
           rows={6}
-          placeholder="What happened? What have you already tried?"
+          placeholder="What happened? What have you already tried? (you can paste a screenshot)"
         />
 
         {(staff || isAdmin) && (
@@ -210,7 +232,7 @@ export default function CreateTicketModal({ user, onClose, onCreated }: Props) {
             compact
             onFiles={addPending}
             disabled={busy}
-            label="Add pictures or PDFs"
+            label="Add pictures or PDFs, or paste a screenshot"
           />
         </div>
 

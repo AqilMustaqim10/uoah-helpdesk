@@ -1,6 +1,6 @@
 // The replies on a ticket (with avatars and attachments) and the box to write a new one.
 //  - IT / ADMIN can switch between a public reply and an internal note (amber, never shown to the requester)
-//  - files can be attached to a reply
+//  - files can be attached to a reply: choose them, drop them, or paste a screenshot with Ctrl+V
 //  - a closed ticket shows a notice instead of the box
 // Text is shown as plain text (React escapes it), so nobody can inject HTML.
 import { useState } from "react";
@@ -9,6 +9,7 @@ import { ApiError } from "../../api/client";
 import { useToast } from "../../hooks/useToast";
 import { formatDateTime, timeAgo } from "../../lib/format";
 import { pickValidFiles, summarizeProblems } from "../../lib/files";
+import { filesFromPaste } from "../../lib/paste";
 import { cn } from "../../lib/cn";
 import type { CommentItem, TicketFile } from "../../types";
 import AttachmentGrid from "../ui/AttachmentGrid";
@@ -48,6 +49,7 @@ export default function Conversation({
   const canSend = text.trim().length > 0 || pending.length > 0;
 
   function addPending(chosen: File[]) {
+    if (busy) return;
     const { accepted, problems } = pickValidFiles(chosen, pending.length);
     if (problems.length > 0) toast.error(summarizeProblems(problems));
     if (accepted.length > 0) setPending((p) => [...p, ...accepted]);
@@ -192,10 +194,20 @@ export default function Conversation({
                   void send();
                 }
               }}
+              // Ctrl+V with a screenshot on the clipboard attaches it. Ordinary text pastes as usual.
+              onPaste={(e) => {
+                const pasted = filesFromPaste(e);
+                if (pasted.length > 0) {
+                  e.preventDefault();
+                  addPending(pasted);
+                }
+              }}
               maxLength={10000}
               rows={3}
               placeholder={
-                isNote ? "Only IT staff can see this note." : "Write a reply…"
+                isNote
+                  ? "Only IT staff can see this note."
+                  : "Write a reply… (you can paste a screenshot)"
               }
               className={isNote ? "border-amber-300 bg-amber-50" : undefined}
             />
@@ -210,7 +222,7 @@ export default function Conversation({
               compact
               onFiles={addPending}
               disabled={busy}
-              label="Attach pictures or PDFs"
+              label="Attach files, or paste a screenshot (Ctrl+V)"
             />
 
             <div className="flex items-center justify-between gap-3">

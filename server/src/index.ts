@@ -19,6 +19,8 @@ import exportRoutes from "./routes/export";
 import userRoutes from "./routes/users";
 import unitRoutes from "./routes/units";
 import kbRoutes from "./routes/kb";
+import kbSuggestRoutes from "./routes/kbSuggest";
+import auditRoutes from "./routes/audit";
 
 const app = express();
 
@@ -64,11 +66,13 @@ app.use("/api/files", requireAuth, fileRoutes);
 // Dashboard numbers and CSV export: IT and ADMIN only (a USER gets "not found")
 app.use("/api/stats", requireAuth, requireRole("ADMIN", "IT"), statsRoutes);
 app.use("/api/export", requireAuth, requireRole("ADMIN", "IT"), exportRoutes);
-// User Directory: ADMIN only
+// User Directory and the audit log viewer: ADMIN only
 app.use("/api/users", requireAuth, requireRole("ADMIN"), userRoutes);
+app.use("/api/audit", requireAuth, requireRole("ADMIN"), auditRoutes);
 // Branding: the logo is for any logged-in user of that unit; changes are ADMIN only (checked inside)
 app.use("/api/units", requireAuth, unitRoutes);
-// Knowledge base: visibility and write rules are enforced inside (articleScope / canWriteArticle)
+// Knowledge base. The "suggest" route MUST come first, or "suggest" would be read as an article id.
+app.use("/api/kb/suggest", requireAuth, kbSuggestRoutes);
 app.use("/api/kb", requireAuth, kbRoutes);
 
 // Any other /api address does not exist
