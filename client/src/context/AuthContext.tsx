@@ -1,6 +1,6 @@
 // Who is logged in. Keeps the user, checks the session on page load,
 // applies the business unit's brand color, and handles "session ended".
-// New in step D: refresh() reloads the user, so a branding change shows up straight away.
+// New in step H: login() may answer "a second step is needed" instead of signing in.
 import {
   createContext,
   useCallback,
@@ -15,12 +15,15 @@ import { setUnauthorizedHandler } from "../api/client";
 import { useToast } from "../hooks/useToast";
 import type { User } from "../types";
 
+/** 'ok' = signed in. Otherwise the password was right and the second step is 'verify' (enter a code) or 'setup'. */
+export type LoginOutcome = "ok" | "verify" | "setup";
+
 export interface AuthValue {
   user: User | null;
   loading: boolean;
-  login: (email: string, password: string) => Promise<void>;
+  login: (email: string, password: string) => Promise<LoginOutcome>;
   logout: () => Promise<void>;
-  /** Used after sign up, which signs the new person in. */
+  /** Used after sign up and after the second step, which sign the person in. */
   setUser: (user: User) => void;
   /** Asks the server for the latest version of the logged-in user (for example after a branding change). */
   refresh: () => Promise<void>;
@@ -52,7 +55,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     };
   }, []);
 
-  // If ANY later request gets 401 (session expired, password changed, account disabled):
+  // If ANY later request gets 401 (session expired, password changed, account disabled, 2FA reset):
   // go back to the sign-in screen with a short message.
   useEffect(() => {
     setUnauthorizedHandler(() => {
@@ -72,10 +75,15 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     else root.style.removeProperty("--brand"); // back to the default blue
   }, [brandColor]);
 
-  const login = useCallback(async (email: string, password: string) => {
-    const r = await authApi.login(email, password);
-    setUserState(r.user);
-  }, []);
+  const login = useCallback(
+    async (email: string, password: string): Promise<LoginOutcome> => {
+      const r = await authApi.login(email, password);
+      if ("mfa" in r) return r.mfa; // the second step is still needed; nobody is signed in yet
+      setUserState(r.user);
+      return "ok";
+    },
+    [],
+  );
 
   const logout = useCallback(async () => {
     try {

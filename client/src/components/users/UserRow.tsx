@@ -1,11 +1,24 @@
 // One person in the User Directory: who they are, plus their role, unit and enable/disable controls.
 // Your OWN row is read-only (you cannot change your own role or disable yourself; the server enforces it too).
-import { UserCheck, UserX } from "lucide-react";
+// New in step H: ADMIN and IT rows show whether two-factor authentication is on, with a "Reset 2FA" button
+// for someone who lost their phone.
+import { useState } from "react";
+import {
+  ShieldAlert,
+  ShieldCheck,
+  ShieldOff,
+  UserCheck,
+  UserX,
+} from "lucide-react";
+import { ApiError } from "../../api/client";
+import { usersApi } from "../../api/users";
+import { useToast } from "../../hooks/useToast";
 import type { ManagedUser, Role, UnitOption } from "../../types";
 import { formatDate } from "../../lib/format";
 import { cn } from "../../lib/cn";
 import Avatar from "../ui/Avatar";
 import Button from "../ui/Button";
+import ConfirmModal from "../ui/ConfirmModal";
 import RoleBadge from "../ui/RoleBadge";
 
 interface Props {
@@ -37,6 +50,32 @@ export default function UserRow({
   onUnit,
   onToggleActive,
 }: Props) {
+  const toast = useToast();
+  const [confirmReset, setConfirmReset] = useState(false);
+  const [resetBusy, setResetBusy] = useState(false);
+  const [resetDone, setResetDone] = useState(false); // after a reset this row shows "pending" without reloading the list
+
+  const staffRole = user.role === "ADMIN" || user.role === "IT";
+  const twoFactorOn = !!user.two_factor && !resetDone;
+
+  async function doReset() {
+    setResetBusy(true);
+    try {
+      await usersApi.reset2fa(user.id);
+      setResetDone(true);
+      setConfirmReset(false);
+      toast.success(`Two-factor authentication was reset for ${user.name}`);
+    } catch (err) {
+      toast.error(
+        err instanceof ApiError
+          ? err.message
+          : "Could not reset. Please try again.",
+      );
+    } finally {
+      setResetBusy(false);
+    }
+  }
+
   return (
     <li
       className={cn(
@@ -67,6 +106,19 @@ export default function UserRow({
                 Disabled
               </span>
             )}
+            {staffRole &&
+              (twoFactorOn ? (
+                <span className="inline-flex items-center gap-1 rounded-full bg-emerald-50 px-2 py-0.5 text-xs font-medium text-emerald-700 ring-1 ring-inset ring-emerald-200">
+                  <ShieldCheck className="h-3 w-3" aria-hidden /> 2FA on
+                </span>
+              ) : (
+                <span
+                  title="They must set up an authenticator app the next time they sign in"
+                  className="inline-flex items-center gap-1 rounded-full bg-amber-50 px-2 py-0.5 text-xs font-medium text-amber-700 ring-1 ring-inset ring-amber-200"
+                >
+                  <ShieldAlert className="h-3 w-3" aria-hidden /> 2FA pending
+                </span>
+              ))}
           </div>
           <p className="truncate text-xs text-slate-500">{user.email}</p>
           <p className="text-xs text-slate-400">
@@ -114,6 +166,18 @@ export default function UserRow({
           ))}
         </select>
 
+        {!isSelf && twoFactorOn && (
+          <Button
+            size="sm"
+            variant="ghost"
+            icon={<ShieldOff className="h-4 w-4" />}
+            disabled={busy}
+            onClick={() => setConfirmReset(true)}
+          >
+            Reset 2FA
+          </Button>
+        )}
+
         {!isSelf && (
           <Button
             size="sm"
@@ -138,6 +202,18 @@ export default function UserRow({
           This person has no business unit, so they cannot see or create
           tickets.
         </p>
+      )}
+
+      {confirmReset && (
+        <ConfirmModal
+          title={`Reset two-factor authentication for ${user.name}?`}
+          message="Use this when they lost their phone and their recovery codes. They will be signed out everywhere, and must set up an authenticator app again the next time they sign in."
+          confirmLabel="Reset 2FA"
+          danger
+          busy={resetBusy}
+          onConfirm={() => void doReset()}
+          onClose={() => setConfirmReset(false)}
+        />
       )}
     </li>
   );

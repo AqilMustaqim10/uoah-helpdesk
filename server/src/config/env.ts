@@ -31,6 +31,7 @@ function intOf(name: string, fallback: number): number {
 const nodeEnv = optional("NODE_ENV", "development");
 const jwtSecret = required("JWT_SECRET");
 const codeSecret = required("CODE_HMAC_SECRET");
+const mfaKey = required("MFA_ENCRYPTION_KEY");
 
 // Secrets must be long, not left as the placeholder, and different from each other.
 for (const [name, val] of [
@@ -52,6 +53,15 @@ if (jwtSecret === codeSecret) {
   process.exit(1);
 }
 
+// The key that encrypts the authenticator secrets: exactly 32 bytes = 64 hex characters
+if (!/^[0-9a-fA-F]{64}$/.test(mfaKey)) {
+  console.error(
+    "\nMFA_ENCRYPTION_KEY must be exactly 64 hex characters (0-9 and a-f). Generate one with:\n" +
+      `  node -e "console.log(require('crypto').randomBytes(32).toString('hex'))"\n`,
+  );
+  process.exit(1);
+}
+
 /** All settings in one place. Other files import { config } from this file. */
 export const config = {
   nodeEnv,
@@ -61,7 +71,8 @@ export const config = {
   appUrl: optional("APP_URL", "http://localhost:5173").replace(/\/+$/, ""), // used for links in emails
   databaseUrl: required("DATABASE_URL"),
   jwtSecret, // signs the login cookie
-  codeSecret, // hashes the 6-digit email codes
+  codeSecret, // hashes the 6-digit email codes and the recovery codes
+  mfaKey: mfaKey.toLowerCase(), // encrypts the authenticator (2FA) secrets
   // Only these email domains may register
   allowedDomains: optional("ALLOWED_SENDER_DOMAINS")
     .split(",")
@@ -85,8 +96,9 @@ export const config = {
     user: optional("POP3_USER"),
     pass: optional("POP3_PASS"),
   },
-  // How often the worker checks the mailbox (never faster than every 30 seconds)
-  ingestIntervalSeconds: Math.max(10, intOf("INGEST_INTERVAL_SECONDS", 10)), // First admin account (used only by the seed script)
+  // How often the worker checks the mailbox (never faster than every 10 seconds)
+  ingestIntervalSeconds: Math.max(10, intOf("INGEST_INTERVAL_SECONDS", 10)),
+  // First admin account (used only by the seed script)
   seed: {
     email: optional("SEED_ADMIN_EMAIL").toLowerCase(),
     name: optional("SEED_ADMIN_NAME", "Administrator"),

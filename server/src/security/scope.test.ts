@@ -16,6 +16,7 @@ const base = {
   is_active: true,
   password_changed_at: new Date(),
   branding: null,
+  two_factor: false,
 };
 const admin: AuthUser = { ...base, id: 1, role: "ADMIN", business_unit_id: 6 };
 const itFnb: AuthUser = { ...base, id: 2, role: "IT", business_unit_id: 2 };

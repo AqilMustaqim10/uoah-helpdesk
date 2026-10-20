@@ -3,6 +3,8 @@
 //  - login, sign up and forgot password give the SAME answer whether an email exists or not
 //  - new accounts are ALWAYS role USER (the role is never read from the request)
 //  - a password reset signs out every old session (password_changed_at)
+//  - New in step H: ADMIN and IT (and anyone with two-factor authentication on) do not get a session
+//    from the password alone. They get a short second-step cookie and must finish at /api/auth/2fa.
 import { Router } from "express";
 import bcrypt from "bcryptjs";
 import { query, withTx } from "../db/pool";
@@ -17,11 +19,12 @@ import {
   validatePassword,
 } from "../lib/validate";
 import {
-  AuthUser,
   clearAuthCookie,
+  clearMfaChallengeCookie,
   loadUserById,
   requireAuth,
   setAuthCookie,
+  setMfaChallengeCookie,
 } from "../middleware/auth";
 import {
   codeRequestLimiter,
@@ -30,6 +33,8 @@ import {
 } from "../middleware/rateLimit";
 import { issueCode, verifyCode } from "../lib/codes";
 import { sendAccountExistsEmail, sendCodeEmail } from "../services/authMail";
+import { needsMfa } from "../services/mfa";
+import { publicUser } from "../services/publicUser";
 
 const router = Router();
 
@@ -39,18 +44,6 @@ const DUMMY_HASH = bcrypt.hashSync("not-a-real-password-1", 12);
 const GENERIC_CODE_SENT =
   "If the details are valid, a 6-digit code has been sent to your email.";
 const BAD_CODE = "Invalid or expired code.";
-
-/** What the browser is allowed to know about the logged-in user (never the password hash). */
-function publicUser(u: AuthUser) {
-  return {
-    id: u.id,
-    email: u.email,
-    name: u.name,
-    role: u.role,
-    business_unit_id: u.business_unit_id,
-    branding: u.branding,
-  };
-}
 
 /** Checks that a code from the browser looks like exactly 6 digits. */
 function codeOf(v: unknown): string {
@@ -82,6 +75,8 @@ router.get(
 
 // ---------------------------------------------------------------------------
 // POST /api/auth/login   { email, password }
+// Answers { user }                     -> signed in
+//      or { mfa: 'verify' | 'setup' }  -> the password was right, a second step is still needed
 // ---------------------------------------------------------------------------
 router.post(
   "/login",
@@ -97,7 +92,7 @@ router.post(
     const rows = email
       ? (
           await query(
-            "SELECT id, password_hash, is_active FROM users WHERE email = $1",
+            "SELECT id, password_hash, is_active, role, totp_enabled_at FROM users WHERE email = $1",
             [email],
           )
         ).rows
@@ -115,6 +110,14 @@ router.post(
       throw new HttpError(401, "Invalid email or password.");
     }
 
+    // The password is right. ADMIN, IT and anyone with two-factor authentication on need the second step.
+    if (needsMfa(row.role, !!row.totp_enabled_at)) {
+      clearAuthCookie(res); // no session until the second step is done
+      setMfaChallengeCookie(res, row.id);
+      res.json({ mfa: row.totp_enabled_at ? "verify" : "setup" });
+      return;
+    }
+
     setAuthCookie(res, row.id);
     const user = await loadUserById(row.id);
     res.json({ user: publicUser(user!) });
@@ -122,10 +125,11 @@ router.post(
 );
 
 // ---------------------------------------------------------------------------
-// POST /api/auth/logout
+// POST /api/auth/logout   (also cancels a half-finished sign-in)
 // ---------------------------------------------------------------------------
 router.post("/logout", (_req, res) => {
   clearAuthCookie(res);
+  clearMfaChallengeCookie(res);
   res.json({ ok: true });
 });
 
@@ -232,7 +236,7 @@ router.post(
 
     if (newId === null) throw new HttpError(400, BAD_CODE);
 
-    setAuthCookie(res, newId);
+    setAuthCookie(res, newId); // new accounts are always USER, so no second step
     const user = await loadUserById(newId);
     res.status(201).json({ user: publicUser(user!) });
   }),
@@ -273,6 +277,7 @@ router.post(
 // ---------------------------------------------------------------------------
 // POST /api/auth/forgot/reset   { email, code, new_password }
 // Right code -> new password saved, and every old session is signed out.
+// (ADMIN and IT still need their authenticator code to sign in afterwards.)
 // ---------------------------------------------------------------------------
 router.post(
   "/forgot/reset",
@@ -310,6 +315,7 @@ router.post(
     if (!ok) throw new HttpError(400, BAD_CODE);
 
     clearAuthCookie(res);
+    clearMfaChallengeCookie(res);
     res.json({
       ok: true,
       message: "Password updated. Please sign in with your new password.",

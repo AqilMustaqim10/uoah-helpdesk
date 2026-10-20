@@ -25,7 +25,8 @@ function qstr(v: unknown): string {
 /** What the directory shows for each person (never the password hash). */
 const USER_SELECT = `
   SELECT u.id, u.email, u.name, u.role, u.is_active, u.business_unit_id,
-         bu.code AS unit_code, bu.name AS unit_name, u.created_at
+                  bu.code AS unit_code, bu.name AS unit_name, u.created_at,
+         (u.totp_enabled_at IS NOT NULL) AS two_factor
     FROM users u
     LEFT JOIN business_units bu ON bu.id = u.business_unit_id`;
 

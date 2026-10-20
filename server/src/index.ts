@@ -10,6 +10,7 @@ import { errorHandler } from "./middleware/errorHandler";
 import { originCheck } from "./middleware/originCheck";
 import { apiLimiter } from "./middleware/rateLimit";
 import authRoutes from "./routes/auth";
+import mfaRoutes from "./routes/mfa";
 import ticketRoutes from "./routes/tickets";
 import commentRoutes from "./routes/comments";
 import ticketFileRoutes from "./routes/ticketFiles";
@@ -17,6 +18,7 @@ import fileRoutes from "./routes/files";
 import statsRoutes from "./routes/stats";
 import exportRoutes from "./routes/export";
 import userRoutes from "./routes/users";
+import userMfaRoutes from "./routes/usersMfa";
 import unitRoutes from "./routes/units";
 import kbRoutes from "./routes/kb";
 import kbSuggestRoutes from "./routes/kbSuggest";
@@ -52,6 +54,8 @@ app.get(
   }),
 );
 
+// Two-factor authentication first (its own login rules), then the rest of sign-in
+app.use("/api/auth/2fa", mfaRoutes);
 app.use("/api/auth", authRoutes);
 
 // Everything below needs a logged-in user (requireAuth runs first)
@@ -66,8 +70,14 @@ app.use("/api/files", requireAuth, fileRoutes);
 // Dashboard numbers and CSV export: IT and ADMIN only (a USER gets "not found")
 app.use("/api/stats", requireAuth, requireRole("ADMIN", "IT"), statsRoutes);
 app.use("/api/export", requireAuth, requireRole("ADMIN", "IT"), exportRoutes);
-// User Directory and the audit log viewer: ADMIN only
-app.use("/api/users", requireAuth, requireRole("ADMIN"), userRoutes);
+// User Directory (including the 2FA reset) and the audit log viewer: ADMIN only
+app.use(
+  "/api/users",
+  requireAuth,
+  requireRole("ADMIN"),
+  userRoutes,
+  userMfaRoutes,
+);
 app.use("/api/audit", requireAuth, requireRole("ADMIN"), auditRoutes);
 // Branding: the logo is for any logged-in user of that unit; changes are ADMIN only (checked inside)
 app.use("/api/units", requireAuth, unitRoutes);

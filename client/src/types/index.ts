@@ -21,6 +21,7 @@ export interface User {
   role: Role;
   business_unit_id: number | null;
   branding: Branding | null;
+  two_factor?: boolean;
 }
 
 /** A business unit in dropdowns. */
@@ -169,6 +170,7 @@ export interface ManagedUser {
   name: string;
   role: Role;
   is_active: boolean;
+  two_factor?: boolean;
   business_unit_id: number | null;
   unit_code: string | null;
   unit_name: string | null;

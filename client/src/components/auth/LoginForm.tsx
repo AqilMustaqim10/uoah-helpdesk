@@ -1,5 +1,5 @@
-// Sign-in form. On success the app switches to the main screen by itself
-// (AuthContext now has a user), so there is nothing to navigate to here.
+// Sign-in form. For USER accounts a correct password signs in at once (the app then switches to the main screen).
+// ADMIN and IT accounts get a second step: onMfa() tells the page to show the code (or setup) screen.
 import { useState, type FormEvent } from "react";
 import { ApiError } from "../../api/client";
 import { emailProblem } from "../../lib/validate";
@@ -12,9 +12,15 @@ interface Props {
   initialEmail: string;
   onSignup: () => void;
   onForgot: () => void;
+  onMfa: (phase: "verify" | "setup") => void;
 }
 
-export default function LoginForm({ initialEmail, onSignup, onForgot }: Props) {
+export default function LoginForm({
+  initialEmail,
+  onSignup,
+  onForgot,
+  onMfa,
+}: Props) {
   const { login } = useAuth();
   const [email, setEmail] = useState(initialEmail);
   const [password, setPassword] = useState("");
@@ -32,8 +38,12 @@ export default function LoginForm({ initialEmail, onSignup, onForgot }: Props) {
     setBusy(true);
     setError("");
     try {
-      await login(email.trim(), password);
-      // success: this form disappears because the app now has a user
+      const outcome = await login(email.trim(), password);
+      if (outcome !== "ok") {
+        setBusy(false);
+        onMfa(outcome); // the password was right; now the code (or the first-time setup)
+      }
+      // outcome 'ok': this form disappears because the app now has a user
     } catch (err) {
       setError(
         err instanceof ApiError

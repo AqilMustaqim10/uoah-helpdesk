@@ -81,6 +81,17 @@ export function describeAudit(action: string, d: Record<string, any>): string {
       return `removed ${text(d.name, "a file")} from an article`;
 
     default:
+    // ----- two-factor authentication -----
+    case "MFA_ENABLED":
+      return "turned on two-factor authentication";
+    case "MFA_RECOVERY_USED":
+      return `signed in with a recovery code (${text(d.left, "?")} left)`;
+    case "MFA_RECOVERY_REGENERATED":
+      return "created new recovery codes";
+    case "MFA_LOCKED":
+      return "was locked out for 15 minutes after wrong codes";
+    case "MFA_RESET":
+      return `reset two-factor authentication for ${text(d.email)}`;
       return humanizeAction(action).toLowerCase();
   }
 }

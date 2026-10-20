@@ -1,4 +1,4 @@
-// User Directory server calls (they match server/src/routes/users.ts).
+// User Directory server calls (they match server/src/routes/users.ts and usersMfa.ts).
 import { api } from "./client";
 import type { ManagedUser, Role, UserListResponse, UserQuery } from "../types";
 
@@ -22,4 +22,6 @@ export const usersApi = {
     api.patch<{ user: ManagedUser }>(`/users/${id}/unit`, { business_unit_id }),
   setActive: (id: number, is_active: boolean) =>
     api.patch<{ user: ManagedUser }>(`/users/${id}/active`, { is_active }),
+  /** Removes someone's authenticator and recovery codes (they sign in again and set it up anew). */
+  reset2fa: (id: number) => api.post<{ ok: boolean }>(`/users/${id}/reset-2fa`),
 };

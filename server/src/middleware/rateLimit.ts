@@ -3,6 +3,15 @@ import rateLimit from "express-rate-limit";
 
 const FIFTEEN_MIN = 15 * 60 * 1000;
 
+/** Entering a second-factor code: max 20 tries per 15 minutes per IP (each person also has their own lockout). */
+export const mfaLimiter = rateLimit({
+  windowMs: FIFTEEN_MIN,
+  limit: 20,
+  standardHeaders: true,
+  legacyHeaders: false,
+  message: { error: "Too many attempts. Please try again in a few minutes." },
+});
+
 /**
  * Login: max 10 FAILED attempts per 15 minutes per IP.
  * Successful logins are not counted, so many staff behind one office internet address

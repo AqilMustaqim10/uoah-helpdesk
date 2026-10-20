@@ -1,16 +1,20 @@
-// The screen before login: sign in, sign up, or forgot password.
-// Switching between them fades softly.
+// The screen before login: sign in, sign up, forgot password, or (after a correct password
+// for ADMIN / IT) the two-factor step. Switching between them fades softly.
 import { useState } from "react";
 import { Headset } from "lucide-react";
 import ThemeToggle from "../components/ui/ThemeToggle";
 import LoginForm from "../components/auth/LoginForm";
 import SignupForm from "../components/auth/SignupForm";
 import ForgotForm from "../components/auth/ForgotForm";
+import TwoFactorForm from "../components/auth/TwoFactorForm";
+import TwoFactorSetup from "../components/auth/TwoFactorSetup";
 
-type View = "login" | "signup" | "forgot";
+type View = "login" | "signup" | "forgot" | "mfa";
 
 export default function AuthPage() {
   const [view, setView] = useState<View>("login");
+  // 'verify' = enter a code; 'setup' = first-time setup of the authenticator app
+  const [mfaPhase, setMfaPhase] = useState<"verify" | "setup">("verify");
   // After a password reset we return to login with the email already filled in
   const [prefillEmail, setPrefillEmail] = useState("");
 
@@ -41,6 +45,10 @@ export default function AuthPage() {
               initialEmail={prefillEmail}
               onSignup={() => setView("signup")}
               onForgot={() => setView("forgot")}
+              onMfa={(phase) => {
+                setMfaPhase(phase);
+                setView("mfa");
+              }}
             />
           )}
           {view === "signup" && (
@@ -55,6 +63,12 @@ export default function AuthPage() {
               }}
             />
           )}
+          {view === "mfa" &&
+            (mfaPhase === "verify" ? (
+              <TwoFactorForm onBack={() => setView("login")} />
+            ) : (
+              <TwoFactorSetup onBack={() => setView("login")} />
+            ))}
         </div>
       </div>
     </div>
