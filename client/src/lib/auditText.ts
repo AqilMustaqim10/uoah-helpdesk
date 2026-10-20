@@ -44,7 +44,7 @@ export function describeAudit(action: string, d: Record<string, any>): string {
     case "FILE_REMOVED":
       return `removed ${text(d.name, "a file")}`;
     case "TICKETS_EXPORTED":
-      return `exported ${text(d.rows, "0")} ticket(s) to CSV`;
+      return `exported ${text(d.rows, "0")} ticket(s) to ${text(d.format, "CSV")}`;
 
     // ----- people -----
     case "USER_REGISTERED":
@@ -93,5 +93,15 @@ export function describeAudit(action: string, d: Record<string, any>): string {
     case "MFA_RESET":
       return `reset two-factor authentication for ${text(d.email)}`;
       return humanizeAction(action).toLowerCase();
+
+    // ----- deleting and creating -----
+    case "TICKET_DELETED":
+      return `permanently deleted ticket ${text(d.ref)} "${text(d.title)}" (${text(d.comments, "0")} replies, ${text(d.files, "0")} files). Reason: ${text(d.reason)}`;
+    case "USER_CREATED":
+      return `created the account ${text(d.email)} (${text(d.role)}, ${text(d.department, "no department")})`;
+    case "USER_DELETED":
+      return `deleted the account of ${text(d.email)}. Reason: ${text(d.reason)}`;
+    case "USER_DEPARTMENT_CHANGED":
+      return `changed the department of ${text(d.email)} from ${text(d.from, "none")} to ${text(d.to)}`;
   }
 }

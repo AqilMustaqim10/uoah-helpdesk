@@ -1,12 +1,15 @@
-// The User Directory tab (ADMIN only): search, filter, change role / unit, enable / disable.
-// There is no delete: people are only ever disabled.
+// The User Directory tab.
+//  - ADMIN: search, filter, add users anywhere, change role / unit / department, enable / disable, delete
+//  - IT:    only the normal user accounts of their own unit: search, add users to that unit, delete
+// Deleting is PERMANENT and always asks for a written reason (recorded in the audit log).
 import { useEffect, useRef, useState } from "react";
-import { Search, SearchX, Users as UsersIcon } from "lucide-react";
+import { Plus, Search, SearchX, Users as UsersIcon } from "lucide-react";
 import { authApi } from "../api/auth";
 import { ApiError } from "../api/client";
 import { usersApi } from "../api/users";
 import { useAuth } from "../hooks/useAuth";
 import { useDebounce } from "../hooks/useDebounce";
+import { useDepartments } from "../hooks/useDepartments";
 import { useToast } from "../hooks/useToast";
 import { cn } from "../lib/cn";
 import type {
@@ -17,12 +20,15 @@ import type {
   UserListResponse,
   UserQuery,
 } from "../types";
+import CreateUserModal from "../components/users/CreateUserModal";
 import UserRow from "../components/users/UserRow";
 import Button from "../components/ui/Button";
 import ConfirmModal from "../components/ui/ConfirmModal";
 import EmptyState from "../components/ui/EmptyState";
+import ErrorBoundary from "../components/ui/ErrorBoundary";
 import FormError from "../components/ui/FormError";
 import Pagination from "../components/ui/Pagination";
+import ReasonModal from "../components/ui/ReasonModal";
 import Skeleton from "../components/ui/Skeleton";
 
 const EMPTY_QUERY: UserQuery = {
@@ -52,6 +58,8 @@ type Pending =
 export default function UsersPage({ user: me }: { user: User }) {
   const toast = useToast();
   const { refresh } = useAuth();
+  const { departments } = useDepartments();
+  const isAdmin = me.role === "ADMIN";
 
   const [query, setQuery] = useState<UserQuery>(EMPTY_QUERY);
   const [text, setText] = useState("");
@@ -60,17 +68,24 @@ export default function UsersPage({ user: me }: { user: User }) {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
   const [units, setUnits] = useState<UnitOption[]>([]);
+  const [version, setVersion] = useState(0); // changes when the list must be loaded again
   const [busyId, setBusyId] = useState<number | null>(null);
   const [pending, setPending] = useState<Pending>(null);
   const [confirmBusy, setConfirmBusy] = useState(false);
+  const [createOpen, setCreateOpen] = useState(false);
+  const [deleting, setDeleting] = useState<ManagedUser | null>(null);
+  const [deleteBusy, setDeleteBusy] = useState(false);
+  const [deleteError, setDeleteError] = useState("");
   const requestId = useRef(0);
 
+  // The business units are needed by ADMIN (filters, unit dropdowns, the "Add user" window)
   useEffect(() => {
+    if (!isAdmin) return;
     authApi
       .units()
       .then((r) => setUnits(r.units))
       .catch(() => undefined);
-  }, []);
+  }, [isAdmin]);
 
   // The search runs 300 ms after you stop typing
   useEffect(() => {
@@ -95,7 +110,7 @@ export default function UsersPage({ user: me }: { user: User }) {
       .finally(() => {
         if (id === requestId.current) setLoading(false);
       });
-  }, [query]);
+  }, [query, version]);
 
   // If the current page no longer exists, go back to page 1
   useEffect(() => {
@@ -190,8 +205,30 @@ export default function UsersPage({ user: me }: { user: User }) {
     setPending(null);
   }
 
+  /** The reason was typed: erase the account for good. */
+  async function confirmDelete(reason: string) {
+    if (!deleting) return;
+    setDeleteBusy(true);
+    setDeleteError("");
+    try {
+      await usersApi.erase(deleting.id, reason);
+      toast.success(`The account of ${deleting.name} was deleted`);
+      setDeleting(null);
+      setVersion((v) => v + 1); // the list is loaded again without them
+    } catch (err) {
+      setDeleteError(
+        err instanceof ApiError
+          ? err.message
+          : "Could not delete. Please try again.",
+      );
+    } finally {
+      setDeleteBusy(false);
+    }
+  }
+
   const filtersActive = !!(query.q || query.role || query.status || query.unit);
   const firstLoad = loading && !data;
+  const itWithoutUnit = !isAdmin && me.business_unit_id === null;
 
   return (
     <div className="space-y-4">
@@ -212,52 +249,65 @@ export default function UsersPage({ user: me }: { user: User }) {
             className="h-10 w-full rounded-lg border border-slate-200 bg-white pl-9 pr-3 text-sm text-slate-900 transition placeholder:text-slate-400 focus:border-brand focus:outline-none focus:ring-2 focus:ring-brand/25"
           />
         </div>
-        <div className="flex flex-wrap items-center gap-2">
-          <select
-            aria-label="Filter by role"
-            className={SELECT_CLASS}
-            value={query.role}
-            onChange={(e) =>
-              change({ role: e.target.value as UserQuery["role"] })
-            }
-          >
-            <option value="">All roles</option>
-            <option value="ADMIN">Administrators</option>
-            <option value="IT">IT staff</option>
-            <option value="USER">Users</option>
-          </select>
-          <select
-            aria-label="Filter by status"
-            className={SELECT_CLASS}
-            value={query.status}
-            onChange={(e) =>
-              change({ status: e.target.value as UserQuery["status"] })
-            }
-          >
-            <option value="">Active and disabled</option>
-            <option value="active">Active only</option>
-            <option value="disabled">Disabled only</option>
-          </select>
-          <select
-            aria-label="Filter by business unit"
-            className={SELECT_CLASS}
-            value={query.unit}
-            onChange={(e) => change({ unit: e.target.value })}
-          >
-            <option value="">All units</option>
-            <option value="none">No unit</option>
-            {units.map((u) => (
-              <option key={u.id} value={u.id}>
-                {u.code}
-              </option>
-            ))}
-          </select>
-        </div>
+        {isAdmin ? (
+          <div className="flex flex-wrap items-center gap-2">
+            <select
+              aria-label="Filter by role"
+              className={SELECT_CLASS}
+              value={query.role}
+              onChange={(e) =>
+                change({ role: e.target.value as UserQuery["role"] })
+              }
+            >
+              <option value="">All roles</option>
+              <option value="ADMIN">Administrators</option>
+              <option value="IT">IT staff</option>
+              <option value="USER">Users</option>
+            </select>
+            <select
+              aria-label="Filter by status"
+              className={SELECT_CLASS}
+              value={query.status}
+              onChange={(e) =>
+                change({ status: e.target.value as UserQuery["status"] })
+              }
+            >
+              <option value="">Active and disabled</option>
+              <option value="active">Active only</option>
+              <option value="disabled">Disabled only</option>
+            </select>
+            <select
+              aria-label="Filter by business unit"
+              className={SELECT_CLASS}
+              value={query.unit}
+              onChange={(e) => change({ unit: e.target.value })}
+            >
+              <option value="">All units</option>
+              <option value="none">No unit</option>
+              {units.map((u) => (
+                <option key={u.id} value={u.id}>
+                  {u.code}
+                </option>
+              ))}
+            </select>
+          </div>
+        ) : (
+          <p className="text-sm text-slate-500">
+            Showing the user accounts of{" "}
+            {me.branding?.name ?? "your business unit"}.
+          </p>
+        )}
       </div>
 
       <FormError message={error} />
 
-      {firstLoad ? (
+      {itWithoutUnit ? (
+        <EmptyState
+          icon={UsersIcon}
+          title="You have no business unit"
+          description="Ask an administrator to set your business unit. Until then you cannot see or add users."
+        />
+      ) : firstLoad ? (
         <div
           className="space-y-px overflow-hidden rounded-2xl border border-slate-200 bg-white"
           aria-busy="true"
@@ -271,9 +321,18 @@ export default function UsersPage({ user: me }: { user: User }) {
         </div>
       ) : data && data.users.length > 0 ? (
         <>
-          <p className="text-sm text-slate-500">
-            {data.total} {data.total === 1 ? "person" : "people"}
-          </p>
+          <div className="flex items-center justify-between">
+            <p className="text-sm text-slate-500">
+              {data.total} {data.total === 1 ? "person" : "people"}
+            </p>
+            <Button
+              size="sm"
+              icon={<Plus className="h-4 w-4" />}
+              onClick={() => setCreateOpen(true)}
+            >
+              Add user
+            </Button>
+          </div>
           <ul
             className={cn(
               "divide-y divide-slate-200 overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm transition-opacity",
@@ -285,7 +344,9 @@ export default function UsersPage({ user: me }: { user: User }) {
                 key={u.id}
                 user={u}
                 isSelf={u.id === me.id}
+                mode={isAdmin ? "admin" : "it"}
                 units={units}
+                departments={departments}
                 busy={busyId === u.id}
                 onRole={(role) => requestRole(u, role)}
                 onUnit={(unitId) =>
@@ -298,7 +359,18 @@ export default function UsersPage({ user: me }: { user: User }) {
                     if (ok && u.id === me.id) void refresh();
                   })
                 }
+                onDepartment={(department) =>
+                  void runChange(
+                    u.id,
+                    () => usersApi.setDepartment(u.id, department),
+                    `Department of ${u.name} updated`,
+                  )
+                }
                 onToggleActive={() => requestToggle(u)}
+                onDelete={() => {
+                  setDeleteError("");
+                  setDeleting(u);
+                }}
               />
             ))}
           </ul>
@@ -331,7 +403,10 @@ export default function UsersPage({ user: me }: { user: User }) {
           <EmptyState
             icon={UsersIcon}
             title="No users yet"
-            description="People appear here after they register."
+            description="People appear here after they register, or when you add them."
+            action={
+              <Button onClick={() => setCreateOpen(true)}>Add user</Button>
+            }
           />
         )
       ) : null}
@@ -350,13 +425,39 @@ export default function UsersPage({ user: me }: { user: User }) {
               ? "They will be signed out and cannot sign in until you enable the account again. Their tickets and comments are kept."
               : pending.role === "ADMIN"
                 ? "Administrators can see every ticket in every business unit and manage all users and settings."
-                : "They will lose access to other business units and to the User Directory and Settings."
+                : "They will lose access to other business units and to Settings."
           }
           confirmLabel={pending.kind === "disable" ? "Disable" : "Confirm"}
           danger={pending.kind === "disable"}
           busy={confirmBusy}
           onConfirm={() => void confirmPending()}
           onClose={() => setPending(null)}
+        />
+      )}
+
+      {createOpen && (
+        <ErrorBoundary onClose={() => setCreateOpen(false)}>
+          <CreateUserModal
+            actor={me}
+            units={units}
+            onClose={() => setCreateOpen(false)}
+            onCreated={() => {
+              setCreateOpen(false);
+              setVersion((v) => v + 1);
+            }}
+          />
+        </ErrorBoundary>
+      )}
+
+      {deleting && (
+        <ReasonModal
+          title={`Delete the account of ${deleting.name}?`}
+          message="This cannot be undone. Their name, email and department are removed, they are signed out, and their email address can register again. Their tickets stay but show 'Deleted user'. Their open tickets become unassigned."
+          confirmLabel="Delete account"
+          busy={deleteBusy}
+          error={deleteError}
+          onConfirm={(reason) => void confirmDelete(reason)}
+          onClose={() => !deleteBusy && setDeleting(null)}
         />
       )}
     </div>

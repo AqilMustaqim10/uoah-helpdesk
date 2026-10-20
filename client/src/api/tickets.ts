@@ -1,4 +1,5 @@
-// Server calls for tickets (they match server/src/routes/tickets.ts, comments.ts, ticketFiles.ts, files.ts, export.ts).
+// Server calls for tickets (they match server/src/routes/tickets.ts, comments.ts, ticketFiles.ts,
+// ticketDelete.ts, files.ts and export.ts).
 import { api } from "./client";
 import type {
   Assignee,
@@ -19,6 +20,15 @@ function toQueryString(q: TicketQuery, withPage = true): string {
   if (q.assignee) p.set("assignee", q.assignee);
   if (withPage) p.set("page", String(q.page));
   return p.toString();
+}
+
+/** YOUR time zone, so the dates in the PDF match what you see on screen. */
+function timeZone(): string {
+  try {
+    return Intl.DateTimeFormat().resolvedOptions().timeZone || "UTC";
+  } catch {
+    return "UTC";
+  }
 }
 
 export const ticketsApi = {
@@ -75,10 +85,16 @@ export const ticketsApi = {
   deleteFile: (fileId: number) =>
     api.del<TicketDetailResponse>(`/files/${fileId}`),
 
-  /** CSV of the tickets that match the current filters (IT/ADMIN only). */
-  exportCsv: (q: TicketQuery) =>
-    api.download(
-      `/export/tickets.csv?${toQueryString(q, false)}`,
-      "tickets.csv",
-    ),
+  /** PERMANENTLY erases the ticket with its replies and files (IT/ADMIN). A reason of at least 5 characters is required. */
+  deleteTicket: (id: number, reason: string) =>
+    api.post<{ ok: boolean }>(`/tickets/${id}/delete`, { reason }),
+
+  /** A PDF of the tickets that match the current filters (IT/ADMIN only). */
+  exportPdf: (q: TicketQuery) => {
+    const qs = toQueryString(q, false);
+    return api.download(
+      `/export/tickets.pdf?${qs}${qs ? "&" : ""}tz=${encodeURIComponent(timeZone())}`,
+      "tickets.pdf",
+    );
+  },
 };

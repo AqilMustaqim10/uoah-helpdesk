@@ -3,12 +3,14 @@
 //  - login, sign up and forgot password give the SAME answer whether an email exists or not
 //  - new accounts are ALWAYS role USER (the role is never read from the request)
 //  - a password reset signs out every old session (password_changed_at)
-//  - New in step H: ADMIN and IT (and anyone with two-factor authentication on) do not get a session
-//    from the password alone. They get a short second-step cookie and must finish at /api/auth/2fa.
+//  - ADMIN and IT (and anyone with two-factor authentication on) do not get a session from the password
+//    alone. They get a short second-step cookie and must finish at /api/auth/2fa.
+//  - New in step I: sign-up needs a department from the fixed list (config/departments.ts).
 import { Router } from "express";
 import bcrypt from "bcryptjs";
 import { query, withTx } from "../db/pool";
 import { audit } from "../db/audit";
+import { DEPARTMENTS, parseDepartment } from "../config/departments";
 import { ah, HttpError } from "../lib/http";
 import {
   bodyId,
@@ -74,6 +76,13 @@ router.get(
 );
 
 // ---------------------------------------------------------------------------
+// GET /api/auth/departments  (public)  The sign-up and "add user" forms need the list of departments.
+// ---------------------------------------------------------------------------
+router.get("/departments", (_req, res) => {
+  res.json({ departments: DEPARTMENTS });
+});
+
+// ---------------------------------------------------------------------------
 // POST /api/auth/login   { email, password }
 // Answers { user }                     -> signed in
 //      or { mfa: 'verify' | 'setup' }  -> the password was right, a second step is still needed
@@ -105,7 +114,7 @@ router.post(
       row ? row.password_hash : DUMMY_HASH,
     );
 
-    // One message for: unknown email, wrong password, disabled account.
+    // One message for: unknown email, wrong password, disabled or deleted account.
     if (!row || !row.is_active || !passwordOk || !match) {
       throw new HttpError(401, "Invalid email or password.");
     }
@@ -141,7 +150,7 @@ router.get("/me", requireAuth, (req, res) => {
 });
 
 // ---------------------------------------------------------------------------
-// POST /api/auth/signup/request   { email, name, password, business_unit_id }
+// POST /api/auth/signup/request   { email, name, department, password, business_unit_id }
 // Step 1 of sign up: checks the details and emails a 6-digit code.
 // Calling it again (after 60 s) sends a fresh code and cancels the old one.
 // ---------------------------------------------------------------------------
@@ -153,6 +162,7 @@ router.post(
     const name = cleanText(req.body?.name, "Name", { max: 100 });
     const password = validatePassword(req.body?.password);
     const unitId = bodyId(req.body?.business_unit_id, "business unit");
+    const department = parseDepartment(req.body?.department); // must be one of the names in config/departments.ts
 
     // Only company email domains may register.
     if (!isAllowedDomain(email)) {
@@ -179,7 +189,12 @@ router.post(
       "SIGNUP",
       existing.rows[0]
         ? { noop: true }
-        : { name, password_hash: passwordHash, business_unit_id: unitId },
+        : {
+            name,
+            password_hash: passwordHash,
+            business_unit_id: unitId,
+            department,
+          },
     );
     if (issued.wait > 0) throw tooSoon(issued.wait);
 
@@ -192,7 +207,7 @@ router.post(
 
 // ---------------------------------------------------------------------------
 // POST /api/auth/signup/verify   { email, code }
-// Step 2: right code -> account is created (role USER) and the person is signed in.
+// Step 2: right code -> account is created (role USER, with its department) and the person is signed in.
 // ---------------------------------------------------------------------------
 router.post(
   "/signup/verify",
@@ -210,13 +225,14 @@ router.post(
 
         // The role is hard-coded to USER. Nothing from the request can change it.
         const ins = await c.query(
-          `INSERT INTO users (email, name, password_hash, role, business_unit_id)
-           VALUES ($1, $2, $3, 'USER', $4) RETURNING id`,
+          `INSERT INTO users (email, name, password_hash, role, business_unit_id, department)
+           VALUES ($1, $2, $3, 'USER', $4, $5) RETURNING id`,
           [
             email,
             payload.name,
             payload.password_hash,
             payload.business_unit_id,
+            payload.department ?? null,
           ],
         );
         await audit(c, {
@@ -224,7 +240,7 @@ router.post(
           action: "USER_REGISTERED",
           entityType: "user",
           entityId: ins.rows[0].id,
-          details: { email },
+          details: { email, department: payload.department ?? null },
         });
         return ins.rows[0].id as number;
       });
@@ -245,6 +261,9 @@ router.post(
 // ---------------------------------------------------------------------------
 // POST /api/auth/forgot/request   { email }
 // ALWAYS answers the same way, whether the email has an account or not.
+// The backend first checks that an ACTIVE account exists. Only then is a real code created and emailed.
+// Unknown, disabled or deleted addresses get a "noop" code that is never emailed and can never be used,
+// so the reply (and the 60-second wait) looks exactly the same and nobody can discover who has an account.
 // ---------------------------------------------------------------------------
 router.post(
   "/forgot/request",
@@ -256,9 +275,8 @@ router.post(
       return;
     }
 
-    // Only active accounts can reset. Unknown or disabled emails get a "noop" code.
     const u = await query(
-      "SELECT id FROM users WHERE email = $1 AND is_active = TRUE",
+      "SELECT id FROM users WHERE email = $1 AND is_active = TRUE AND deleted_at IS NULL",
       [email],
     );
     const issued = await issueCode(
@@ -297,7 +315,7 @@ router.post(
       const u = await c.query(
         `UPDATE users
             SET password_hash = $2, password_changed_at = $3, updated_at = now()
-          WHERE email = $1 AND is_active = TRUE
+          WHERE email = $1 AND is_active = TRUE AND deleted_at IS NULL
           RETURNING id`,
         [email, hash, new Date()],
       );

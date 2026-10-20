@@ -14,6 +14,7 @@ import mfaRoutes from "./routes/mfa";
 import ticketRoutes from "./routes/tickets";
 import commentRoutes from "./routes/comments";
 import ticketFileRoutes from "./routes/ticketFiles";
+import ticketDeleteRoutes from "./routes/ticketDelete";
 import fileRoutes from "./routes/files";
 import statsRoutes from "./routes/stats";
 import exportRoutes from "./routes/export";
@@ -65,19 +66,17 @@ app.use(
   ticketRoutes,
   commentRoutes,
   ticketFileRoutes,
+  ticketDeleteRoutes,
 );
 app.use("/api/files", requireAuth, fileRoutes);
-// Dashboard numbers and CSV export: IT and ADMIN only (a USER gets "not found")
+// Dashboard numbers and the PDF export: IT and ADMIN only (a USER gets "not found")
 app.use("/api/stats", requireAuth, requireRole("ADMIN", "IT"), statsRoutes);
 app.use("/api/export", requireAuth, requireRole("ADMIN", "IT"), exportRoutes);
-// User Directory (including the 2FA reset) and the audit log viewer: ADMIN only
-app.use(
-  "/api/users",
-  requireAuth,
-  requireRole("ADMIN"),
-  userRoutes,
-  userMfaRoutes,
-);
+// User Directory: ADMIN gets everything, IT gets a limited version (each route checks its own rules).
+// The 2FA reset is ADMIN only; IT requests for it fall through to the second line and get "not found".
+app.use("/api/users", requireAuth, requireRole("ADMIN", "IT"), userRoutes);
+app.use("/api/users", requireAuth, requireRole("ADMIN"), userMfaRoutes);
+// The audit log viewer: ADMIN only
 app.use("/api/audit", requireAuth, requireRole("ADMIN"), auditRoutes);
 // Branding: the logo is for any logged-in user of that unit; changes are ADMIN only (checked inside)
 app.use("/api/units", requireAuth, unitRoutes);

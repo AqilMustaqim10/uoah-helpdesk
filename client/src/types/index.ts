@@ -60,6 +60,7 @@ export interface TicketSummary {
   created_by: number;
   requester_name: string;
   requester_email: string;
+  requester_department?: string | null;
   assigned_to: number | null;
   assignee_name: string | null;
   due_at: string | null;
@@ -170,6 +171,7 @@ export interface ManagedUser {
   name: string;
   role: Role;
   is_active: boolean;
+  department?: string | null;
   two_factor?: boolean;
   business_unit_id: number | null;
   unit_code: string | null;

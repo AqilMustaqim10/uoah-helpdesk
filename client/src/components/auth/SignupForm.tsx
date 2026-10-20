@@ -1,5 +1,5 @@
 // Sign up in two steps:
-//  1) your details -> we email a 6-digit code
+//  1) your details (including your department) -> we email a 6-digit code
 //  2) enter the code -> account is created (always a normal USER) and you are signed in
 import { useEffect, useState, type FormEvent } from "react";
 import { ArrowLeft } from "lucide-react";
@@ -8,6 +8,7 @@ import { ApiError } from "../../api/client";
 import { emailProblem, passwordProblem } from "../../lib/validate";
 import { useAuth } from "../../hooks/useAuth";
 import { useCountdown } from "../../hooks/useCountdown";
+import { useDepartments } from "../../hooks/useDepartments";
 import { useToast } from "../../hooks/useToast";
 import type { UnitOption } from "../../types";
 import Button from "../ui/Button";
@@ -17,7 +18,10 @@ import Input from "../ui/Input";
 import Select from "../ui/Select";
 
 type FieldErrors = Partial<
-  Record<"name" | "email" | "unit" | "password" | "confirm", string>
+  Record<
+    "name" | "email" | "unit" | "department" | "password" | "confirm",
+    string
+  >
 >;
 
 export default function SignupForm({
@@ -27,11 +31,13 @@ export default function SignupForm({
 }) {
   const { setUser } = useAuth();
   const toast = useToast();
+  const { departments, loading: departmentsLoading } = useDepartments();
 
   const [step, setStep] = useState<"details" | "code">("details");
   const [name, setName] = useState("");
   const [email, setEmail] = useState("");
   const [unitId, setUnitId] = useState("");
+  const [department, setDepartment] = useState("");
   const [password, setPassword] = useState("");
   const [confirm, setConfirm] = useState("");
   const [code, setCode] = useState("");
@@ -70,6 +76,7 @@ export default function SignupForm({
       await authApi.signupRequest({
         email: email.trim(),
         name: name.trim(),
+        department,
         password,
         business_unit_id: Number(unitId),
       });
@@ -99,6 +106,7 @@ export default function SignupForm({
     const ep = emailProblem(email);
     if (ep) errs.email = ep;
     if (!unitId) errs.unit = "Choose your business unit.";
+    if (!department) errs.department = "Choose your department.";
     const pp = passwordProblem(password);
     if (pp) errs.password = pp;
     if (confirm !== password) errs.confirm = "Passwords do not match.";
@@ -228,6 +236,22 @@ export default function SignupForm({
         {units.map((u) => (
           <option key={u.id} value={u.id}>
             {u.name} ({u.code})
+          </option>
+        ))}
+      </Select>
+      <Select
+        label="Department"
+        value={department}
+        onChange={(e) => setDepartment(e.target.value)}
+        error={errors.department}
+        disabled={departmentsLoading}
+      >
+        <option value="">
+          {departmentsLoading ? "Loading…" : "Choose your department"}
+        </option>
+        {departments.map((d) => (
+          <option key={d} value={d}>
+            {d}
           </option>
         ))}
       </Select>

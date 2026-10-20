@@ -16,10 +16,13 @@ export const authApi = {
     api.post<LoginResult>("/auth/login", { email, password }),
   logout: () => api.post<Ok>("/auth/logout"),
   units: () => api.get<{ units: UnitOption[] }>("/auth/units"),
+  /** The fixed list of departments (edited in server/src/config/departments.ts). */
+  departments: () => api.get<{ departments: string[] }>("/auth/departments"),
 
   signupRequest: (body: {
     email: string;
     name: string;
+    department: string;
     password: string;
     business_unit_id: number;
   }) => api.post<Ok>("/auth/signup/request", body),

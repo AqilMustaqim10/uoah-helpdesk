@@ -1,12 +1,13 @@
-// One person in the User Directory: who they are, plus their role, unit and enable/disable controls.
-// Your OWN row is read-only (you cannot change your own role or disable yourself; the server enforces it too).
-// New in step H: ADMIN and IT rows show whether two-factor authentication is on, with a "Reset 2FA" button
-// for someone who lost their phone.
+// One person in the User Directory.
+//  - mode "admin": role, unit and department controls, 2FA status and reset, enable/disable, delete
+//  - mode "it":    read-only details and a Delete button (IT only ever sees normal users of their own unit)
+// Your OWN row is read-only (you cannot change your own role, disable or delete yourself; the server enforces it too).
 import { useState } from "react";
 import {
   ShieldAlert,
   ShieldCheck,
   ShieldOff,
+  Trash2,
   UserCheck,
   UserX,
 } from "lucide-react";
@@ -24,11 +25,15 @@ import RoleBadge from "../ui/RoleBadge";
 interface Props {
   user: ManagedUser;
   isSelf: boolean;
+  mode: "admin" | "it";
   units: UnitOption[];
+  departments: string[];
   busy: boolean;
   onRole: (role: Role) => void;
   onUnit: (unitId: number) => void;
+  onDepartment: (department: string) => void;
   onToggleActive: () => void;
+  onDelete: () => void;
 }
 
 const SELECT_CLASS =
@@ -44,19 +49,30 @@ const ROLE_OPTIONS: Array<{ value: Role; label: string }> = [
 export default function UserRow({
   user,
   isSelf,
+  mode,
   units,
+  departments,
   busy,
   onRole,
   onUnit,
+  onDepartment,
   onToggleActive,
+  onDelete,
 }: Props) {
   const toast = useToast();
   const [confirmReset, setConfirmReset] = useState(false);
   const [resetBusy, setResetBusy] = useState(false);
   const [resetDone, setResetDone] = useState(false); // after a reset this row shows "pending" without reloading the list
 
+  const admin = mode === "admin";
   const staffRole = user.role === "ADMIN" || user.role === "IT";
   const twoFactorOn = !!user.two_factor && !resetDone;
+
+  // The person's current department is always selectable, even if it was removed from the list later
+  const departmentOptions =
+    user.department && !departments.includes(user.department)
+      ? [user.department, ...departments]
+      : departments;
 
   async function doReset() {
     setResetBusy(true);
@@ -106,7 +122,8 @@ export default function UserRow({
                 Disabled
               </span>
             )}
-            {staffRole &&
+            {admin &&
+              staffRole &&
               (twoFactorOn ? (
                 <span className="inline-flex items-center gap-1 rounded-full bg-emerald-50 px-2 py-0.5 text-xs font-medium text-emerald-700 ring-1 ring-inset ring-emerald-200">
                   <ShieldCheck className="h-3 w-3" aria-hidden /> 2FA on
@@ -122,51 +139,79 @@ export default function UserRow({
           </div>
           <p className="truncate text-xs text-slate-500">{user.email}</p>
           <p className="text-xs text-slate-400">
-            Joined {formatDate(user.created_at)}
+            {user.department ?? "No department"}
+            {!admin && user.unit_code && (
+              <span className="font-mono"> · {user.unit_code}</span>
+            )}{" "}
+            · Joined {formatDate(user.created_at)}
           </p>
         </div>
       </div>
 
       {/* Controls */}
       <div className="flex flex-wrap items-center gap-2">
-        {isSelf ? (
-          <RoleBadge role={user.role} />
-        ) : (
+        {admin &&
+          (isSelf ? (
+            <RoleBadge role={user.role} />
+          ) : (
+            <select
+              aria-label={`Role of ${user.name}`}
+              className={SELECT_CLASS}
+              value={user.role}
+              disabled={busy}
+              onChange={(e) => onRole(e.target.value as Role)}
+            >
+              {ROLE_OPTIONS.map((o) => (
+                <option key={o.value} value={o.value}>
+                  {o.label}
+                </option>
+              ))}
+            </select>
+          ))}
+
+        {admin && (
           <select
-            aria-label={`Role of ${user.name}`}
+            aria-label={`Business unit of ${user.name}`}
             className={SELECT_CLASS}
-            value={user.role}
+            value={user.business_unit_id ?? ""}
             disabled={busy}
-            onChange={(e) => onRole(e.target.value as Role)}
+            onChange={(e) => e.target.value && onUnit(Number(e.target.value))}
           >
-            {ROLE_OPTIONS.map((o) => (
-              <option key={o.value} value={o.value}>
-                {o.label}
+            {user.business_unit_id === null && (
+              <option value="" disabled>
+                No unit
+              </option>
+            )}
+            {units.map((u) => (
+              <option key={u.id} value={u.id}>
+                {u.code}
               </option>
             ))}
           </select>
         )}
 
-        <select
-          aria-label={`Business unit of ${user.name}`}
-          className={SELECT_CLASS}
-          value={user.business_unit_id ?? ""}
-          disabled={busy}
-          onChange={(e) => e.target.value && onUnit(Number(e.target.value))}
-        >
-          {user.business_unit_id === null && (
-            <option value="" disabled>
-              No unit
-            </option>
-          )}
-          {units.map((u) => (
-            <option key={u.id} value={u.id}>
-              {u.code}
-            </option>
-          ))}
-        </select>
+        {admin && (
+          <select
+            aria-label={`Department of ${user.name}`}
+            className={SELECT_CLASS}
+            value={user.department ?? ""}
+            disabled={busy}
+            onChange={(e) => e.target.value && onDepartment(e.target.value)}
+          >
+            {!user.department && (
+              <option value="" disabled>
+                No department
+              </option>
+            )}
+            {departmentOptions.map((d) => (
+              <option key={d} value={d}>
+                {d}
+              </option>
+            ))}
+          </select>
+        )}
 
-        {!isSelf && twoFactorOn && (
+        {admin && !isSelf && twoFactorOn && (
           <Button
             size="sm"
             variant="ghost"
@@ -178,7 +223,7 @@ export default function UserRow({
           </Button>
         )}
 
-        {!isSelf && (
+        {admin && !isSelf && (
           <Button
             size="sm"
             variant="secondary"
@@ -195,9 +240,22 @@ export default function UserRow({
             {user.is_active ? "Disable" : "Enable"}
           </Button>
         )}
+
+        {/* Delete (permanent): everyone but yourself. A dedicated red button, because the shared Button only has the brand color. */}
+        {!isSelf && (
+          <button
+            type="button"
+            onClick={onDelete}
+            disabled={busy}
+            className="inline-flex h-9 items-center gap-1.5 rounded-lg border border-rose-200 px-3 text-sm font-medium text-rose-700 transition hover:bg-rose-50 disabled:cursor-not-allowed disabled:opacity-60"
+          >
+            <Trash2 className="h-4 w-4" aria-hidden />
+            Delete
+          </button>
+        )}
       </div>
 
-      {user.business_unit_id === null && user.role !== "ADMIN" && (
+      {admin && user.business_unit_id === null && user.role !== "ADMIN" && (
         <p className="text-xs text-amber-700 lg:basis-full">
           This person has no business unit, so they cannot see or create
           tickets.

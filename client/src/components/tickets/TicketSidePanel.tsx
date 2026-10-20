@@ -308,6 +308,11 @@ export default function TicketSidePanel({ ticket, user, onUpdated }: Props) {
           <dd className="break-all text-xs text-slate-500">
             {ticket.requester_email}
           </dd>
+          {ticket.requester_department && (
+            <dd className="text-xs text-slate-500">
+              {ticket.requester_department}
+            </dd>
+          )}
         </div>
         <div>
           <dt className="text-xs font-medium uppercase tracking-wide text-slate-500">

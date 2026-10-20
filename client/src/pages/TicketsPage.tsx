@@ -110,9 +110,9 @@ export default function TicketsPage({
     if (exporting) return;
     setExporting(true);
     try {
-      const { blob, filename } = await ticketsApi.exportCsv(query);
+      const { blob, filename } = await ticketsApi.exportPdf(query);
       saveBlob(blob, filename);
-      toast.success("CSV downloaded");
+      toast.success("PDF downloaded");
     } catch (err) {
       toast.error(
         err instanceof ApiError

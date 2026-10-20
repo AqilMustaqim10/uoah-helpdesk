@@ -1,5 +1,6 @@
 // The sidebar tabs and which roles may see each one.
 // This only controls what is SHOWN. The server enforces the real permissions.
+// New in step I: IT also sees the User Directory (a limited version: only their own unit).
 import {
   BookOpen,
   LayoutDashboard,
@@ -15,7 +16,7 @@ export interface TabDef {
   label: string;
   icon: LucideIcon;
   roles: Role[];
-  /** Text on the temporary "coming soon" card. */
+  /** Text on the temporary "coming soon" card (no longer used, kept for the placeholder page). */
   soon: string;
 }
 
@@ -45,7 +46,7 @@ export const TABS: TabDef[] = [
     key: "users",
     label: "User Directory",
     icon: Users,
-    roles: ["ADMIN"],
+    roles: ["ADMIN", "IT"],
     soon: "User management will appear here in a later step.",
   },
   {

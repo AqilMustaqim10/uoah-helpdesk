@@ -14,7 +14,7 @@ import { canSeeInternal, ticketScope } from "../security/scope";
 export const SUMMARY_COLUMNS = `
   t.id, t.title, t.status, t.priority, t.source,
   t.business_unit_id, bu.code AS unit_code, bu.name AS unit_name,
-  t.created_by, ru.name AS requester_name, t.requester_email,
+    t.created_by, ru.name AS requester_name, ru.department AS requester_department, t.requester_email,
   t.assigned_to, au.name AS assignee_name,
   t.due_at, t.created_at, t.updated_at, t.resolved_at, t.closed_at,
   ${overdueSql("t")} AS is_overdue,
