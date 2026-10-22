@@ -1,0 +1,61 @@
+/* Open and close animations for pop-up windows. Plain CSS, imported by Modal.tsx.
+   (The "reduce motion" rule in index.css shortens these automatically.) */
+@keyframes modal-backdrop-in {
+    from {
+        opacity: 0;
+    }
+
+    to {
+        opacity: 1;
+    }
+}
+
+@keyframes modal-backdrop-out {
+    from {
+        opacity: 1;
+    }
+
+    to {
+        opacity: 0;
+    }
+}
+
+@keyframes modal-panel-in {
+    from {
+        opacity: 0;
+        transform: translateY(8px) scale(0.97);
+    }
+
+    to {
+        opacity: 1;
+        transform: none;
+    }
+}
+
+@keyframes modal-panel-out {
+    from {
+        opacity: 1;
+        transform: none;
+    }
+
+    to {
+        opacity: 0;
+        transform: translateY(8px) scale(0.97);
+    }
+}
+
+.modal-backdrop-in {
+    animation: modal-backdrop-in 0.2s ease-out both;
+}
+
+.modal-backdrop-out {
+    animation: modal-backdrop-out 0.15s ease-in both;
+}
+
+.modal-panel-in {
+    animation: modal-panel-in 0.2s ease-out both;
+}
+
+.modal-panel-out {
+    animation: modal-panel-out 0.15s ease-in both;
+}

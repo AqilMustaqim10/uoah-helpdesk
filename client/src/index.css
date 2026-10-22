@@ -1,0 +1,190 @@
+/* Tailwind v4 + our theme: colors, animations and dark mode. */
+@import "tailwindcss";
+
+/* Lets us still write dark: variants if ever needed (the .dark class is on <html>). */
+@custom-variant dark (&:where(.dark, .dark *));
+
+/* ---------- Design tokens ---------- */
+@theme {
+    /* White text that stays white in dark mode (used on brand-colored buttons).
+     Do not use text-white for that: dark mode remaps "white" to a dark color. */
+    --color-onbrand: #ffffff;
+
+    --font-sans: "Segoe UI", system-ui, -apple-system, Roboto, "Helvetica Neue", Arial, sans-serif;
+    --font-mono: ui-monospace, "Cascadia Code", Consolas, "Courier New", monospace;
+
+    /* Short, subtle animations (150-300 ms) */
+    --animate-fade-in: fade-in 0.2s ease-out both;
+    --animate-scale-in: scale-in 0.2s ease-out both;
+    --animate-slide-in: slide-in 0.25s ease-out both;
+    --animate-shimmer: shimmer 1.4s ease-in-out infinite;
+
+    @keyframes fade-in {
+        from {
+            opacity: 0;
+        }
+
+        to {
+            opacity: 1;
+        }
+    }
+
+    @keyframes scale-in {
+        from {
+            opacity: 0;
+            transform: scale(0.96);
+        }
+
+        to {
+            opacity: 1;
+            transform: scale(1);
+        }
+    }
+
+    @keyframes slide-in {
+        from {
+            opacity: 0;
+            transform: translateY(8px);
+        }
+
+        to {
+            opacity: 1;
+            transform: translateY(0);
+        }
+    }
+
+    @keyframes shimmer {
+
+        0%,
+        100% {
+            opacity: 1;
+        }
+
+        50% {
+            opacity: 0.5;
+        }
+    }
+}
+
+/* "bg-brand", "text-brand" etc. read the --brand variable.
+   The app sets --brand from the business unit's brand color after login. */
+@theme inline {
+    --color-brand: var(--brand);
+}
+
+:root {
+    --brand: #2563eb;
+    /* default brand color (blue-600) */
+    color-scheme: light;
+}
+
+/* ---------- Dark mode ----------
+   Instead of rewriting every component, we remap the color scale itself:
+   in dark mode "slate-50" becomes the darkest shade, "slate-900" the lightest,
+   and so on. The same class names (bg-white, text-slate-700...) now give dark colors. */
+.dark {
+    color-scheme: dark;
+
+    --color-white: #0f172a;
+    --color-slate-50: #020617;
+    --color-slate-100: #1e293b;
+    --color-slate-200: #334155;
+    --color-slate-300: #475569;
+    --color-slate-400: #64748b;
+    --color-slate-500: #94a3b8;
+    --color-slate-600: #cbd5e1;
+    --color-slate-700: #e2e8f0;
+    --color-slate-800: #f1f5f9;
+    --color-slate-900: #f8fafc;
+    --color-slate-950: #ffffff;
+
+    --color-emerald-50: #022c22;
+    --color-emerald-100: #064e3b;
+    --color-emerald-200: #065f46;
+    --color-emerald-300: #047857;
+    --color-emerald-400: #059669;
+    --color-emerald-500: #10b981;
+    --color-emerald-600: #34d399;
+    --color-emerald-700: #6ee7b7;
+    --color-emerald-800: #a7f3d0;
+    --color-emerald-900: #d1fae5;
+    --color-emerald-950: #ecfdf5;
+
+    --color-amber-50: #451a03;
+    --color-amber-100: #78350f;
+    --color-amber-200: #92400e;
+    --color-amber-300: #b45309;
+    --color-amber-400: #d97706;
+    --color-amber-500: #f59e0b;
+    --color-amber-600: #fbbf24;
+    --color-amber-700: #fcd34d;
+    --color-amber-800: #fde68a;
+    --color-amber-900: #fef3c7;
+    --color-amber-950: #fffbeb;
+
+    --color-rose-50: #4c0519;
+    --color-rose-100: #881337;
+    --color-rose-200: #9f1239;
+    --color-rose-300: #be123c;
+    --color-rose-400: #e11d48;
+    --color-rose-500: #f43f5e;
+    --color-rose-600: #fb7185;
+    --color-rose-700: #fda4af;
+    --color-rose-800: #fecdd3;
+    --color-rose-900: #ffe4e6;
+    --color-rose-950: #fff1f2;
+
+    --color-indigo-50: #1e1b4b;
+    --color-indigo-100: #312e81;
+    --color-indigo-200: #3730a3;
+    --color-indigo-300: #4338ca;
+    --color-indigo-400: #4f46e5;
+    --color-indigo-500: #6366f1;
+    --color-indigo-600: #818cf8;
+    --color-indigo-700: #a5b4fc;
+    --color-indigo-800: #c7d2fe;
+    --color-indigo-900: #e0e7ff;
+    --color-indigo-950: #eef2ff;
+}
+
+/* ---------- Base look ---------- */
+*,
+::before,
+::after {
+    border-color: var(--color-slate-200);
+}
+
+body {
+    margin: 0;
+    background-color: var(--color-slate-50);
+    color: var(--color-slate-900);
+    font-family: var(--font-sans);
+    -webkit-font-smoothing: antialiased;
+}
+
+/* Clear focus ring for keyboard users */
+:focus-visible {
+    outline: 2px solid var(--brand);
+    outline-offset: 2px;
+}
+
+/* Smooth color change while toggling dark mode (class is added for 300 ms only) */
+html.theme-transition,
+html.theme-transition *,
+html.theme-transition *::before,
+html.theme-transition *::after {
+    transition: background-color 0.25s ease, border-color 0.25s ease, color 0.25s ease !important;
+}
+
+/* People who turned on "reduce motion" in their system get no animations */
+@media (prefers-reduced-motion: reduce) {
+
+    *,
+    ::before,
+    ::after {
+        animation-duration: 0.01ms !important;
+        animation-iteration-count: 1 !important;
+        transition-duration: 0.01ms !important;
+        scroll-behavior: auto !important;
+    }
+}

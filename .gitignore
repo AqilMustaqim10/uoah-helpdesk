@@ -1,0 +1,15 @@
+# Libraries are re-downloaded by "npm install", never commit them
+node_modules/
+dist/
+
+# SECRETS: passwords and keys live here. NEVER upload to GitHub.
+.env
+server/.env
+
+# Uploaded files stay on the server only (keep the empty folder via .gitkeep)
+server/uploads/*
+!server/uploads/.gitkeep
+
+# Build output and logs
+client/dist/
+*.log
