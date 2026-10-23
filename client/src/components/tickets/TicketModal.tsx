@@ -1,20 +1,32 @@
-// The big ticket window. Left: description, attachments, conversation, history. Right: details and controls.
-// New in step I: IT and ADMIN get a "Delete" button that PERMANENTLY erases the ticket after a written reason.
-import { useEffect, useState } from "react";
-import { AlertCircle, Trash2 } from "lucide-react";
+// The ticket window, one column inside a fixed frame:
+//   header (ticket number, unit, department) -> scrolling body -> footer (Close, Delete, the next step)
+// Body: status chips and title, the description, a strip of key facts, the "Manage ticket" card,
+// the attachments, the conversation, and the history.
+// Every change is still applied at once and audited on the server (nothing waits for a "Save" button).
+import { useEffect, useState, type ReactNode } from "react";
+import { AlertCircle, Mail, MessageSquare, Trash2 } from "lucide-react";
 import { ApiError } from "../../api/client";
 import { ticketsApi } from "../../api/tickets";
 import { useToast } from "../../hooks/useToast";
-import { ticketRef } from "../../lib/format";
-import type { TicketDetailResponse, TicketFile, User } from "../../types";
+import { formatDateTime, ticketRef, timeAgo } from "../../lib/format";
+import { STATUS_META, TRANSITIONS } from "../../lib/ticketMeta";
+import { cn } from "../../lib/cn";
+import type {
+  TicketDetailResponse,
+  TicketFile,
+  TicketStatus,
+  User,
+} from "../../types";
 import { OverdueBadge, PriorityBadge, StatusBadge } from "../ui/Badges";
+import Button from "../ui/Button";
 import Modal from "../ui/Modal";
 import ReasonModal from "../ui/ReasonModal";
 import Skeleton from "../ui/Skeleton";
 import Attachments from "./Attachments";
 import Conversation from "./Conversation";
 import HistoryTimeline from "./HistoryTimeline";
-import TicketSidePanel from "./TicketSidePanel";
+import SectionCard from "./SectionCard";
+import TicketManage from "./TicketManage";
 
 interface Props {
   ticketId: number;
@@ -22,6 +34,31 @@ interface Props {
   onClose: () => void;
   /** Called after any change so the list behind the window refreshes. */
   onChanged: () => void;
+}
+
+/** One small fact in the strip under the description (label above, value below). */
+function Fact({ label, children }: { label: string; children: ReactNode }) {
+  return (
+    <div className="min-w-0">
+      <dt className="text-[11px] font-medium uppercase tracking-wide text-slate-500">
+        {label}
+      </dt>
+      <dd className="mt-1 text-sm text-slate-900">{children}</dd>
+    </div>
+  );
+}
+
+/** The business unit as a small chip with a dot, in the brand color. */
+function UnitChip({ code, name }: { code: string; name: string }) {
+  return (
+    <span
+      title={name}
+      className="inline-flex items-center gap-1.5 rounded-md bg-brand/10 px-2 py-0.5 text-xs font-semibold text-brand"
+    >
+      <span className="h-1.5 w-1.5 rounded-full bg-brand" aria-hidden />
+      {code}
+    </span>
+  );
 }
 
 export default function TicketModal({
@@ -33,6 +70,8 @@ export default function TicketModal({
   const toast = useToast();
   const [data, setData] = useState<TicketDetailResponse | null>(null);
   const [error, setError] = useState("");
+  const [busy, setBusy] = useState(""); // which change is being saved ('' = none)
+  const [confirmClose, setConfirmClose] = useState(false); // "Close ticket" needs a second click
   const [deleteOpen, setDeleteOpen] = useState(false);
   const [deleteBusy, setDeleteBusy] = useState(false);
   const [deleteError, setDeleteError] = useState("");
@@ -60,6 +99,13 @@ export default function TicketModal({
     };
   }, [ticketId]);
 
+  // The "click again to close" question goes away after 4 seconds
+  useEffect(() => {
+    if (!confirmClose) return;
+    const t = window.setTimeout(() => setConfirmClose(false), 4000);
+    return () => window.clearTimeout(t);
+  }, [confirmClose]);
+
   /** A change succeeded: show the fresh data, refresh the list, show a toast. */
   function apply(result: TicketDetailResponse, message: string) {
     setData({ ...result, files: result.files ?? [] });
@@ -67,8 +113,38 @@ export default function TicketModal({
     toast.success(message);
   }
 
+  /** Runs one change, shows the result, and reports a problem as a toast. */
+  async function run(
+    key: string,
+    action: () => Promise<TicketDetailResponse>,
+    message: string,
+  ) {
+    if (busy) return;
+    setBusy(key);
+    try {
+      apply(await action(), message);
+    } catch (err) {
+      toast.error(
+        err instanceof ApiError
+          ? err.message
+          : "Something went wrong. Please try again.",
+      );
+    } finally {
+      setBusy("");
+    }
+  }
+
+  async function move(to: TicketStatus) {
+    await run(
+      to,
+      () => ticketsApi.setStatus(ticketId, to),
+      `Status: ${STATUS_META[to].label}`,
+    );
+  }
+
   const staff = user.role !== "USER";
   const closed = data?.ticket.status === "CLOSED";
+  const canEdit = staff && !closed;
 
   /** Who may remove a file (the server checks again): the uploader or IT/ADMIN, never on a closed ticket. */
   const canDeleteFile = (f: TicketFile) =>
@@ -103,12 +179,17 @@ export default function TicketModal({
     }
   }
 
+  // The main next step for this ticket (Start work / Mark resolved / Close ticket), shown in the footer
+  const moves = data ? TRANSITIONS[data.ticket.status] : [];
+  const primary = canEdit ? moves.find((m) => m.primary) : undefined;
+  const secondary = moves.filter((m) => !m.primary);
+
   return (
     <>
       <Modal
         label={`Ticket ${ticketRef(ticketId)}`}
         onClose={onClose}
-        size="xl"
+        size="wide"
       >
         {error ? (
           <div className="flex flex-col items-center px-6 py-16 text-center">
@@ -126,58 +207,118 @@ export default function TicketModal({
             <Skeleton className="h-40 w-full" />
           </div>
         ) : (
-          <div>
-            {/* Header */}
-            <header className="border-b border-slate-200 px-6 py-5 pr-14">
-              <div className="flex flex-wrap items-center gap-2">
-                <span className="font-mono text-sm font-medium text-slate-500">
-                  {ticketRef(data.ticket.id)}
-                </span>
-                <StatusBadge status={data.ticket.status} />
-                <PriorityBadge priority={data.ticket.priority} />
-                {data.ticket.is_overdue && <OverdueBadge />}
-
-                {/* Permanent delete: IT and ADMIN only (the server checks again) */}
-                {staff && (
-                  <button
-                    type="button"
-                    onClick={() => {
-                      setDeleteError("");
-                      setDeleteOpen(true);
-                    }}
-                    className="ml-auto inline-flex h-8 items-center gap-1.5 rounded-lg border border-rose-200 px-2.5 text-xs font-medium text-rose-700 transition hover:bg-rose-50"
-                  >
-                    <Trash2 className="h-3.5 w-3.5" aria-hidden />
-                    Delete
-                  </button>
-                )}
+          // A fixed frame: the header and footer stay, only the middle scrolls
+          <div className="flex max-h-[calc(100dvh-2rem)] flex-col overflow-hidden rounded-2xl sm:max-h-[calc(100dvh-3rem)]">
+            {/* ---------- header ---------- */}
+            <header className="flex shrink-0 items-center gap-3 border-b border-slate-200 bg-white px-6 py-4 pr-14">
+              <span className="shrink-0 rounded-md bg-brand px-2.5 py-1 font-mono text-sm font-semibold text-onbrand">
+                {ticketRef(data.ticket.id)}
+              </span>
+              <div className="min-w-0">
+                <div className="flex flex-wrap items-center gap-2">
+                  <h2 className="text-base font-semibold text-slate-900">
+                    Ticket details
+                  </h2>
+                  <UnitChip
+                    code={data.ticket.unit_code}
+                    name={data.ticket.unit_name}
+                  />
+                </div>
+                <p className="truncate text-xs text-slate-500">
+                  {data.ticket.requester_department ?? data.ticket.unit_name}
+                </p>
               </div>
-              <h2 className="mt-2 break-words text-lg font-semibold text-slate-900">
-                {data.ticket.title}
-              </h2>
             </header>
 
-            <div className="grid gap-6 p-6 lg:grid-cols-[minmax(0,1fr)_280px]">
-              {/* Left column */}
-              <div className="min-w-0 space-y-6">
-                <section aria-label="Description">
-                  <h3 className="mb-2 text-sm font-semibold text-slate-900">
-                    Description
-                  </h3>
-                  <p className="whitespace-pre-wrap break-words rounded-xl bg-slate-50 px-4 py-3 text-sm text-slate-700">
-                    {data.ticket.description}
+            {/* ---------- body (scrolls) ---------- */}
+            <div className="min-h-0 flex-1 space-y-4 overflow-y-auto bg-slate-50 px-6 py-5">
+              {/* Status chips and the title */}
+              <div>
+                <div className="mb-2 flex flex-wrap items-center gap-2">
+                  <StatusBadge status={data.ticket.status} />
+                  <PriorityBadge priority={data.ticket.priority} />
+                  {data.ticket.is_overdue && <OverdueBadge />}
+                  {data.ticket.source === "EMAIL" && (
+                    <span className="inline-flex items-center gap-1 rounded-full bg-slate-100 px-2 py-0.5 text-xs font-medium text-slate-600 ring-1 ring-inset ring-slate-200">
+                      <Mail className="h-3 w-3" aria-hidden /> Email
+                    </span>
+                  )}
+                </div>
+                <h3 className="break-words text-lg font-semibold text-slate-900">
+                  {data.ticket.title}
+                </h3>
+              </div>
+
+              {/* The description (plain text: React escapes it) */}
+              <p className="whitespace-pre-wrap break-words rounded-xl border border-slate-200 bg-white px-4 py-3 text-sm text-slate-700">
+                {data.ticket.description}
+              </p>
+
+              {/* Key facts */}
+              <dl className="grid grid-cols-2 gap-x-4 gap-y-4 rounded-xl border border-slate-200 bg-slate-100/60 p-4 md:grid-cols-4">
+                <Fact label="Created by">
+                  <p className="truncate font-semibold">
+                    {data.ticket.requester_name}
                   </p>
-                </section>
+                  <p
+                    className="truncate text-xs text-slate-500"
+                    title={data.ticket.requester_email}
+                  >
+                    {data.ticket.requester_email}
+                  </p>
+                </Fact>
+                <Fact label="Submitted on">
+                  <p className="font-semibold">
+                    {formatDateTime(data.ticket.created_at)}
+                  </p>
+                  <p className="text-xs text-slate-500">
+                    Updated {timeAgo(data.ticket.updated_at)}
+                  </p>
+                </Fact>
+                <Fact label="Business unit">
+                  <UnitChip
+                    code={data.ticket.unit_code}
+                    name={data.ticket.unit_name}
+                  />
+                  <p className="mt-1 truncate text-xs text-slate-500">
+                    {data.ticket.unit_name}
+                  </p>
+                </Fact>
+                <Fact label="Department">
+                  {data.ticket.requester_department ? (
+                    <span className="font-semibold">
+                      {data.ticket.requester_department}
+                    </span>
+                  ) : (
+                    <span className="text-slate-400">Not set</span>
+                  )}
+                </Fact>
+              </dl>
 
-                <Attachments
-                  ticketId={ticketId}
-                  files={data.files}
-                  canAdd={!closed}
-                  canDelete={canDeleteFile}
-                  onDelete={deleteFile}
-                  onUpdated={apply}
-                />
+              {/* Progress, priority, assignee, due date */}
+              <TicketManage
+                ticket={data.ticket}
+                canEdit={canEdit}
+                busy={busy}
+                run={run}
+                secondary={secondary}
+                onMove={(to) => void move(to)}
+              />
 
+              <Attachments
+                ticketId={ticketId}
+                files={data.files}
+                canAdd={!closed}
+                canDelete={canDeleteFile}
+                onDelete={deleteFile}
+                onUpdated={apply}
+              />
+
+              <SectionCard
+                icon={MessageSquare}
+                title="Conversation"
+                count={data.comments.length}
+              >
                 <Conversation
                   comments={data.comments}
                   files={data.files}
@@ -195,19 +336,69 @@ export default function TicketModal({
                     apply(r, internal ? "Internal note added" : "Reply sent");
                   }}
                 />
+              </SectionCard>
 
-                {data.history && <HistoryTimeline history={data.history} />}
-              </div>
-
-              {/* Right column */}
-              <div className="lg:border-l lg:border-slate-200 lg:pl-6">
-                <TicketSidePanel
-                  ticket={data.ticket}
-                  user={user}
-                  onUpdated={apply}
-                />
-              </div>
+              {/* The audit history (IT / ADMIN only; collapsed until opened) */}
+              {data.history && (
+                <div className="rounded-xl border border-slate-200 bg-white px-4 py-3">
+                  <HistoryTimeline history={data.history} />
+                </div>
+              )}
             </div>
+
+            {/* ---------- footer ---------- */}
+            <footer className="flex shrink-0 flex-wrap items-center gap-2 border-t border-slate-200 bg-white px-6 py-3">
+              <Button variant="secondary" onClick={onClose}>
+                Close
+              </Button>
+
+              {/* Permanent delete: IT and ADMIN only (the server checks again) */}
+              {staff && (
+                <button
+                  type="button"
+                  onClick={() => {
+                    setDeleteError("");
+                    setDeleteOpen(true);
+                  }}
+                  className="inline-flex h-10 items-center gap-2 rounded-lg border border-rose-200 bg-rose-50 px-4 text-sm font-medium text-rose-700 transition hover:bg-rose-100"
+                >
+                  <Trash2 className="h-4 w-4" aria-hidden />
+                  Delete Ticket
+                </button>
+              )}
+
+              <div className="ml-auto flex items-center gap-2">
+                {closed && (
+                  <span className="text-xs text-slate-500">
+                    This ticket is closed and read-only.
+                  </span>
+                )}
+                {primary && (
+                  <Button
+                    loading={busy === primary.to}
+                    disabled={!!busy && busy !== primary.to}
+                    className={cn(
+                      primary.to === "CLOSED" &&
+                        confirmClose &&
+                        "bg-rose-600 hover:bg-rose-600",
+                    )}
+                    onClick={() => {
+                      // Closing needs a second click, because a closed ticket can never be changed again
+                      if (primary.to === "CLOSED" && !confirmClose) {
+                        setConfirmClose(true);
+                        return;
+                      }
+                      setConfirmClose(false);
+                      void move(primary.to);
+                    }}
+                  >
+                    {primary.to === "CLOSED" && confirmClose
+                      ? "Click again to confirm"
+                      : primary.label}
+                  </Button>
+                )}
+              </div>
+            </footer>
           </div>
         )}
       </Modal>

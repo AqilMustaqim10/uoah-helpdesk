@@ -75,10 +75,6 @@ export default function Conversation({
 
   return (
     <section aria-label="Conversation">
-      <h3 className="mb-3 text-sm font-semibold text-slate-900">
-        Conversation
-      </h3>
-
       {comments.length === 0 ? (
         <p className="rounded-xl border border-dashed border-slate-200 px-4 py-6 text-center text-sm text-slate-500">
           No replies yet.

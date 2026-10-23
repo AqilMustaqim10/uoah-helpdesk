@@ -52,7 +52,7 @@ export default function HistoryTimeline({
         type="button"
         onClick={() => setOpen((o) => !o)}
         aria-expanded={open}
-        className="flex w-full items-center justify-between rounded-lg py-1 text-sm font-semibold text-slate-900"
+        className="flex w-full items-center justify-between rounded-lg py-0.5 text-xs font-semibold uppercase tracking-wide text-slate-700"
       >
         <span>
           History{" "}

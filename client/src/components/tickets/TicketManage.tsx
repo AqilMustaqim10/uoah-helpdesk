@@ -1,65 +1,67 @@
-// The right-hand column of the ticket window: progress, status buttons, priority,
-// assignee, due date and facts about the ticket.
-// IT / ADMIN can edit (unless the ticket is closed). A USER only sees the values.
-import { useEffect, useState } from "react";
-import { ApiError } from "../../api/client";
+// The "Manage ticket" card: progress steps, and below them priority, assignee and due date.
+//  - IT / ADMIN can change them (unless the ticket is closed); every change is saved at once
+//  - everyone else only sees the values
+// The buttons that move the ticket forward live in the footer of the window; the other moves are here.
+import { useEffect, useState, type ReactNode } from "react";
+import { SlidersHorizontal } from "lucide-react";
 import { ticketsApi } from "../../api/tickets";
 import { useToast } from "../../hooks/useToast";
 import { formatDateTime, toLocalInputValue } from "../../lib/format";
-import {
-  PRIORITY_LIST,
-  PRIORITY_META,
-  STATUS_META,
-  TRANSITIONS,
-} from "../../lib/ticketMeta";
-import { cn } from "../../lib/cn";
+import { PRIORITY_LIST, PRIORITY_META } from "../../lib/ticketMeta";
 import type {
   Assignee,
   Priority,
   TicketDetail,
   TicketDetailResponse,
-  User,
+  TicketStatus,
 } from "../../types";
-import Button from "../ui/Button";
 import { PriorityBadge } from "../ui/Badges";
+import Button from "../ui/Button";
 import ProgressSteps from "./ProgressSteps";
+import SectionCard from "./SectionCard";
 
 interface Props {
   ticket: TicketDetail;
-  user: User;
-  onUpdated: (result: TicketDetailResponse, message: string) => void;
+  /** IT/ADMIN and the ticket is not closed. */
+  canEdit: boolean;
+  /** What is being saved right now ('' = nothing). Used to disable the controls. */
+  busy: string;
+  /** Runs one change, shows the result, and reports an error as a toast (provided by the window). */
+  run: (
+    key: string,
+    action: () => Promise<TicketDetailResponse>,
+    message: string,
+  ) => Promise<void>;
+  /** The status moves that are not the main one (for example "Move back to Open"). */
+  secondary: Array<{ to: TicketStatus; label: string }>;
+  onMove: (to: TicketStatus) => void;
 }
 
 const FIELD_CLASS =
   "h-9 w-full rounded-lg border border-slate-200 bg-white px-2.5 text-sm text-slate-700 transition " +
-  "focus:border-brand focus:outline-none focus:ring-2 focus:ring-brand/25";
+  "focus:border-brand focus:outline-none focus:ring-2 focus:ring-brand/25 disabled:cursor-not-allowed disabled:opacity-60";
 
 /** A small block with a label on top. */
-function Field({
-  label,
-  children,
-}: {
-  label: string;
-  children: React.ReactNode;
-}) {
+function Field({ label, children }: { label: string; children: ReactNode }) {
   return (
-    <div>
-      <p className="mb-1 text-xs font-medium uppercase tracking-wide text-slate-500">
+    <div className="min-w-0">
+      <dt className="mb-1 text-[11px] font-medium uppercase tracking-wide text-slate-500">
         {label}
-      </p>
-      {children}
+      </dt>
+      <dd>{children}</dd>
     </div>
   );
 }
 
-export default function TicketSidePanel({ ticket, user, onUpdated }: Props) {
+export default function TicketManage({
+  ticket,
+  canEdit,
+  busy,
+  run,
+  secondary,
+  onMove,
+}: Props) {
   const toast = useToast();
-  const staff = user.role !== "USER";
-  const readOnly = ticket.status === "CLOSED";
-  const canEdit = staff && !readOnly;
-
-  const [busy, setBusy] = useState("");
-  const [confirmClose, setConfirmClose] = useState(false);
   const [assignees, setAssignees] = useState<Assignee[]>([]);
   const [dueInput, setDueInput] = useState(toLocalInputValue(ticket.due_at));
 
@@ -68,7 +70,7 @@ export default function TicketSidePanel({ ticket, user, onUpdated }: Props) {
     setDueInput(toLocalInputValue(ticket.due_at));
   }, [ticket.due_at]);
 
-  // Staff load the list of people who can be assigned
+  // IT / ADMIN load the list of people this ticket can be assigned to
   useEffect(() => {
     if (!canEdit) return;
     let cancelled = false;
@@ -80,34 +82,6 @@ export default function TicketSidePanel({ ticket, user, onUpdated }: Props) {
       cancelled = true;
     };
   }, [ticket.id, canEdit]);
-
-  // "Close ticket" needs a second click; the confirmation resets after 4 seconds
-  useEffect(() => {
-    if (!confirmClose) return;
-    const t = window.setTimeout(() => setConfirmClose(false), 4000);
-    return () => window.clearTimeout(t);
-  }, [confirmClose]);
-
-  /** Runs one change, shows the result, and reports errors as a toast. */
-  async function run(
-    key: string,
-    action: () => Promise<TicketDetailResponse>,
-    message: string,
-  ) {
-    if (busy) return;
-    setBusy(key);
-    try {
-      onUpdated(await action(), message);
-    } catch (err) {
-      toast.error(
-        err instanceof ApiError
-          ? err.message
-          : "Something went wrong. Please try again.",
-      );
-    } finally {
-      setBusy("");
-    }
-  }
 
   function saveDue() {
     const d = new Date(dueInput);
@@ -136,48 +110,13 @@ export default function TicketSidePanel({ ticket, user, onUpdated }: Props) {
   const dueChanged = dueInput !== toLocalInputValue(ticket.due_at);
 
   return (
-    <aside className="space-y-5" aria-label="Ticket details">
-      <Field label="Progress">
-        <ProgressSteps status={ticket.status} />
-      </Field>
+    <SectionCard
+      icon={SlidersHorizontal}
+      title={canEdit ? "Manage ticket" : "Progress"}
+    >
+      <ProgressSteps status={ticket.status} />
 
-      {/* Status buttons */}
-      {canEdit && TRANSITIONS[ticket.status].length > 0 && (
-        <div className="space-y-2">
-          {TRANSITIONS[ticket.status].map((tr) => {
-            const isClose = tr.to === "CLOSED";
-            return (
-              <Button
-                key={tr.to}
-                size="sm"
-                variant={tr.primary ? "primary" : "secondary"}
-                className={cn(
-                  "w-full",
-                  isClose && confirmClose && "bg-rose-600 hover:bg-rose-600",
-                )}
-                loading={busy === tr.to}
-                disabled={!!busy && busy !== tr.to}
-                onClick={() => {
-                  if (isClose && !confirmClose) {
-                    setConfirmClose(true);
-                    return;
-                  }
-                  setConfirmClose(false);
-                  void run(
-                    tr.to,
-                    () => ticketsApi.setStatus(ticket.id, tr.to),
-                    `Status: ${STATUS_META[tr.to].label}`,
-                  );
-                }}
-              >
-                {isClose && confirmClose ? "Click again to confirm" : tr.label}
-              </Button>
-            );
-          })}
-        </div>
-      )}
-
-      <div className="space-y-4 border-t border-slate-200 pt-4">
+      <dl className="mt-5 grid gap-4 border-t border-slate-200 pt-4 sm:grid-cols-3">
         <Field label="Priority">
           {canEdit ? (
             <select
@@ -236,7 +175,7 @@ export default function TicketSidePanel({ ticket, user, onUpdated }: Props) {
               ))}
             </select>
           ) : (
-            <p className="text-sm text-slate-700">
+            <p className="text-sm text-slate-800">
               {ticket.assignee_name ?? "Unassigned"}
             </p>
           )}
@@ -287,59 +226,37 @@ export default function TicketSidePanel({ ticket, user, onUpdated }: Props) {
               )}
             </div>
           ) : (
-            <p className="text-sm text-slate-700">
+            <p className="text-sm text-slate-800">
               {ticket.due_at ? formatDateTime(ticket.due_at) : "Not set"}
             </p>
           )}
-          {ticket.is_overdue && (
-            <p className="mt-1 text-xs font-medium text-rose-600">
-              This ticket is overdue.
-            </p>
-          )}
         </Field>
-      </div>
-
-      <dl className="space-y-3 border-t border-slate-200 pt-4 text-sm">
-        <div>
-          <dt className="text-xs font-medium uppercase tracking-wide text-slate-500">
-            Requester
-          </dt>
-          <dd className="text-slate-700">{ticket.requester_name}</dd>
-          <dd className="break-all text-xs text-slate-500">
-            {ticket.requester_email}
-          </dd>
-          {ticket.requester_department && (
-            <dd className="text-xs text-slate-500">
-              {ticket.requester_department}
-            </dd>
-          )}
-        </div>
-        <div>
-          <dt className="text-xs font-medium uppercase tracking-wide text-slate-500">
-            Business unit
-          </dt>
-          <dd className="text-slate-700">{ticket.unit_name}</dd>
-        </div>
-        <div>
-          <dt className="text-xs font-medium uppercase tracking-wide text-slate-500">
-            Created
-          </dt>
-          <dd className="text-slate-700">
-            {formatDateTime(ticket.created_at)}
-            {ticket.source === "EMAIL" && (
-              <span className="text-slate-400"> (by email)</span>
-            )}
-          </dd>
-        </div>
-        <div>
-          <dt className="text-xs font-medium uppercase tracking-wide text-slate-500">
-            Last update
-          </dt>
-          <dd className="text-slate-700">
-            {formatDateTime(ticket.updated_at)}
-          </dd>
-        </div>
       </dl>
-    </aside>
+
+      {/* The other status moves (the main one is the button in the footer) */}
+      {canEdit && secondary.length > 0 && (
+        <div className="mt-4 flex flex-wrap items-center gap-2 border-t border-slate-200 pt-4">
+          <span className="text-xs text-slate-500">Other moves:</span>
+          {secondary.map((m) => (
+            <Button
+              key={m.to}
+              size="sm"
+              variant="secondary"
+              loading={busy === m.to}
+              disabled={!!busy && busy !== m.to}
+              onClick={() => onMove(m.to)}
+            >
+              {m.label}
+            </Button>
+          ))}
+        </div>
+      )}
+
+      {ticket.is_overdue && (
+        <p className="mt-3 text-xs font-medium text-rose-600">
+          This ticket is overdue.
+        </p>
+      )}
+    </SectionCard>
   );
 }

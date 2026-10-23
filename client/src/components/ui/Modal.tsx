@@ -19,11 +19,16 @@ interface Props {
   /** Read aloud by screen readers. */
   label: string;
   onClose: () => void;
-  size?: "md" | "lg" | "xl";
+  size?: "md" | "lg" | "wide" | "xl";
   children: ReactNode;
 }
 
-const SIZES = { md: "max-w-lg", lg: "max-w-2xl", xl: "max-w-5xl" };
+const SIZES = {
+  md: "max-w-lg",
+  lg: "max-w-2xl",
+  wide: "max-w-3xl",
+  xl: "max-w-5xl",
+};
 const FOCUSABLE =
   'a[href],button:not([disabled]),textarea:not([disabled]),input:not([disabled]),select:not([disabled]),[tabindex]:not([tabindex="-1"])';
 
