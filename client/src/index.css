@@ -188,3 +188,54 @@ html.theme-transition *::after {
         scroll-behavior: auto !important;
     }
 }
+
+.auth-background-image {
+    opacity: 0;
+    animation: auth-background-crossfade 72s ease-in-out infinite both;
+}
+
+.auth-form-transition {
+    animation: auth-form-enter 220ms ease-out both;
+}
+
+@keyframes auth-background-crossfade {
+    0%,
+    100% {
+        opacity: 0;
+    }
+
+    2%,
+    10% {
+        opacity: 1;
+    }
+
+    12% {
+        opacity: 0;
+    }
+}
+
+@keyframes auth-form-enter {
+    from {
+        opacity: 0;
+        transform: translateY(6px) scale(0.99);
+    }
+
+    to {
+        opacity: 1;
+        transform: translateY(0) scale(1);
+    }
+}
+
+@media (prefers-reduced-motion: reduce) {
+    .auth-form-transition {
+        animation: none;
+    }
+
+    .auth-background-image {
+        animation: none;
+    }
+
+    .auth-background-image:first-child {
+        opacity: 1;
+    }
+}

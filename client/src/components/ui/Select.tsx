@@ -8,10 +8,18 @@ interface Props extends Omit<
 > {
   label: string;
   error?: string;
+  labelClassName?: string;
   children: ReactNode;
 }
 
-export default function Select({ label, error, id, children, ...rest }: Props) {
+export default function Select({
+  label,
+  error,
+  labelClassName,
+  id,
+  children,
+  ...rest
+}: Props) {
   const autoId = useId();
   const selectId = id ?? autoId;
 
@@ -19,7 +27,10 @@ export default function Select({ label, error, id, children, ...rest }: Props) {
     <div>
       <label
         htmlFor={selectId}
-        className="mb-1.5 block text-sm font-medium text-slate-700"
+        className={cn(
+          "mb-1 block text-sm font-medium text-slate-700",
+          labelClassName,
+        )}
       >
         {label}
       </label>

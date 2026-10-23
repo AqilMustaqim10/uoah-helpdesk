@@ -150,8 +150,8 @@ export default function SignupForm({
   if (step === "code") {
     return (
       <form onSubmit={submitCode} className="space-y-4" noValidate>
-        <div>
-          <h2 className="text-lg font-semibold text-slate-900">
+        <div className="space-y-1">
+          <h2 className="text-xl font-semibold tracking-tight text-slate-900">
             Check your email
           </h2>
           <p className="text-sm text-slate-500">
@@ -194,9 +194,9 @@ export default function SignupForm({
 
   // ---------- Step 1: your details ----------
   return (
-    <form onSubmit={submitDetails} className="space-y-4" noValidate>
-      <div>
-        <h2 className="text-lg font-semibold text-slate-900">
+    <form onSubmit={submitDetails} className="space-y-3" noValidate>
+      <div className="space-y-1">
+        <h2 className="text-xl font-semibold tracking-tight text-slate-900">
           Create your account
         </h2>
         <p className="text-sm text-slate-500">
@@ -206,72 +206,84 @@ export default function SignupForm({
 
       <FormError message={formError} />
 
-      <Input
-        label="Full name"
-        autoComplete="name"
-        value={name}
-        onChange={(e) => setName(e.target.value)}
-        error={errors.name}
-        maxLength={100}
-      />
-      <Input
-        label="Company email"
-        type="email"
-        autoComplete="email"
-        value={email}
-        onChange={(e) => setEmail(e.target.value)}
-        error={errors.email}
-        placeholder="you@company.com"
-      />
-      <Select
-        label="Business unit"
-        value={unitId}
-        onChange={(e) => setUnitId(e.target.value)}
-        error={errors.unit}
-        disabled={unitsLoading}
-      >
-        <option value="">
-          {unitsLoading ? "Loading…" : "Choose your unit"}
-        </option>
-        {units.map((u) => (
-          <option key={u.id} value={u.id}>
-            {u.name} ({u.code})
+      <div className="grid gap-3 sm:grid-cols-2">
+        <Input
+          label="Full name"
+          labelClassName="font-semibold"
+          autoComplete="name"
+          value={name}
+          onChange={(e) => setName(e.target.value)}
+          error={errors.name}
+          maxLength={100}
+        />
+        <Input
+          label="Company email"
+          labelClassName="font-semibold"
+          type="email"
+          autoComplete="email"
+          value={email}
+          onChange={(e) => setEmail(e.target.value)}
+          error={errors.email}
+          placeholder="you@company.com"
+        />
+      </div>
+      <div className="grid gap-3 sm:grid-cols-2">
+        <Select
+          label="Business unit"
+          labelClassName="font-semibold"
+          value={unitId}
+          onChange={(e) => setUnitId(e.target.value)}
+          error={errors.unit}
+          disabled={unitsLoading}
+        >
+          <option value="">
+            {unitsLoading ? "Loading…" : "Choose your unit"}
           </option>
-        ))}
-      </Select>
-      <Select
-        label="Department"
-        value={department}
-        onChange={(e) => setDepartment(e.target.value)}
-        error={errors.department}
-        disabled={departmentsLoading}
-      >
-        <option value="">
-          {departmentsLoading ? "Loading…" : "Choose your department"}
-        </option>
-        {departments.map((d) => (
-          <option key={d} value={d}>
-            {d}
+          {units.map((u) => (
+            <option key={u.id} value={u.id}>
+              {u.name} ({u.code})
+            </option>
+          ))}
+        </Select>
+        <Select
+          label="Department"
+          labelClassName="font-semibold"
+          value={department}
+          onChange={(e) => setDepartment(e.target.value)}
+          error={errors.department}
+          disabled={departmentsLoading}
+        >
+          <option value="">
+            {departmentsLoading ? "Loading…" : "Choose your department"}
           </option>
-        ))}
-      </Select>
-      <Input
-        label="Password"
-        type="password"
-        autoComplete="new-password"
-        value={password}
-        onChange={(e) => setPassword(e.target.value)}
-        error={errors.password}
-        hint="At least 10 characters, with a letter and a number."
-      />
-      <Input
-        label="Confirm password"
-        type="password"
-        autoComplete="new-password"
-        value={confirm}
-        onChange={(e) => setConfirm(e.target.value)}
-        error={errors.confirm}
-      />
+          {departments.map((d) => (
+            <option key={d} value={d}>
+              {d}
+            </option>
+          ))}
+        </Select>
+      </div>
+      <div className="grid gap-3 sm:grid-cols-2">
+        <Input
+          label="Password"
+          labelClassName="font-semibold"
+          type="password"
+          autoComplete="new-password"
+          value={password}
+          onChange={(e) => setPassword(e.target.value)}
+          error={errors.password}
+          hint="At least 10 characters, with a letter and a number."
+        />
+        <Input
+          label="Confirm password"
+          labelClassName="font-semibold"
+          type="password"
+          autoComplete="new-password"
+          value={confirm}
+          onChange={(e) => setConfirm(e.target.value)}
+          error={errors.confirm}
+        />
+      </div>
 
       <Button type="submit" loading={busy} className="w-full">
         Send me a code

@@ -55,9 +55,11 @@ export default function LoginForm({
   }
 
   return (
-    <form onSubmit={submit} className="space-y-4" noValidate>
-      <div>
-        <h2 className="text-lg font-semibold text-slate-900">Welcome back</h2>
+    <form onSubmit={submit} className="space-y-5" noValidate>
+      <div className="space-y-1">
+        <h2 className="text-xl font-semibold tracking-tight text-slate-900">
+          Welcome back
+        </h2>
         <p className="text-sm text-slate-500">Sign in to your account.</p>
       </div>
 
@@ -65,6 +67,7 @@ export default function LoginForm({
 
       <Input
         label="Email"
+        labelClassName="font-semibold"
         type="email"
         autoComplete="username"
         value={email}
@@ -73,6 +76,7 @@ export default function LoginForm({
       />
       <Input
         label="Password"
+        labelClassName="font-semibold"
         type="password"
         autoComplete="current-password"
         value={password}

@@ -1,8 +1,12 @@
 // Extra protection against "cross-site request forgery":
 // a request that changes data must come from our own web app (or from a tool with no Origin header,
 // like PowerShell/curl, which is fine because browsers always send Origin on such requests).
+// When a request is blocked, the reason is printed in the API window, so a wrong address is easy to find.
 import type { NextFunction, Request, Response } from "express";
 import { config } from "../config/env";
+
+// The address we trust, without a closing slash ("http://x:5173/" and "http://x:5173" count as the same)
+const ALLOWED = config.clientOrigin.replace(/\/+$/, "");
 
 export function originCheck(
   req: Request,
@@ -14,7 +18,11 @@ export function originCheck(
     return next();
 
   const origin = req.headers.origin;
-  if (origin && origin !== config.clientOrigin) {
+  if (origin && origin !== ALLOWED) {
+    console.warn(
+      `[origin] blocked ${req.method} ${req.originalUrl}: the page was opened at ${JSON.stringify(origin)} ` +
+        `but CLIENT_ORIGIN in server/.env is ${JSON.stringify(ALLOWED)}`,
+    );
     res.status(403).json({ error: "Request blocked." });
     return;
   }

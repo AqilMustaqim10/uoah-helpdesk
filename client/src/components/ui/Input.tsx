@@ -12,6 +12,7 @@ interface Props extends Omit<
   error?: string;
   hint?: string;
   inputClassName?: string;
+  labelClassName?: string;
 }
 
 export default function Input({
@@ -19,6 +20,7 @@ export default function Input({
   error,
   hint,
   inputClassName,
+  labelClassName,
   type = "text",
   id,
   ...rest
@@ -33,7 +35,10 @@ export default function Input({
     <div>
       <label
         htmlFor={inputId}
-        className="mb-1.5 block text-sm font-medium text-slate-700"
+        className={cn(
+          "mb-1 block text-sm font-medium text-slate-700",
+          labelClassName,
+        )}
       >
         {label}
       </label>
