@@ -1,10 +1,18 @@
 // Sends email through your SMTP server. Used by sign up / reset now, and by notifications later.
 // sendMail NEVER throws: a mail problem must never break the action that triggered it.
 import nodemailer, { Transporter } from "nodemailer";
+import path from "node:path";
 import { config } from "../config/env";
 import { escapeHtml, safeSubject } from "../lib/validate";
 
 let transporter: Transporter | null = null;
+
+export const EMAIL_LOGO_CID = "uoa-helpdesk-logo";
+export const EMAIL_LOGO_PATH = path.resolve(
+  path.dirname(config.clientDist),
+  "public",
+  "email-reply-logo.jpeg",
+);
 
 /** Creates the SMTP connection once and reuses it. Returns null if SMTP is not configured. */
 function getTransporter(): Transporter | null {
@@ -30,6 +38,7 @@ export interface MailInput {
   subject: string;
   text: string;
   html?: string;
+  attachments?: NonNullable<Parameters<Transporter["sendMail"]>[0]["attachments"]>;
   /** Extra headers (used later for threading), never taken from user input. */
   headers?: Record<string, string>;
 }
@@ -66,6 +75,7 @@ export async function sendMail(m: MailInput): Promise<boolean> {
       subject: safeSubject(m.subject), // line breaks removed so no header injection
       text: m.text,
       html: m.html,
+      attachments: m.attachments,
       headers: {
         "Auto-Submitted": "auto-generated",
         "X-Auto-Response-Suppress": "All",
@@ -88,6 +98,7 @@ export interface HtmlParts {
   code?: string; // big 6-digit code box
   link?: { url: string; label: string }; // button-style link (url is built by us, never from users)
   footer?: string;
+  logo?: boolean;
 }
 
 /**
@@ -122,7 +133,10 @@ export function renderHtml(p: HtmlParts): string {
 
   return (
     `<!doctype html><html><body style="margin:0;padding:24px;background:#f8fafc;font-family:Segoe UI,Arial,sans-serif">` +
-    `<div style="max-width:480px;margin:0 auto;background:#ffffff;border:1px solid #e2e8f0;border-radius:12px;padding:24px">` +
+    `<div${p.logo ? ` align="center"` : ""} style="max-width:600px;margin:0 auto;background:#ffffff;border:1px solid #e2e8f0;border-radius:12px;padding:24px${p.logo ? ";text-align:center" : ""}">` +
+    (p.logo
+      ? `<p style="margin:0 0 16px;text-align:center"><img src="cid:${EMAIL_LOGO_CID}" alt="UOA" width="600" style="display:block;width:600px;max-width:100%;height:auto;margin:0 auto"></p>`
+      : "") +
     `<h2 style="margin:0 0 16px;font-size:18px;color:#0f172a">${escapeHtml(p.heading)}</h2>` +
     `${paras}${code}${link}` +
     `<p style="margin:16px 0 0;color:#94a3b8;font-size:12px">${footer}</p>` +

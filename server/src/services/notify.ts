@@ -7,7 +7,12 @@
 import { pool } from "../db/pool";
 import { config } from "../config/env";
 import { ticketRef } from "../lib/sql";
-import { renderHtml, sendMail } from "./mailer";
+import {
+  EMAIL_LOGO_CID,
+  EMAIL_LOGO_PATH,
+  renderHtml,
+  sendMail,
+} from "./mailer";
 
 const STATUS_LABEL: Record<string, string> = {
   OPEN: "Open",
@@ -70,6 +75,7 @@ async function emailAbout(
   to: string,
   lead: string,
   paragraphs: string[],
+  includeLogo = false,
 ): Promise<void> {
   const ref = ticketRef(t.id);
   const canReply = !!config.pop3.host;
@@ -95,7 +101,17 @@ async function emailAbout(
       paragraphs,
       link: { url: config.appUrl, label: "Open the helpdesk" },
       footer,
+      logo: includeLogo,
     }),
+    attachments: includeLogo
+      ? [
+          {
+            filename: "email-reply-logo.jpeg",
+            path: EMAIL_LOGO_PATH,
+            cid: EMAIL_LOGO_CID,
+          },
+        ]
+      : undefined,
     headers: { "X-Helpdesk-Ticket": ref },
   });
 }
@@ -113,7 +129,7 @@ export function notifyTicketCreated(ticketId: number): void {
       "We received your request and the IT team will look at it soon.",
       `Ticket: ${ticketRef(t.id)}`,
       `Title: ${t.title}`,
-    ]);
+    ], true);
   });
 }
 

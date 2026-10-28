@@ -18,7 +18,8 @@ export default function BrandMark({ branding }: { branding: Branding | null }) {
         src={`/api/units/${branding.unitId}/logo?v=${branding.logoVersion}`}
         alt={branding.brandText}
         onError={() => setFailed(true)}
-        className="h-full w-full object-contain"
+        className="h-full w-full rounded-lg bg-white p-2 object-contain"
+        style={{ backgroundColor: "#ffffff" }}
       />
     );
   }
