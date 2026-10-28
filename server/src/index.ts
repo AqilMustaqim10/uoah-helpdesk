@@ -38,7 +38,14 @@ app.use((_req, res, next) => {
 });
 
 // Only our web app may call the API from a browser, and it may send the login cookie.
-app.use(cors({ origin: config.clientOrigin, credentials: true }));
+app.use(
+  cors({
+    origin: (origin, callback) => {
+      callback(null, !origin || config.clientOrigins.includes(origin));
+    },
+    credentials: true,
+  }),
+);
 // 256 KB: knowledge base articles can be up to 50,000 characters (some may use multi-byte letters)
 app.use(express.json({ limit: "256kb" }));
 app.use(cookieParser());

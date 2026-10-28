@@ -5,8 +5,8 @@
 import type { NextFunction, Request, Response } from "express";
 import { config } from "../config/env";
 
-// The address we trust, without a closing slash ("http://x:5173/" and "http://x:5173" count as the same)
-const ALLOWED = config.clientOrigin.replace(/\/+$/, "");
+// Configured origins have trailing slashes removed in env.ts.
+const ALLOWED = config.clientOrigins;
 
 export function originCheck(
   req: Request,
@@ -18,10 +18,10 @@ export function originCheck(
     return next();
 
   const origin = req.headers.origin;
-  if (origin && origin !== ALLOWED) {
+  if (origin && !ALLOWED.includes(origin)) {
     console.warn(
       `[origin] blocked ${req.method} ${req.originalUrl}: the page was opened at ${JSON.stringify(origin)} ` +
-        `but CLIENT_ORIGIN in server/.env is ${JSON.stringify(ALLOWED)}`,
+        `but CLIENT_ORIGIN in server/.env allows ${JSON.stringify(ALLOWED)}`,
     );
     res.status(403).json({ error: "Request blocked." });
     return;

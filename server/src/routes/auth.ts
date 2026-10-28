@@ -10,7 +10,10 @@ import { Router } from "express";
 import bcrypt from "bcryptjs";
 import { query, withTx } from "../db/pool";
 import { audit } from "../db/audit";
-import { DEPARTMENTS, parseDepartment } from "../config/departments";
+import {
+  activeDepartmentNames,
+  requireDepartment,
+} from "../services/departments";
 import { ah, HttpError } from "../lib/http";
 import {
   bodyId,
@@ -78,9 +81,12 @@ router.get(
 // ---------------------------------------------------------------------------
 // GET /api/auth/departments  (public)  The sign-up and "add user" forms need the list of departments.
 // ---------------------------------------------------------------------------
-router.get("/departments", (_req, res) => {
-  res.json({ departments: DEPARTMENTS });
-});
+router.get(
+  "/departments",
+  ah(async (_req, res) => {
+    res.json({ departments: await activeDepartmentNames() });
+  }),
+);
 
 // ---------------------------------------------------------------------------
 // POST /api/auth/login   { email, password }
@@ -162,8 +168,7 @@ router.post(
     const name = cleanText(req.body?.name, "Name", { max: 100 });
     const password = validatePassword(req.body?.password);
     const unitId = bodyId(req.body?.business_unit_id, "business unit");
-    const department = parseDepartment(req.body?.department); // must be one of the names in config/departments.ts
-
+    const department = await requireDepartment(req.body?.department); // must be a visible department (Settings)
     // Only company email domains may register.
     if (!isAllowedDomain(email)) {
       throw new HttpError(

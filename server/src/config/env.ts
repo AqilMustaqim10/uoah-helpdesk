@@ -29,6 +29,13 @@ function intOf(name: string, fallback: number): number {
 }
 
 const nodeEnv = optional("NODE_ENV", "development");
+const isProd = nodeEnv === "production";
+const clientOrigins = optional("CLIENT_ORIGIN", "http://localhost:5173")
+  .split(",")
+  .map((origin) => origin.trim().replace(/\/+$/, ""))
+  .filter(Boolean);
+const requireHttps =
+  optional("REQUIRE_HTTPS", isProd ? "true" : "false") === "true";
 const jwtSecret = required("JWT_SECRET");
 const codeSecret = required("CODE_HMAC_SECRET");
 const mfaKey = required("MFA_ENCRYPTION_KEY");
@@ -65,9 +72,16 @@ if (!/^[0-9a-fA-F]{64}$/.test(mfaKey)) {
 /** All settings in one place. Other files import { config } from this file. */
 export const config = {
   nodeEnv,
-  isProd: nodeEnv === "production", // production turns on secure cookies
+  isProd, // production turns on secure cookies
   port: intOf("PORT", 3000),
-  clientOrigin: optional("CLIENT_ORIGIN", "http://localhost:5173"),
+  clientOrigin: clientOrigins[0] ?? "http://localhost:5173",
+  clientOrigins,
+  requireHttps,
+  serveClient: optional("SERVE_CLIENT", "false") === "true",
+  clientDist: path.resolve(
+    process.cwd(),
+    optional("CLIENT_DIST", "../client/dist"),
+  ),
   appUrl: optional("APP_URL", "http://localhost:5173").replace(/\/+$/, ""), // used for links in emails
   databaseUrl: required("DATABASE_URL"),
   jwtSecret, // signs the login cookie

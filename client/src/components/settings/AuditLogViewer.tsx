@@ -35,6 +35,7 @@ const ENTITIES = [
   "user",
   "unit",
   "article",
+  "department",
   "export",
 ];
 const TICKET_RE = /^(hd-?)?\d{1,15}$/i;

@@ -1,14 +1,16 @@
-// The Settings tab (ADMIN only). Two sections: Branding, and the Audit log.
+// The Settings tab (ADMIN only). Three sections: Branding, Departments, and the Audit log.
 import { useState } from "react";
 import { cn } from "../lib/cn";
 import type { User } from "../types";
 import AuditLogViewer from "../components/settings/AuditLogViewer";
 import BrandingSettings from "../components/settings/BrandingSettings";
+import DepartmentsSettings from "../components/settings/DepartmentsSettings";
 
-type Section = "branding" | "audit";
+type Section = "branding" | "departments" | "audit";
 
 const SECTIONS: Array<{ key: Section; label: string }> = [
   { key: "branding", label: "Branding" },
+  { key: "departments", label: "Departments" },
   { key: "audit", label: "Audit log" },
 ];
 
@@ -44,6 +46,8 @@ export default function SettingsPage({ user }: { user: User }) {
       <div key={section} className="animate-fade-in">
         {section === "branding" ? (
           <BrandingSettings user={user} />
+        ) : section === "departments" ? (
+          <DepartmentsSettings />
         ) : (
           <AuditLogViewer />
         )}

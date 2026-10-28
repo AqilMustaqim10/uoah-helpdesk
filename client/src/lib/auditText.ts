@@ -103,5 +103,17 @@ export function describeAudit(action: string, d: Record<string, any>): string {
       return `deleted the account of ${text(d.email)}. Reason: ${text(d.reason)}`;
     case "USER_DEPARTMENT_CHANGED":
       return `changed the department of ${text(d.email)} from ${text(d.from, "none")} to ${text(d.to)}`;
+
+    // ----- departments -----
+    case "DEPARTMENT_CREATED":
+      return `added the department "${text(d.name)}"`;
+    case "DEPARTMENT_RENAMED":
+      return `renamed the department "${text(d.from)}" to "${text(d.to)}" (${text(d.people, "0")} people updated)`;
+    case "DEPARTMENT_HIDDEN":
+      return `hid the department "${text(d.name)}"`;
+    case "DEPARTMENT_SHOWN":
+      return `showed the department "${text(d.name)}" again`;
+    case "DEPARTMENT_DELETED":
+      return `deleted the department "${text(d.name)}"${d.moved_to ? ` and moved ${text(d.people, "0")} people to "${text(d.moved_to)}"` : ""}`;
   }
 }

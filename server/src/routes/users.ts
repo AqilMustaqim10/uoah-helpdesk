@@ -16,7 +16,7 @@ import { pool, query, withTx } from "../db/pool";
 import type { Db } from "../db/pool";
 import { audit } from "../db/audit";
 import { PAGINATION, ROLES, type Role } from "../config/constants";
-import { parseDepartment } from "../config/departments";
+import { requireDepartment } from "../services/departments";
 import { ah, HttpError } from "../lib/http";
 import { escapeLike } from "../lib/sql";
 import {
@@ -164,7 +164,7 @@ router.post(
     const actor = req.user!;
     const email = normEmail(req.body?.email);
     const name = cleanText(req.body?.name, "Name", { max: 100 });
-    const department = parseDepartment(req.body?.department);
+    const department = await requireDepartment(req.body?.department);
     if (!isAllowedDomain(email)) {
       throw new HttpError(
         400,
@@ -367,7 +367,7 @@ router.patch(
   ah(async (req, res) => {
     const actor = req.user!;
     const id = idParam(req.params.id);
-    const department = parseDepartment(req.body?.department);
+    const department = await requireDepartment(req.body?.department);
 
     await withTx(async (c) => {
       const target = await lockUser(c, id);
