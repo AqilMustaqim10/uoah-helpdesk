@@ -23,11 +23,11 @@ export interface TabDef {
 
 export const TABS: TabDef[] = [
   {
-    key: "history",
-    label: "Ticket History",
-    icon: HistoryIcon,
-    roles: ["ADMIN", "IT"], // standard users never see this tab
-    soon: "Resolved and closed tickets of every business unit.",
+    key: "dashboard",
+    label: "Dashboard",
+    icon: LayoutDashboard,
+    roles: ["ADMIN", "IT"],
+    soon: "Ticket statistics and trends.",
   },
   {
     key: "tickets",
@@ -35,6 +35,13 @@ export const TABS: TabDef[] = [
     icon: Ticket,
     roles: ["ADMIN", "IT", "USER"],
     soon: "The ticket list and Create Ticket arrive in the next step.",
+  },
+  {
+    key: "history",
+    label: "Ticket History",
+    icon: HistoryIcon,
+    roles: ["ADMIN", "IT"], // standard users never see this tab
+    soon: "Resolved and closed tickets of every business unit.",
   },
   {
     key: "kb",

@@ -11,7 +11,7 @@ import {
   useState,
   type ReactNode,
 } from "react";
-import type { TabKey, User } from "../../types";
+import type { TabKey, TicketQuery, User } from "../../types";
 import { TAB_STORAGE_KEY, defaultTabFor, tabsForRole } from "../../lib/nav";
 import { getStored, setStored } from "../../lib/storage";
 import { useAuth } from "../../hooks/useAuth";
@@ -44,12 +44,23 @@ export default function AppShell({ user }: { user: User }) {
     () => getStored(COLLAPSED_KEY) === "1",
   );
   const [mobileOpen, setMobileOpen] = useState(false);
+  const [pendingTicketFilters, setPendingTicketFilters] =
+    useState<Partial<TicketQuery> | null>(null);
 
   // Ticket windows + "reload the data" counter (the list and the dashboard both listen to it)
   const [createOpen, setCreateOpen] = useState(false);
   const [selectedId, setSelectedId] = useState<number | null>(null);
   const [version, setVersion] = useState(0);
   const refresh = useCallback(() => setVersion((v) => v + 1), []);
+  const consumeTicketFilters = useCallback(
+    () => setPendingTicketFilters(null),
+    [],
+  );
+  const showTickets = useCallback((filters: Partial<TicketQuery>) => {
+    setPendingTicketFilters(filters);
+    setTab("tickets");
+    setMobileOpen(false);
+  }, []);
 
   // Safety net: if the current tab is not allowed for this role, go to the default one
   useEffect(() => {
@@ -83,6 +94,8 @@ export default function AppShell({ user }: { user: User }) {
             version={version}
             onOpen={setSelectedId}
             onCreate={() => setCreateOpen(true)}
+            initialFilters={pendingTicketFilters}
+            onInitialFiltersApplied={consumeTicketFilters}
           />
         );
       case "history":
@@ -96,7 +109,12 @@ export default function AppShell({ user }: { user: User }) {
         );
       case "dashboard":
         return (
-          <DashboardPage user={user} version={version} onOpen={setSelectedId} />
+          <DashboardPage
+            user={user}
+            version={version}
+            onOpen={setSelectedId}
+            onShowTickets={showTickets}
+          />
         );
       case "kb":
         return <KnowledgeBasePage user={user} />;

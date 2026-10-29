@@ -1,15 +1,45 @@
-// Builds the WHERE conditions for "which tickets match these filters", used by the CSV export.
+// Builds the WHERE conditions for "which tickets match these filters", used by the ticket list and PDF export.
 // Visibility ALWAYS comes first and always from ticketScope().
 // (The ticket list route has the same filter logic written inline; both rely on ticketScope.)
 import { PRIORITIES, STATUSES } from "../config/constants";
 import type { AuthUser } from "../middleware/auth";
 import { HttpError } from "../lib/http";
-import { escapeLike } from "../lib/sql";
+import { escapeLike, overdueSql } from "../lib/sql";
 import { bodyId, oneOf } from "../lib/validate";
 import { ticketScope } from "../security/scope";
 
 function qstr(v: unknown): string {
   return typeof v === "string" ? v.trim() : "";
+}
+
+export function addTicketActivityFilters(
+  q: Record<string, unknown>,
+  conds: string[],
+  params: unknown[],
+): void {
+  const active = qstr(q.active);
+  if (active && active !== "1") {
+    throw new HttpError(400, "Invalid active filter.");
+  }
+  if (active === "1") conds.push("t.status IN ('OPEN','IN_PROGRESS')");
+
+  const overdue = qstr(q.overdue);
+  if (overdue && overdue !== "1") {
+    throw new HttpError(400, "Invalid overdue filter.");
+  }
+  if (overdue === "1") conds.push(overdueSql("t"));
+
+  const createdWithin = qstr(q.created_within);
+  if (createdWithin) {
+    if (!["7", "30", "90"].includes(createdWithin)) {
+      throw new HttpError(400, "Invalid created date range.");
+    }
+    const days = Number(createdWithin);
+    params.push(days);
+    conds.push(
+      `t.created_at >= now() - make_interval(days => $${params.length})`,
+    );
+  }
 }
 
 export function buildTicketFilters(user: AuthUser, q: Record<string, unknown>) {
@@ -33,6 +63,8 @@ export function buildTicketFilters(user: AuthUser, q: Record<string, unknown>) {
     params.push(oneOf(priority, PRIORITIES, "priority"));
     conds.push(`t.priority = $${params.length}`);
   }
+
+  addTicketActivityFilters(q, conds, params);
 
   const unit = qstr(q.unit);
   if (unit && user.role === "ADMIN") {

@@ -52,11 +52,25 @@ const CARDS: CardDef[] = [
   },
 ];
 
-function Card({ def, value }: { def: CardDef; value: number }) {
+function Card({
+  def,
+  value,
+  onSelect,
+}: {
+  def: CardDef;
+  value: number;
+  onSelect: () => void;
+}) {
   const shown = useCountUp(value);
   const Icon = def.icon;
   return (
-    <div className="rounded-2xl border border-slate-200 bg-white p-4 shadow-sm">
+    <button
+      type="button"
+      onClick={onSelect}
+      disabled={value === 0}
+      className="rounded-2xl border border-slate-200 bg-white p-4 text-left shadow-sm transition enabled:hover:border-brand/40 enabled:hover:shadow-md focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand focus-visible:ring-offset-2 disabled:cursor-default"
+      aria-label={`View ${value} ${def.label.toLowerCase()} tickets`}
+    >
       <div className="flex items-center justify-between">
         <p className="text-sm text-slate-500">{def.label}</p>
         <span
@@ -69,15 +83,26 @@ function Card({ def, value }: { def: CardDef; value: number }) {
         {shown}
       </p>
       {def.hint && <p className="mt-0.5 text-xs text-slate-400">{def.hint}</p>}
-    </div>
+    </button>
   );
 }
 
-export default function KpiCards({ kpis }: { kpis: DashboardStats["kpis"] }) {
+export default function KpiCards({
+  kpis,
+  onSelect,
+}: {
+  kpis: DashboardStats["kpis"];
+  onSelect: (key: keyof DashboardStats["kpis"]) => void;
+}) {
   return (
     <div className="grid grid-cols-2 gap-3 lg:grid-cols-5">
       {CARDS.map((c) => (
-        <Card key={c.key} def={c} value={kpis[c.key]} />
+        <Card
+          key={c.key}
+          def={c}
+          value={kpis[c.key]}
+          onSelect={() => onSelect(c.key)}
+        />
       ))}
     </div>
   );

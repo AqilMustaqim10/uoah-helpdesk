@@ -32,6 +32,7 @@ import {
   TICKET_JOINS,
   buildDetail,
 } from "../services/ticketQueries";
+import { addTicketActivityFilters } from "../services/ticketFilters";
 
 const router = Router();
 
@@ -56,7 +57,7 @@ const toIso = (d: Date | string | null): string | null =>
   d ? new Date(d).toISOString() : null;
 
 // ---------------------------------------------------------------------------
-// GET /api/tickets?q=&status=&priority=&unit=&assignee=&page=&page_size=
+// GET /api/tickets?q=&status=&priority=&unit=&assignee=&active=&overdue=&created_within=&page=&page_size=
 // ---------------------------------------------------------------------------
 router.get(
   "/",
@@ -76,6 +77,8 @@ router.get(
       params.push(oneOf(priority, PRIORITIES, "priority"));
       conds.push(`t.priority = $${params.length}`);
     }
+
+    addTicketActivityFilters(req.query, conds, params);
 
     // Unit filter only means something for ADMIN (IT and USER are already limited by scope)
     const unit = qstr(req.query.unit);

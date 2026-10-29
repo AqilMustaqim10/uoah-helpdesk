@@ -88,6 +88,10 @@ router.get(
     const priority = qstr(q.priority);
     if (priority)
       filters.push(`Priority: ${PRIORITY_LABEL[priority] ?? priority}`);
+    if (q.active === "1") filters.push("Active tickets");
+    if (q.overdue === "1") filters.push("Overdue tickets");
+    const createdWithin = qstr(q.created_within);
+    if (createdWithin) filters.push(`Created within last ${createdWithin} days`);
     const assignee = qstr(q.assignee);
     if (assignee === "unassigned") filters.push("Unassigned");
     if (assignee === "me") filters.push("Assigned to me");

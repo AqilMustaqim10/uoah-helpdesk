@@ -170,6 +170,40 @@ export default function TicketFilters({
           )}
         </div>
       </div>
+
+      {(query.activeOnly || query.overdueOnly) && (
+        <div className="flex flex-wrap gap-2" aria-label="Additional filters">
+          {query.activeOnly && (
+            <button
+              type="button"
+              onClick={() => onChange({ activeOnly: false })}
+              className="rounded-full border border-slate-200 bg-slate-50 px-3 py-1 text-xs font-medium text-slate-700 hover:bg-slate-100 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand"
+            >
+              Active tickets ×
+            </button>
+          )}
+          {query.overdueOnly && (
+            <button
+              type="button"
+              onClick={() => onChange({ overdueOnly: false })}
+              className="rounded-full border border-rose-200 bg-rose-50 px-3 py-1 text-xs font-medium text-rose-700 hover:bg-rose-100 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand"
+            >
+              Overdue tickets ×
+            </button>
+          )}
+        </div>
+      )}
+      {query.createdWithin && (
+        <div className="flex flex-wrap gap-2" aria-label="Date filters">
+          <button
+            type="button"
+            onClick={() => onChange({ createdWithin: "" })}
+            className="rounded-full border border-slate-200 bg-slate-50 px-3 py-1 text-xs font-medium text-slate-700 hover:bg-slate-100 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand"
+          >
+            Created in last {query.createdWithin} days ×
+          </button>
+        </div>
+      )}
     </div>
   );
 }

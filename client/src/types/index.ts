@@ -145,6 +145,16 @@ export interface TicketQuery {
   unit: string;
   assignee: "" | "unassigned" | "me";
   page: number;
+  activeOnly?: boolean;
+  overdueOnly?: boolean;
+  createdWithin?: "" | "7" | "30" | "90";
+}
+
+export interface DashboardFilters {
+  unit: string;
+  status: "" | TicketStatus;
+  priority: "" | Priority;
+  createdWithin: "" | "7" | "30" | "90";
 }
 
 // ---------------- Dashboard ----------------
@@ -162,7 +172,7 @@ export interface DashboardStats {
   /** Active tickets (Open + In progress) per priority. */
   byPriority: Record<Priority, number>;
   /** Active tickets per business unit (ADMIN only; empty for IT). */
-  byUnit: Array<{ code: string; name: string; n: number }>;
+  byUnit: Array<{ id: number; code: string; name: string; n: number }>;
   /** Up to five of the oldest overdue tickets. */
   overdueTickets: TicketSummary[];
 }

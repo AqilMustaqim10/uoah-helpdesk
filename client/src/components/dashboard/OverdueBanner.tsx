@@ -8,9 +8,15 @@ interface Props {
   count: number;
   tickets: TicketSummary[];
   onOpen: (id: number) => void;
+  onViewAll: () => void;
 }
 
-export default function OverdueBanner({ count, tickets, onOpen }: Props) {
+export default function OverdueBanner({
+  count,
+  tickets,
+  onOpen,
+  onViewAll,
+}: Props) {
   if (count === 0) return null;
 
   return (
@@ -20,9 +26,13 @@ export default function OverdueBanner({ count, tickets, onOpen }: Props) {
     >
       <div className="flex items-center gap-2 text-rose-700">
         <AlarmClock className="h-5 w-5 shrink-0" aria-hidden />
-        <p className="text-sm font-semibold">
-          {count} ticket{count === 1 ? " is" : "s are"} overdue
-        </p>
+        <button
+          type="button"
+          onClick={onViewAll}
+          className="text-left text-sm font-semibold hover:underline focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-rose-600"
+        >
+          {count} ticket{count === 1 ? " is" : "s are"} overdue — view all
+        </button>
       </div>
 
       <ul className="mt-3 space-y-1">

@@ -30,6 +30,8 @@ const EMPTY_QUERY: TicketQuery = {
   unit: "",
   assignee: "",
   page: 1,
+  activeOnly: false,
+  overdueOnly: false,
 };
 
 interface Props {
@@ -38,6 +40,8 @@ interface Props {
   version: number;
   onOpen: (id: number) => void;
   onCreate: () => void;
+  initialFilters?: Partial<TicketQuery> | null;
+  onInitialFiltersApplied?: () => void;
 }
 
 export default function TicketsPage({
@@ -45,10 +49,15 @@ export default function TicketsPage({
   version,
   onOpen,
   onCreate,
+  initialFilters,
+  onInitialFiltersApplied,
 }: Props) {
   const staff = user.role !== "USER";
 
-  const [query, setQuery] = useState<TicketQuery>(EMPTY_QUERY);
+  const [query, setQuery] = useState<TicketQuery>(() => ({
+    ...EMPTY_QUERY,
+    ...initialFilters,
+  }));
   const [data, setData] = useState<TicketListResponse | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
@@ -56,6 +65,10 @@ export default function TicketsPage({
   const [exportOpen, setExportOpen] = useState(false);
   const [filterKey, setFilterKey] = useState(0); // changing it resets the search box
   const requestId = useRef(0);
+
+  useEffect(() => {
+    if (initialFilters) onInitialFiltersApplied?.();
+  }, [initialFilters, onInitialFiltersApplied]);
 
   // ADMIN's unit filter (and the export window) need the list of units
   useEffect(() => {
@@ -110,7 +123,10 @@ export default function TicketsPage({
     query.status ||
     query.priority ||
     query.unit ||
-    query.assignee
+    query.assignee ||
+    query.activeOnly ||
+    query.overdueOnly ||
+    query.createdWithin
   );
   const firstLoad = loading && !data;
 
