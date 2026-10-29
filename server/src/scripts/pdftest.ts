@@ -34,6 +34,8 @@ buildTicketReportPdf({
   generatedAt: new Date(),
   timeZone: "Asia/Kuala_Lumpur",
   scope: "All business units",
+  subtitle: "Report for: Convention Centre & Events Corp (CCEC) - October 2026",
+  periodLine: "Tickets created 1 Oct 2026 to 31 Oct 2026",
   filters: ["Status: Open", 'Search: "printer"'],
   total: 130,
   rows,

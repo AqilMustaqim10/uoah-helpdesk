@@ -44,8 +44,7 @@ export function describeAudit(action: string, d: Record<string, any>): string {
     case "FILE_REMOVED":
       return `removed ${text(d.name, "a file")}`;
     case "TICKETS_EXPORTED":
-      return `exported ${text(d.rows, "0")} ticket(s) to ${text(d.format, "CSV")}`;
-
+      return `exported ${text(d.rows, "0")} ticket(s) to ${text(d.format, "CSV")}${d.unit ? ` (${text(d.unit)}, ${text(d.period, "all")})` : ""}`;
     // ----- people -----
     case "USER_REGISTERED":
       return `registered the account ${text(d.email)}`;

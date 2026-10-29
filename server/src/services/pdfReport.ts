@@ -39,6 +39,8 @@ export interface ReportInput {
   generatedAt: Date;
   timeZone: string; // for example Asia/Kuala_Lumpur
   scope: string; // "All business units" or the unit's name
+  subtitle?: string; // "Report for: Finance BU - October 2026": the filters applied, shown under the title
+  periodLine?: string; // "Tickets created 1 Oct 2026 to 31 Oct 2026"
   filters: string[]; // readable filters, for example ["Status: Open"]
   total: number; // how many tickets match (can be more than rows.length)
   rows: ReportRow[];
@@ -166,18 +168,32 @@ function draw(doc: Doc, input: ReportInput): void {
     .fillColor(INK)
     .text("Ticket report", MARGIN, MARGIN, { lineBreak: false });
 
+  let y = MARGIN + 24;
+  if (input.subtitle) {
+    // "Report for: Finance BU - October 2026": the filters that were applied to this report
+    doc
+      .font(bold)
+      .fontSize(11)
+      .fillColor(INK)
+      .text(fit(doc, clean(input.subtitle), textWidth), MARGIN, y, {
+        lineBreak: false,
+      });
+    y += 18;
+  }
+
   const countLine =
     input.total > input.rows.length
       ? `Tickets: ${input.total} (showing the newest ${input.rows.length})`
       : `Tickets: ${input.total}`;
   const info = [
     `Generated ${fmt(input.generatedAt)} by ${clean(input.generatedBy)}`,
-    `Scope: ${clean(input.scope)}`,
+    // The scope is already in the subtitle when there is one
+    ...(input.subtitle ? [] : [`Scope: ${clean(input.scope)}`]),
+    ...(input.periodLine ? [`Period: ${clean(input.periodLine)}`] : []),
     `Filters: ${input.filters.length > 0 ? clean(input.filters.join("  |  ")) : "none"}`,
     countLine,
   ];
   doc.font(regular).fontSize(8.5).fillColor(MUTED);
-  let y = MARGIN + 24;
   for (const line of info) {
     doc.text(fit(doc, line, textWidth), MARGIN, y, { lineBreak: false });
     y += 12;

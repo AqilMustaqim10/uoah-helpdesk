@@ -1,12 +1,11 @@
-// The Tickets tab: filters, the list, paging, and (for IT/ADMIN) the CSV export.
+// The Tickets tab: filters, the list, paging, and (for IT/ADMIN) the PDF export.
+// "Export PDF" opens a window where you choose the business unit and the period (day, week, month or year).
 // Clicking a row opens the ticket window (which AppShell shows). The list reloads whenever `version` changes.
 import { useEffect, useRef, useState } from "react";
 import { Download, SearchX, Ticket as TicketIcon } from "lucide-react";
 import { authApi } from "../api/auth";
 import { ApiError } from "../api/client";
 import { ticketsApi } from "../api/tickets";
-import { useToast } from "../hooks/useToast";
-import { saveBlob } from "../lib/download";
 import type {
   TicketListResponse,
   TicketQuery,
@@ -15,9 +14,11 @@ import type {
 } from "../types";
 import EmptyState from "../components/ui/EmptyState";
 import Button from "../components/ui/Button";
+import ErrorBoundary from "../components/ui/ErrorBoundary";
 import Pagination from "../components/ui/Pagination";
 import Skeleton from "../components/ui/Skeleton";
 import FormError from "../components/ui/FormError";
+import ExportPdfModal from "../components/tickets/ExportPdfModal";
 import TicketFilters from "../components/tickets/TicketFilters";
 import TicketList from "../components/tickets/TicketList";
 import { cn } from "../lib/cn";
@@ -45,7 +46,6 @@ export default function TicketsPage({
   onOpen,
   onCreate,
 }: Props) {
-  const toast = useToast();
   const staff = user.role !== "USER";
 
   const [query, setQuery] = useState<TicketQuery>(EMPTY_QUERY);
@@ -53,11 +53,11 @@ export default function TicketsPage({
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
   const [units, setUnits] = useState<UnitOption[]>([]);
-  const [exporting, setExporting] = useState(false);
+  const [exportOpen, setExportOpen] = useState(false);
   const [filterKey, setFilterKey] = useState(0); // changing it resets the search box
   const requestId = useRef(0);
 
-  // ADMIN's unit filter needs the list of units
+  // ADMIN's unit filter (and the export window) need the list of units
   useEffect(() => {
     if (user.role !== "ADMIN") return;
     authApi
@@ -103,25 +103,6 @@ export default function TicketsPage({
   function clearFilters() {
     setQuery(EMPTY_QUERY);
     setFilterKey((k) => k + 1);
-  }
-
-  /** Downloads a CSV of the tickets that match the current filters. */
-  async function exportCsv() {
-    if (exporting) return;
-    setExporting(true);
-    try {
-      const { blob, filename } = await ticketsApi.exportPdf(query);
-      saveBlob(blob, filename);
-      toast.success("PDF downloaded");
-    } catch (err) {
-      toast.error(
-        err instanceof ApiError
-          ? err.message
-          : "Could not export. Please try again.",
-      );
-    } finally {
-      setExporting(false);
-    }
   }
 
   const filtersActive = !!(
@@ -170,10 +151,9 @@ export default function TicketsPage({
                 variant="secondary"
                 size="sm"
                 icon={<Download className="h-4 w-4" />}
-                loading={exporting}
-                onClick={() => void exportCsv()}
+                onClick={() => setExportOpen(true)}
               >
-                Export CSV
+                Export PDF
               </Button>
             )}
           </div>
@@ -218,6 +198,17 @@ export default function TicketsPage({
           />
         )
       ) : null}
+
+      {exportOpen && (
+        <ErrorBoundary onClose={() => setExportOpen(false)}>
+          <ExportPdfModal
+            user={user}
+            filters={query}
+            units={units}
+            onClose={() => setExportOpen(false)}
+          />
+        </ErrorBoundary>
+      )}
     </div>
   );
 }
