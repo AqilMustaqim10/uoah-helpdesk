@@ -27,6 +27,8 @@ import Conversation from "./Conversation";
 import HistoryTimeline from "./HistoryTimeline";
 import SectionCard from "./SectionCard";
 import TicketManage from "./TicketManage";
+import ArticleModal from "../kb/ArticleModal";
+import ErrorBoundary from "../ui/ErrorBoundary";
 
 interface Props {
   ticketId: number;
@@ -75,6 +77,7 @@ export default function TicketModal({
   const [deleteOpen, setDeleteOpen] = useState(false);
   const [deleteBusy, setDeleteBusy] = useState(false);
   const [deleteError, setDeleteError] = useState("");
+  const [articleId, setArticleId] = useState<number | null>(null); // a linked article that is open on top of the ticket
 
   // Load the ticket. A ticket that is missing OR out of your scope looks the same: "not found".
   useEffect(() => {
@@ -320,18 +323,21 @@ export default function TicketModal({
                 count={data.comments.length}
               >
                 <Conversation
+                  ticketId={ticketId}
                   comments={data.comments}
                   files={data.files}
                   staff={staff}
                   readOnly={!!closed}
                   canDeleteFile={canDeleteFile}
                   onDeleteFile={deleteFile}
-                  onSend={async (body, internal, files) => {
+                  onOpenArticle={setArticleId}
+                  onSend={async (body, internal, files, kbId) => {
                     const r = await ticketsApi.addComment(
                       ticketId,
                       body,
                       internal,
                       files,
+                      kbId,
                     );
                     apply(r, internal ? "Internal note added" : "Reply sent");
                   }}
@@ -413,6 +419,19 @@ export default function TicketModal({
           onConfirm={(reason) => void confirmDelete(reason)}
           onClose={() => !deleteBusy && setDeleteOpen(false)}
         />
+      )}
+
+      {/* A linked article opens on top of the ticket; closing it returns to the ticket */}
+      {articleId !== null && (
+        <ErrorBoundary onClose={() => setArticleId(null)}>
+          <ArticleModal
+            key={articleId}
+            user={user}
+            articleId={articleId}
+            onClose={() => setArticleId(null)}
+            onChanged={() => undefined}
+          />
+        </ErrorBoundary>
       )}
     </>
   );

@@ -1,17 +1,22 @@
-// The replies on a ticket (with avatars and attachments) and the box to write a new one.
+// The replies on a ticket (with avatars, attachments and linked knowledge base articles) and the box to write a new one.
 //  - IT / ADMIN can switch between a public reply and an internal note (amber, never shown to the requester)
+//  - IT / ADMIN can LINK a published knowledge base article to the reply (search box with suggestions);
+//    the reader sees it as a card in the timeline and can click it to read the solution
 //  - files can be attached to a reply: choose them, drop them, or paste a screenshot with Ctrl+V
 //  - a closed ticket shows a notice instead of the box
 // Text is shown as plain text (React escapes it), so nobody can inject HTML.
 import { useState } from "react";
 import { Lock, Send } from "lucide-react";
 import { ApiError } from "../../api/client";
+import type { LinkableArticle } from "../../api/kb";
 import { useToast } from "../../hooks/useToast";
 import { formatDateTime, timeAgo } from "../../lib/format";
 import { pickValidFiles, summarizeProblems } from "../../lib/files";
 import { filesFromPaste } from "../../lib/paste";
 import { cn } from "../../lib/cn";
 import type { CommentItem, TicketFile } from "../../types";
+import KbArticlePicker from "../kb/KbArticlePicker";
+import LinkedArticleCard from "../kb/LinkedArticleCard";
 import AttachmentGrid from "../ui/AttachmentGrid";
 import Avatar from "../ui/Avatar";
 import Button from "../ui/Button";
@@ -21,6 +26,7 @@ import RoleBadge from "../ui/RoleBadge";
 import Textarea from "../ui/Textarea";
 
 interface Props {
+  ticketId: number;
   comments: CommentItem[];
   /** Every file of the ticket; each reply shows the ones that belong to it. */
   files: TicketFile[];
@@ -28,25 +34,37 @@ interface Props {
   readOnly: boolean;
   canDeleteFile: (file: TicketFile) => boolean;
   onDeleteFile: (file: TicketFile) => Promise<void>;
-  onSend: (body: string, internal: boolean, files: File[]) => Promise<void>;
+  /** Opens a knowledge base article in its own window (used by the linked-article cards). */
+  onOpenArticle: (articleId: number) => void;
+  onSend: (
+    body: string,
+    internal: boolean,
+    files: File[],
+    linkedKbId: number | null,
+  ) => Promise<void>;
 }
 
 export default function Conversation({
+  ticketId,
   comments,
   files,
   staff,
   readOnly,
   canDeleteFile,
   onDeleteFile,
+  onOpenArticle,
   onSend,
 }: Props) {
   const toast = useToast();
   const [mode, setMode] = useState<"reply" | "note">("reply");
   const [text, setText] = useState("");
   const [pending, setPending] = useState<File[]>([]);
+  const [linked, setLinked] = useState<LinkableArticle | null>(null); // the article chosen for this reply
   const [busy, setBusy] = useState(false);
   const isNote = mode === "note";
-  const canSend = text.trim().length > 0 || pending.length > 0;
+  // A reply can be only text, only files, or only a linked article
+  const canSend =
+    text.trim().length > 0 || pending.length > 0 || linked !== null;
 
   function addPending(chosen: File[]) {
     if (busy) return;
@@ -59,9 +77,10 @@ export default function Conversation({
     if (!canSend || busy) return;
     setBusy(true);
     try {
-      await onSend(text.trim(), isNote, pending);
+      await onSend(text.trim(), isNote, pending, linked ? linked.id : null);
       setText("");
       setPending([]);
+      setLinked(null);
     } catch (err) {
       toast.error(
         err instanceof ApiError
@@ -119,6 +138,19 @@ export default function Conversation({
                   <p className="mt-1 whitespace-pre-wrap break-words text-sm text-slate-700">
                     {c.body}
                   </p>
+
+                  {/* The linked knowledge base article ("!= null" also copes with an older server that sends nothing) */}
+                  {c.linked_kb_id != null && (
+                    <div className="mt-2">
+                      <LinkedArticleCard
+                        articleId={c.linked_kb_id}
+                        title={c.kb_title ?? null}
+                        excerpt={c.kb_excerpt}
+                        onOpen={onOpenArticle}
+                      />
+                    </div>
+                  )}
+
                   {own.length > 0 && (
                     <div className="mt-2">
                       <AttachmentGrid
@@ -207,6 +239,31 @@ export default function Conversation({
               }
               className={isNote ? "border-amber-300 bg-amber-50" : undefined}
             />
+
+            {/* Link a knowledge base article (IT / ADMIN only) */}
+            {staff &&
+              (linked ? (
+                <LinkedArticleCard
+                  articleId={linked.id}
+                  title={linked.title}
+                  excerpt={linked.excerpt}
+                  onRemove={() => setLinked(null)}
+                />
+              ) : (
+                <div className="space-y-1">
+                  <p className="text-xs font-medium text-slate-600">
+                    Link a knowledge base article{" "}
+                    <span className="font-normal text-slate-400">
+                      (optional)
+                    </span>
+                  </p>
+                  <KbArticlePicker
+                    ticketId={ticketId}
+                    disabled={busy}
+                    onSelect={setLinked}
+                  />
+                </div>
+              ))}
 
             <PendingFileList
               files={pending}

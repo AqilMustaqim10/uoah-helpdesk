@@ -38,7 +38,7 @@ export function describeAudit(action: string, d: Record<string, any>): string {
         ? `set the due date to ${formatDateTime(String(d.to))}`
         : "cleared the due date";
     case "COMMENT_ADDED":
-      return `${d.internal ? "added an internal note" : "replied"}${d.source === "EMAIL" ? " by email" : ""}`;
+      return `${d.internal ? "added an internal note" : "replied"}${d.source === "EMAIL" ? " by email" : ""}${d.kb_id ? " and linked an article" : ""}`;
     case "FILE_ADDED":
       return `attached ${text(d.name, "a file")}`;
     case "FILE_REMOVED":

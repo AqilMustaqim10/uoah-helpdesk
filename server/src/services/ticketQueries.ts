@@ -4,8 +4,7 @@ import type { Db } from "../db/pool";
 import type { AuthUser } from "../middleware/auth";
 import { HttpError } from "../lib/http";
 import { overdueSql } from "../lib/sql";
-import { canSeeInternal, ticketScope } from "../security/scope";
-
+import { articleScope, canSeeInternal, ticketScope } from "../security/scope";
 /**
  * Columns shown in the ticket list (and the top of the detail view).
  * file_count counts only files that EVERYONE who sees the ticket may see
@@ -46,14 +45,20 @@ export async function buildDetail(db: Db, user: AuthUser, id: number) {
 
   const staff = canSeeInternal(user);
 
+  // The reply thread. A reply may link a knowledge base article. The article's title and a short excerpt are only
+  // returned when THIS viewer may read the article right now (articleScope): if it was unpublished, archived or
+  // moved since, they get kb_title = null and the screen says "no longer available" (nothing leaks).
+  const kb = articleScope(user, 2, "a");
   const comments = await db.query(
     `SELECT c.id, c.body, c.is_internal, c.source, c.created_at,
-            c.author_id, u.name AS author_name, u.role AS author_role
+            c.author_id, u.name AS author_name, u.role AS author_role,
+            c.linked_kb_id, a.title AS kb_title, left(a.body, 200) AS kb_excerpt
        FROM comments c
        JOIN users u ON u.id = c.author_id
+       LEFT JOIN articles a ON a.id = c.linked_kb_id AND ${kb.sql}
       WHERE c.ticket_id = $1 ${staff ? "" : "AND c.is_internal = FALSE"}
       ORDER BY c.created_at, c.id`,
-    [id],
+    [id, ...kb.params],
   );
 
   // Every file of this ticket. comment_id = null means "attached to the ticket itself".

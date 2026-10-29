@@ -124,12 +124,18 @@ export function notifyTicketCreated(ticketId: number): void {
   background("acknowledgment", async () => {
     const t = await loadTicket(ticketId);
     if (!t || !t.requester_active) return;
-    await emailAbout(t, t.requester_email, "We received your request", [
-      `Hello ${t.requester_name},`,
-      "We received your request and the IT team will look at it soon.",
-      `Ticket: ${ticketRef(t.id)}`,
-      `Title: ${t.title}`,
-    ], true);
+    await emailAbout(
+      t,
+      t.requester_email,
+      "We received your request",
+      [
+        `Hello ${t.requester_name},`,
+        "We received your request and the IT team will look at it soon.",
+        `Ticket: ${ticketRef(t.id)}`,
+        `Title: ${t.title}`,
+      ],
+      true,
+    );
   });
 }
 
@@ -207,8 +213,10 @@ export function notifyReply(
 ): void {
   background("reply", async () => {
     const c = await pool.query(
-      `SELECT c.body, c.is_internal, c.author_id, u.name AS author_name
-         FROM comments c JOIN users u ON u.id = c.author_id
+      `SELECT c.body, c.is_internal, c.author_id, u.name AS author_name, ka.title AS kb_title
+         FROM comments c
+         JOIN users u ON u.id = c.author_id
+         LEFT JOIN articles ka ON ka.id = c.linked_kb_id AND ka.status = 'PUBLISHED'
         WHERE c.id = $1 AND c.ticket_id = $2`,
       [commentId, ticketId],
     );
@@ -229,8 +237,10 @@ export function notifyReply(
         return;
       await emailAbout(t, t.assignee_email, "New reply from the requester", [
         `Hello ${t.assignee_name},`,
-        `${comment.author_name} replied on ticket ${ticketRef(t.id)}:`,
+        `${comment.author_name} replied on your ticket ${ticketRef(t.id)}:`,
         excerpt(comment.body),
+        // Only the title of the linked article goes into the email (the article itself stays in the helpdesk)
+        ...(comment.kb_title ? [`Suggested article: ${comment.kb_title}`] : []),
       ]);
     } else {
       // Someone from IT wrote: tell the requester

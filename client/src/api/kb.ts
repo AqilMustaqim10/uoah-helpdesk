@@ -25,6 +25,16 @@ function toQueryString(q: ArticleQuery): string {
   return p.toString();
 }
 
+/** An article that may be linked in a reply (the server only offers ones that can really be linked). */
+export interface LinkableArticle {
+  id: number;
+  title: string;
+  excerpt: string;
+  tags: string[];
+  unit_code: string | null; // null = global (all units)
+  updated_at: string;
+}
+
 export const kbApi = {
   list: (q: ArticleQuery) =>
     api.get<ArticleListResponse>(`/kb?${toQueryString(q)}`),
@@ -37,6 +47,11 @@ export const kbApi = {
   suggest: (q: string) =>
     api.get<{ articles: ArticleSuggestion[] }>(
       `/kb/suggest?q=${encodeURIComponent(q)}`,
+    ),
+  /** Published articles that can be linked to this ticket (IT/ADMIN). An empty query gives the newest ones. */
+  searchLinkable: (ticketId: number, query: string) =>
+    api.get<{ articles: LinkableArticle[] }>(
+      `/kb/search?ticket=${ticketId}&query=${encodeURIComponent(query)}`,
     ),
 
   uploadFiles: (id: number, files: File[]) => {

@@ -58,22 +58,25 @@ export const ticketsApi = {
   assignees: (id: number) =>
     api.get<{ assignees: Assignee[] }>(`/tickets/${id}/assignees`),
 
-  /** Text only -> JSON. With files -> a form (multipart), which is how files travel. */
+  /** Text only -> JSON. With files -> a form (multipart), which is how files travel. linkedKbId = an article to link (IT/ADMIN). */
   addComment: (
     id: number,
     body: string,
     is_internal: boolean,
     files: File[] = [],
+    linkedKbId: number | null = null,
   ) => {
     if (files.length === 0) {
       return api.post<TicketDetailResponse>(`/tickets/${id}/comments`, {
         body,
         is_internal,
+        linked_kb_id: linkedKbId,
       });
     }
     const form = new FormData();
     form.append("body", body);
     form.append("is_internal", String(is_internal));
+    if (linkedKbId !== null) form.append("linked_kb_id", String(linkedKbId));
     files.forEach((f) => form.append("files", f));
     return api.post<TicketDetailResponse>(`/tickets/${id}/comments`, form);
   },

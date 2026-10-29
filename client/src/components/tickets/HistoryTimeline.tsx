@@ -29,7 +29,7 @@ function describe(h: HistoryItem): string {
         ? `set the due date to ${formatDateTime(d.to)}`
         : "cleared the due date";
     case "COMMENT_ADDED":
-      return d.internal ? "added an internal note" : "replied";
+      return `${d.internal ? "added an internal note" : "replied"}${d.kb_id ? " and linked an article" : ""}`;
     case "FILE_ADDED":
       return `attached ${d.name ?? "a file"}`;
     case "FILE_REMOVED":

@@ -91,6 +91,10 @@ export interface CommentItem {
   author_id: number;
   author_name: string;
   author_role: Role;
+  /** The knowledge base article linked to this reply (null = none). kb_title is null when it is no longer available to you. */
+  linked_kb_id: number | null;
+  kb_title: string | null;
+  kb_excerpt: string | null;
 }
 
 /** An attachment. comment_id = null means it is attached to the ticket itself. */

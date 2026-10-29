@@ -28,6 +28,7 @@ import kbRoutes from "./routes/kb";
 import kbSuggestRoutes from "./routes/kbSuggest";
 import auditRoutes from "./routes/audit";
 import historyRoutes from "./routes/history";
+import kbSearchRoutes from "./routes/kbSearch";
 
 const app = express();
 
@@ -111,6 +112,13 @@ app.use("/api/units", requireAuth, unitRoutes);
 // Knowledge base. The "suggest" route MUST come first,
 // or "suggest" would be read as an article id.
 app.use("/api/kb/suggest", requireAuth, kbSuggestRoutes);
+// Searching articles to LINK in a reply: IT and ADMIN only (a standard user gets "not found")
+app.use(
+  "/api/kb/search",
+  requireAuth,
+  requireRole("ADMIN", "IT"),
+  kbSearchRoutes,
+);
 app.use("/api/kb", requireAuth, kbRoutes);
 
 // Any other /api address does not exist
