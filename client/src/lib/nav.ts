@@ -3,6 +3,7 @@
 // New in step I: IT also sees the User Directory (a limited version: only their own unit).
 import {
   BookOpen,
+  History as HistoryIcon,
   LayoutDashboard,
   Settings,
   Ticket,
@@ -22,11 +23,11 @@ export interface TabDef {
 
 export const TABS: TabDef[] = [
   {
-    key: "dashboard",
-    label: "Dashboard",
-    icon: LayoutDashboard,
-    roles: ["ADMIN", "IT"],
-    soon: "Ticket statistics will appear here once the ticket screens are built.",
+    key: "history",
+    label: "Ticket History",
+    icon: HistoryIcon,
+    roles: ["ADMIN", "IT"], // standard users never see this tab
+    soon: "Resolved and closed tickets of every business unit.",
   },
   {
     key: "tickets",

@@ -1,4 +1,3 @@
-// Starts the API server (port 3000). Later steps add more routes in the marked spot.
 import express from "express";
 import cookieParser from "cookie-parser";
 import cors from "cors";
@@ -9,6 +8,10 @@ import { requireAuth, requireRole } from "./middleware/auth";
 import { errorHandler } from "./middleware/errorHandler";
 import { originCheck } from "./middleware/originCheck";
 import { apiLimiter } from "./middleware/rateLimit";
+import {
+  itClosedFileGuard,
+  itClosedTicketGuard,
+} from "./middleware/closedGuard";
 import authRoutes from "./routes/auth";
 import mfaRoutes from "./routes/mfa";
 import ticketRoutes from "./routes/tickets";
@@ -24,6 +27,7 @@ import unitRoutes from "./routes/units";
 import kbRoutes from "./routes/kb";
 import kbSuggestRoutes from "./routes/kbSuggest";
 import auditRoutes from "./routes/audit";
+import historyRoutes from "./routes/history";
 
 const app = express();
 
@@ -46,7 +50,9 @@ app.use(
     credentials: true,
   }),
 );
-// 256 KB: knowledge base articles can be up to 50,000 characters (some may use multi-byte letters)
+
+// 256 KB: knowledge base articles can be up to 50,000 characters
+// (some may use multi-byte letters)
 app.use(express.json({ limit: "256kb" }));
 app.use(cookieParser());
 
@@ -70,24 +76,40 @@ app.use("/api/auth", authRoutes);
 app.use(
   "/api/tickets",
   requireAuth,
+  itClosedTicketGuard,
   ticketRoutes,
   commentRoutes,
   ticketFileRoutes,
   ticketDeleteRoutes,
 );
-app.use("/api/files", requireAuth, fileRoutes);
-// Dashboard numbers and the PDF export: IT and ADMIN only (a USER gets "not found")
+
+app.use("/api/files", requireAuth, itClosedFileGuard, fileRoutes);
+
+// Dashboard numbers and PDF export: IT and ADMIN only
+// A USER gets "not found"
 app.use("/api/stats", requireAuth, requireRole("ADMIN", "IT"), statsRoutes);
 app.use("/api/export", requireAuth, requireRole("ADMIN", "IT"), exportRoutes);
-// User Directory: ADMIN gets everything, IT gets a limited version (each route checks its own rules).
-// The 2FA reset is ADMIN only; IT requests for it fall through to the second line and get "not found".
+
+// Ticket History: finished tickets of every unit, read-only.
+// Standard users get "not found".
+app.use("/api/history", requireAuth, requireRole("ADMIN", "IT"), historyRoutes);
+
+// User Directory: ADMIN gets everything, IT gets a limited version
+// (each route checks its own rules).
+// The 2FA reset is ADMIN only; IT requests for it fall through to the
+// second line and get "not found".
 app.use("/api/users", requireAuth, requireRole("ADMIN", "IT"), userRoutes);
 app.use("/api/users", requireAuth, requireRole("ADMIN"), userMfaRoutes);
+
 // The audit log viewer: ADMIN only
 app.use("/api/audit", requireAuth, requireRole("ADMIN"), auditRoutes);
-// Branding: the logo is for any logged-in user of that unit; changes are ADMIN only (checked inside)
+
+// Branding: the logo is for any logged-in user of that unit;
+// changes are ADMIN only (checked inside)
 app.use("/api/units", requireAuth, unitRoutes);
-// Knowledge base. The "suggest" route MUST come first, or "suggest" would be read as an article id.
+
+// Knowledge base. The "suggest" route MUST come first,
+// or "suggest" would be read as an article id.
 app.use("/api/kb/suggest", requireAuth, kbSuggestRoutes);
 app.use("/api/kb", requireAuth, kbRoutes);
 
@@ -98,13 +120,15 @@ app.use("/api", (_req, _res, next) => next(new HttpError(404, "Not found")));
 app.use(errorHandler);
 
 async function start() {
-  // Refuse to start if the database is unreachable (clearer than failing on the first request)
+  // Refuse to start if the database is unreachable
+  // (clearer than failing on the first request)
   try {
     await query("SELECT 1");
   } catch (e) {
     console.error("Cannot connect to the database:", (e as Error).message);
     process.exit(1);
   }
+
   app.listen(config.port, () =>
     console.log(`API running on http://localhost:${config.port}`),
   );

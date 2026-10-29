@@ -32,8 +32,13 @@ export interface UnitOption {
 }
 
 /** The sidebar tabs. */
-export type TabKey = "dashboard" | "tickets" | "kb" | "users" | "settings";
-
+export type TabKey =
+  | "dashboard"
+  | "tickets"
+  | "history"
+  | "kb"
+  | "users"
+  | "settings";
 export type ToastKind = "success" | "error" | "info";
 
 export interface ToastItem {

@@ -353,7 +353,7 @@ export default function TicketModal({
               </Button>
 
               {/* Permanent delete: IT and ADMIN only (the server checks again) */}
-              {staff && (
+              {(user.role === "ADMIN" || (staff && !closed)) && (
                 <button
                   type="button"
                   onClick={() => {

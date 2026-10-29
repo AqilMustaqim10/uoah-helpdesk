@@ -25,6 +25,7 @@ import TicketModal from "../tickets/TicketModal";
 import ErrorBoundary from "../ui/ErrorBoundary";
 import Sidebar from "./Sidebar";
 import TopBar from "./TopBar";
+import HistoryPage from "../../pages/HistoryPage";
 
 const COLLAPSED_KEY = "sidebarCollapsed";
 
@@ -82,6 +83,15 @@ export default function AppShell({ user }: { user: User }) {
             version={version}
             onOpen={setSelectedId}
             onCreate={() => setCreateOpen(true)}
+          />
+        );
+      case "history":
+        // ADMIN gets a way to open the full ticket window; IT gets none (view only)
+        return (
+          <HistoryPage
+            user={user}
+            version={version}
+            onManage={user.role === "ADMIN" ? setSelectedId : undefined}
           />
         );
       case "dashboard":

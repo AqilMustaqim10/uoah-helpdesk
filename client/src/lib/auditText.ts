@@ -115,5 +115,9 @@ export function describeAudit(action: string, d: Record<string, any>): string {
       return `showed the department "${text(d.name)}" again`;
     case "DEPARTMENT_DELETED":
       return `deleted the department "${text(d.name)}"${d.moved_to ? ` and moved ${text(d.people, "0")} people to "${text(d.moved_to)}"` : ""}`;
+
+    // ----- ticket history -----
+    case "TICKET_HISTORY_VIEWED":
+      return `opened ${text(d.ref)} of ${text(d.unit)} in the ticket history`;
   }
 }
