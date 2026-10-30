@@ -1,23 +1,23 @@
-// The audit log (ADMIN only): who did what, and when. Read-only; the log can never be edited.
-// Filters: person, action, type, ticket number and a date range. 50 rows per page, newest first.
+// The audit log (ADMIN only), grouped by ticket. Filters match ticket history; 50 tickets per page.
 import { useEffect, useRef, useState } from "react";
-import { ChevronDown, ScrollText, SearchX } from "lucide-react";
+import { ChevronRight, ScrollText, SearchX } from "lucide-react";
 import {
   auditApi,
   type AuditListResponse,
   type AuditQuery,
+  type AuditTicketSummary,
 } from "../../api/audit";
 import { ApiError } from "../../api/client";
 import { useDebounce } from "../../hooks/useDebounce";
-import { describeAudit, humanizeAction } from "../../lib/auditText";
+import { humanizeAction } from "../../lib/auditText";
 import { cn } from "../../lib/cn";
 import { formatDateTime } from "../../lib/format";
-import Avatar from "../ui/Avatar";
 import Button from "../ui/Button";
 import EmptyState from "../ui/EmptyState";
 import FormError from "../ui/FormError";
 import Pagination from "../ui/Pagination";
 import Skeleton from "../ui/Skeleton";
+import AuditTicketDetailModal from "./AuditTicketDetailModal";
 
 const EMPTY: AuditQuery = {
   actor: "",
@@ -65,7 +65,8 @@ export default function AuditLogViewer() {
   const [actions, setActions] = useState<string[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
-  const [openId, setOpenId] = useState<number | null>(null); // the row whose raw details are shown
+  const [selectedTicket, setSelectedTicket] =
+    useState<AuditTicketSummary | null>(null);
   const requestId = useRef(0);
 
   // The action dropdown lists every kind of action that exists
@@ -134,8 +135,7 @@ export default function AuditLogViewer() {
       <div>
         <h2 className="text-base font-semibold text-slate-900">Audit log</h2>
         <p className="text-sm text-slate-500">
-          Every important action, newest first. This log cannot be edited or
-          deleted.
+          One row per ticket with a complete, read-only change history.
         </p>
       </div>
 
@@ -250,7 +250,7 @@ export default function AuditLogViewer() {
       ) : data && data.rows.length > 0 ? (
         <>
           <p className="text-sm text-slate-500">
-            {data.total} event{data.total === 1 ? "" : "s"}
+            {data.total} ticket{data.total === 1 ? "" : "s"}
           </p>
           <ul
             className={cn(
@@ -259,71 +259,42 @@ export default function AuditLogViewer() {
             )}
           >
             {data.rows.map((r) => {
-              const open = openId === r.id;
-              const who = r.actor_name ?? "System";
               return (
-                <li key={r.id} className="animate-fade-in px-4 py-3">
-                  <div className="flex items-start gap-3">
-                    <Avatar name={who} size="sm" />
-                    <div className="min-w-0 flex-1">
-                      <p className="break-words text-sm text-slate-700">
-                        <span
-                          className="font-medium text-slate-900"
-                          title={r.actor_email ?? undefined}
-                        >
-                          {who}
-                        </span>{" "}
-                        {describeAudit(r.action, r.details ?? {})}
-                      </p>
-                      <div className="mt-1 flex flex-wrap items-center gap-x-3 gap-y-1 text-xs text-slate-400">
-                        <span>{formatDateTime(r.created_at)}</span>
-                        {r.ticket_id && (
-                          <span className="font-mono text-slate-500">
-                            HD-{r.ticket_id}
-                          </span>
-                        )}
-                        {r.business_unit_code && (
-                          <span className="rounded-full bg-brand/10 px-2 py-0.5 font-medium text-brand">
-                            {r.business_unit_code === "HOTEL"
-                              ? "Hotel"
-                              : r.business_unit_code}
-                          </span>
-                        )}
-                        <span className="rounded-md bg-slate-100 px-1.5 py-0.5 text-slate-500">
-                          {r.entity_type}
+                <li key={r.ticket_id} className="animate-fade-in">
+                  <button
+                    type="button"
+                    onClick={() => setSelectedTicket(r)}
+                    className="flex w-full items-center gap-4 px-4 py-4 text-left transition hover:bg-slate-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-brand"
+                  >
+                    <span className="flex min-w-0 flex-1 flex-col gap-1 sm:flex-row sm:items-center sm:gap-4">
+                      <span className="min-w-0 flex-1">
+                        <span className="block truncate text-sm font-medium text-slate-900">
+                          {r.title}
                         </span>
-                        <button
-                          type="button"
-                          onClick={() => setOpenId(open ? null : r.id)}
-                          aria-expanded={open}
-                          className="inline-flex items-center gap-1 text-slate-500 hover:text-slate-700"
-                        >
-                          Details
-                          <ChevronDown
-                            className={cn(
-                              "h-3 w-3 transition-transform",
-                              open && "rotate-180",
-                            )}
-                            aria-hidden
-                          />
-                        </button>
-                      </div>
-                      {open && (
-                        // The raw record, for whoever needs the exact values
-                        <pre className="mt-2 max-h-48 animate-fade-in overflow-auto rounded-lg bg-slate-50 p-3 text-xs text-slate-600">
-                          {JSON.stringify(
-                            {
-                              action: r.action,
-                              entity: `${r.entity_type} ${r.entity_id}`,
-                              details: r.details,
-                            },
-                            null,
-                            2,
-                          )}
-                        </pre>
-                      )}
-                    </div>
-                  </div>
+                        <span className="mt-1 block font-mono text-xs text-slate-500">
+                          HD-{r.ticket_id}
+                        </span>
+                      </span>
+                      <span className="flex flex-wrap items-center gap-2 text-xs text-slate-500 sm:justify-end">
+                        <span className="rounded-full bg-brand/10 px-2 py-0.5 font-medium text-brand">
+                          {r.business_unit_code === "HOTEL"
+                            ? "Hotel"
+                            : r.business_unit_code}
+                        </span>
+                        <span>
+                          {r.total_change_count} change
+                          {r.total_change_count === 1 ? "" : "s"}
+                        </span>
+                        <time dateTime={r.latest_modified_at}>
+                          Updated {formatDateTime(r.latest_modified_at)}
+                        </time>
+                      </span>
+                    </span>
+                    <ChevronRight
+                      className="h-4 w-4 shrink-0 text-slate-400"
+                      aria-hidden
+                    />
+                  </button>
                 </li>
               );
             })}
@@ -355,6 +326,12 @@ export default function AuditLogViewer() {
           />
         )
       ) : null}
+      {selectedTicket && (
+        <AuditTicketDetailModal
+          ticket={selectedTicket}
+          onClose={() => setSelectedTicket(null)}
+        />
+      )}
     </div>
   );
 }

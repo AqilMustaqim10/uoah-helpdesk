@@ -23,6 +23,13 @@ function dateParam(v: unknown, label: string): Date | null {
   return d;
 }
 
+function ticketIdParam(v: unknown): number {
+  const value = qstr(v);
+  if (!/^\d{1,15}$/.test(value) || Number(value) < 1)
+    throw new HttpError(400, "Invalid ticket number.");
+  return Number(value);
+}
+
 // ---------------------------------------------------------------------------
 // GET /api/audit/actions   every kind of action that exists (fills the filter dropdown)
 // ---------------------------------------------------------------------------
@@ -33,6 +40,59 @@ router.get(
       "SELECT DISTINCT action FROM audit_log ORDER BY action",
     );
     res.json({ actions: r.rows.map((x) => x.action as string) });
+  }),
+);
+
+// ---------------------------------------------------------------------------
+// GET /api/audit/:ticketId/details  complete timeline for one ticket
+// ---------------------------------------------------------------------------
+router.get(
+  "/:ticketId/details",
+  ah(async (req, res) => {
+    const ticketId = ticketIdParam(req.params.ticketId);
+    const ticket = await query(
+      `SELECT history.ticket_id,
+              COALESCE(t.title, deleted.title, 'Deleted ticket') AS title,
+              bu.code AS business_unit_code, bu.name AS business_unit_name
+         FROM (SELECT DISTINCT ticket_id
+                 FROM audit_log
+                WHERE ticket_id = $1) history
+         LEFT JOIN tickets t ON t.id = history.ticket_id
+         LEFT JOIN LATERAL (
+           SELECT details->>'title' AS title
+             FROM audit_log
+            WHERE ticket_id = history.ticket_id
+              AND action = 'TICKET_DELETED'
+            ORDER BY created_at DESC, id DESC
+            LIMIT 1
+         ) deleted ON TRUE
+         LEFT JOIN business_units bu ON bu.id = COALESCE(
+           t.business_unit_id,
+           (SELECT business_unit_id
+              FROM audit_log
+             WHERE ticket_id = history.ticket_id
+               AND business_unit_id IS NOT NULL
+             ORDER BY created_at DESC, id DESC
+             LIMIT 1)
+         )`,
+      [ticketId],
+    );
+    if (ticket.rows.length === 0)
+      throw new HttpError(404, "Ticket history not found.");
+
+    const rows = await query(
+      `SELECT a.id, a.action, a.entity_type, a.entity_id, a.ticket_id, a.details, a.created_at,
+              a.actor_id, u.name AS actor_name, u.email AS actor_email,
+              bu.code AS business_unit_code, bu.name AS business_unit_name
+         FROM audit_log a
+         LEFT JOIN users u ON u.id = a.actor_id
+         LEFT JOIN business_units bu ON bu.id = a.business_unit_id
+        WHERE a.ticket_id = $1
+        ORDER BY a.created_at DESC, a.id DESC`,
+      [ticketId],
+    );
+
+    res.json({ ticket: ticket.rows[0], rows: rows.rows });
   }),
 );
 
@@ -107,11 +167,16 @@ router.get(
 
     const total: number = (
       await query(
-        `SELECT count(*)::int AS n
+        `WITH matching_tickets AS (
+           SELECT DISTINCT a.ticket_id
            FROM audit_log a
+          LEFT JOIN tickets t ON t.id = a.ticket_id
            LEFT JOIN users u ON u.id = a.actor_id
-           LEFT JOIN business_units bu ON bu.id = a.business_unit_id
-           ${where}`,
+          LEFT JOIN business_units bu
+            ON bu.id = COALESCE(t.business_unit_id, a.business_unit_id)
+          ${where ? `${where} AND` : "WHERE"} a.ticket_id IS NOT NULL
+        )
+         SELECT count(*)::int AS n FROM matching_tickets`,
         params,
       )
     ).rows[0].n;
@@ -121,14 +186,42 @@ router.get(
       Math.max(1, parseInt(qstr(req.query.page), 10) || 1),
     );
     const rows = await query(
-      `SELECT a.id, a.action, a.entity_type, a.entity_id, a.ticket_id, a.details, a.created_at,
-              a.actor_id, u.name AS actor_name, u.email AS actor_email,
-              bu.code AS business_unit_code, bu.name AS business_unit_name
+      `WITH matching_tickets AS (
+         SELECT DISTINCT a.ticket_id
          FROM audit_log a
+         LEFT JOIN tickets t ON t.id = a.ticket_id
          LEFT JOIN users u ON u.id = a.actor_id
-         LEFT JOIN business_units bu ON bu.id = a.business_unit_id
-         ${where}
-        ORDER BY a.id DESC
+         LEFT JOIN business_units bu
+           ON bu.id = COALESCE(t.business_unit_id, a.business_unit_id)
+         ${where ? `${where} AND` : "WHERE"} a.ticket_id IS NOT NULL
+       )
+       SELECT mt.ticket_id,
+              COALESCE(t.title, deleted.title, 'Deleted ticket') AS title,
+              MAX(a.created_at) AS latest_modified_at,
+              count(*)::int AS total_change_count,
+              bu.code AS business_unit_code, bu.name AS business_unit_name
+         FROM matching_tickets mt
+         LEFT JOIN tickets t ON t.id = mt.ticket_id
+         JOIN audit_log a ON a.ticket_id = mt.ticket_id
+         LEFT JOIN LATERAL (
+           SELECT details->>'title' AS title
+             FROM audit_log
+            WHERE ticket_id = mt.ticket_id
+              AND action = 'TICKET_DELETED'
+            ORDER BY created_at DESC, id DESC
+            LIMIT 1
+         ) deleted ON TRUE
+         LEFT JOIN business_units bu ON bu.id = COALESCE(
+           t.business_unit_id,
+           (SELECT business_unit_id
+              FROM audit_log
+             WHERE ticket_id = mt.ticket_id
+               AND business_unit_id IS NOT NULL
+             ORDER BY created_at DESC, id DESC
+             LIMIT 1)
+         )
+        GROUP BY mt.ticket_id, t.id, t.title, deleted.title, bu.code, bu.name
+        ORDER BY MAX(a.created_at) DESC, t.id DESC
         LIMIT $${params.length + 1} OFFSET $${params.length + 2}`,
       [...params, PAGE_SIZE, (page - 1) * PAGE_SIZE],
     );

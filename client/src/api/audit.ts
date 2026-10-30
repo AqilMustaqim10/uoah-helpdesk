@@ -1,15 +1,24 @@
 // Audit log viewer server calls (they match server/src/routes/audit.ts).
 import { api } from "./client";
 
-export interface AuditRow {
-  id: number;
+export interface AuditTicketSummary {
+  ticket_id: number | string;
+  title: string;
+  latest_modified_at: string;
+  total_change_count: number;
+  business_unit_code: string;
+  business_unit_name: string;
+}
+
+export interface AuditEvent {
+  id: number | string;
   action: string;
   entity_type: string;
   entity_id: string;
-  ticket_id: number | null;
-  details: Record<string, any>;
+  ticket_id: number | string;
+  details: Record<string, unknown>;
   created_at: string;
-  actor_id: number | null;
+  actor_id: number | string | null;
   actor_name: string | null;
   actor_email: string | null;
   business_unit_code: string | null;
@@ -17,10 +26,22 @@ export interface AuditRow {
 }
 
 export interface AuditListResponse {
-  rows: AuditRow[];
+  rows: AuditTicketSummary[];
   total: number;
   page: number;
   pageSize: number;
+}
+
+export interface AuditTicketDetails {
+  ticket_id: number | string;
+  title: string;
+  business_unit_code: string;
+  business_unit_name: string;
+}
+
+export interface AuditTicketDetailsResponse {
+  ticket: AuditTicketDetails;
+  rows: AuditEvent[];
 }
 
 /** The filters on the page. Empty string = "no filter". from / to are dates like 2026-10-16. */
@@ -52,5 +73,9 @@ function toQueryString(q: AuditQuery): string {
 export const auditApi = {
   list: (q: AuditQuery) =>
     api.get<AuditListResponse>(`/audit?${toQueryString(q)}`),
+  details: (ticketId: number | string) =>
+    api.get<AuditTicketDetailsResponse>(
+      `/audit/${encodeURIComponent(ticketId)}/details`,
+    ),
   actions: () => api.get<{ actions: string[] }>("/audit/actions"),
 };
