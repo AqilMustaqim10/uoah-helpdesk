@@ -97,18 +97,20 @@ CREATE INDEX ticket_files_ticket_idx ON ticket_files (ticket_id);
 
 -- ---------- Audit log (append-only history of important actions) ----------
 CREATE TABLE audit_log (
-  id           BIGSERIAL PRIMARY KEY,
-  actor_id     BIGINT REFERENCES users(id),              -- NULL = system / email worker
-  ticket_id    BIGINT REFERENCES tickets(id),
-  entity_type  TEXT NOT NULL,                            -- ticket | comment | user | unit | article | file
-  entity_id    TEXT NOT NULL,
-  action       TEXT NOT NULL,                            -- e.g. TICKET_STATUS_CHANGED
-  details      JSONB NOT NULL DEFAULT '{}'::jsonb,
-  created_at   TIMESTAMPTZ NOT NULL DEFAULT now()
+  id                BIGSERIAL PRIMARY KEY,
+  actor_id          BIGINT REFERENCES users(id),          -- NULL = system / email worker
+  ticket_id         BIGINT REFERENCES tickets(id),
+  business_unit_id  SMALLINT REFERENCES business_units(id),
+  entity_type       TEXT NOT NULL,                        -- ticket | comment | user | unit | article | file
+  entity_id         TEXT NOT NULL,
+  action            TEXT NOT NULL,                        -- e.g. TICKET_STATUS_CHANGED
+  details           JSONB NOT NULL DEFAULT '{}'::jsonb,
+  created_at        TIMESTAMPTZ NOT NULL DEFAULT now()
 );
 CREATE INDEX audit_ticket_idx ON audit_log (ticket_id, created_at);
 CREATE INDEX audit_actor_idx  ON audit_log (actor_id, created_at);
 CREATE INDEX audit_entity_idx ON audit_log (entity_type, entity_id);
+CREATE INDEX audit_business_unit_idx ON audit_log (business_unit_id);
 
 -- This function simply refuses any change. The triggers below call it.
 CREATE FUNCTION audit_log_block_changes() RETURNS trigger

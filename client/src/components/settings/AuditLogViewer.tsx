@@ -21,6 +21,7 @@ import Skeleton from "../ui/Skeleton";
 
 const EMPTY: AuditQuery = {
   actor: "",
+  businessUnit: "",
   action: "",
   entity: "",
   ticket: "",
@@ -37,6 +38,14 @@ const ENTITIES = [
   "article",
   "department",
   "export",
+];
+const BUSINESS_UNITS = [
+  { code: "CCEC", label: "CCEC" },
+  { code: "FNB", label: "FNB" },
+  { code: "HOTEL", label: "Hotel" },
+  { code: "KLBS", label: "KLBS" },
+  { code: "KLW", label: "KLW" },
+  { code: "HQ", label: "HQ" },
 ];
 const TICKET_RE = /^(hd-?)?\d{1,15}$/i;
 
@@ -111,6 +120,7 @@ export default function AuditLogViewer() {
 
   const filtersActive = !!(
     query.actor ||
+    query.businessUnit ||
     query.action ||
     query.entity ||
     query.ticket ||
@@ -140,6 +150,19 @@ export default function AuditLogViewer() {
           maxLength={100}
           className={cn(FIELD, "w-52")}
         />
+        <select
+          aria-label="Filter by business unit"
+          className={FIELD}
+          value={query.businessUnit}
+          onChange={(e) => change({ businessUnit: e.target.value })}
+        >
+          <option value="">All Business Units</option>
+          {BUSINESS_UNITS.map(({ code, label }) => (
+            <option key={code} value={code}>
+              {label}
+            </option>
+          ))}
+        </select>
         <select
           aria-label="Filter by action"
           className={FIELD}
@@ -257,6 +280,13 @@ export default function AuditLogViewer() {
                         {r.ticket_id && (
                           <span className="font-mono text-slate-500">
                             HD-{r.ticket_id}
+                          </span>
+                        )}
+                        {r.business_unit_code && (
+                          <span className="rounded-full bg-brand/10 px-2 py-0.5 font-medium text-brand">
+                            {r.business_unit_code === "HOTEL"
+                              ? "Hotel"
+                              : r.business_unit_code}
                           </span>
                         )}
                         <span className="rounded-md bg-slate-100 px-1.5 py-0.5 text-slate-500">

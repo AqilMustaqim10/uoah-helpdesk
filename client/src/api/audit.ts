@@ -12,6 +12,8 @@ export interface AuditRow {
   actor_id: number | null;
   actor_name: string | null;
   actor_email: string | null;
+  business_unit_code: string | null;
+  business_unit_name: string | null;
 }
 
 export interface AuditListResponse {
@@ -24,6 +26,7 @@ export interface AuditListResponse {
 /** The filters on the page. Empty string = "no filter". from / to are dates like 2026-10-16. */
 export interface AuditQuery {
   actor: string;
+  businessUnit: string;
   action: string;
   entity: string;
   ticket: string;
@@ -35,6 +38,7 @@ export interface AuditQuery {
 function toQueryString(q: AuditQuery): string {
   const p = new URLSearchParams();
   if (q.actor.trim()) p.set("actor", q.actor.trim());
+  if (q.businessUnit) p.set("bu", q.businessUnit);
   if (q.action) p.set("action", q.action);
   if (q.entity) p.set("entity", q.entity);
   if (q.ticket.trim()) p.set("ticket", q.ticket.trim());

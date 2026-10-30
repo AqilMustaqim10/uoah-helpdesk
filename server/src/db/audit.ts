@@ -8,6 +8,7 @@ export interface AuditEntry {
   entityType: string; // ticket | comment | user | unit | article | file
   entityId: string | number; // id of the thing that changed
   ticketId?: number | null; // set when it relates to a ticket (used for the history timeline)
+  businessUnitId?: number | null; // explicit override; otherwise derived from the event's subject
   details?: Record<string, unknown>; // extra facts, e.g. { from: 'OPEN', to: 'IN_PROGRESS' }
 }
 
@@ -17,8 +18,43 @@ export interface AuditEntry {
  */
 export async function audit(db: Db, e: AuditEntry): Promise<void> {
   await db.query(
-    `INSERT INTO audit_log (actor_id, ticket_id, entity_type, entity_id, action, details)
-     VALUES ($1, $2, $3, $4, $5, $6::jsonb)`,
+    `INSERT INTO audit_log
+       (actor_id, ticket_id, business_unit_id, entity_type, entity_id, action, details)
+     VALUES (
+       $1, $2,
+       CASE
+         WHEN $7::smallint IS NOT NULL THEN $7::smallint
+         WHEN $3 = 'ticket' OR $2 IS NOT NULL THEN (
+           SELECT t.business_unit_id
+           FROM tickets t
+           WHERE t.id = COALESCE(
+             $2,
+             CASE WHEN $4 ~ '^[0-9]+$' THEN $4::bigint END
+           )
+         )
+         WHEN $3 = 'article' THEN (
+           SELECT a.business_unit_id
+           FROM articles a
+           WHERE a.id = CASE WHEN $4 ~ '^[0-9]+$' THEN $4::bigint END
+         )
+         WHEN $3 = 'user' THEN (
+           SELECT u.business_unit_id
+           FROM users u
+           WHERE u.id = CASE WHEN $4 ~ '^[0-9]+$' THEN $4::bigint END
+         )
+         WHEN $3 = 'unit' THEN (
+           SELECT bu.id
+           FROM business_units bu
+           WHERE bu.id = CASE WHEN $4 ~ '^[0-9]+$' THEN $4::smallint END
+         )
+         ELSE (
+           SELECT u.business_unit_id
+           FROM users u
+           WHERE u.id = $1
+         )
+       END,
+       $3, $4, $5, $6::jsonb
+     )`,
     [
       e.actorId,
       e.ticketId ?? null,
@@ -26,6 +62,7 @@ export async function audit(db: Db, e: AuditEntry): Promise<void> {
       String(e.entityId),
       e.action,
       JSON.stringify(e.details ?? {}),
+      e.businessUnitId ?? null,
     ],
   );
 }

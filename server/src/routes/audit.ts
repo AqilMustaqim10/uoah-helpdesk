@@ -37,7 +37,7 @@ router.get(
 );
 
 // ---------------------------------------------------------------------------
-// GET /api/audit?actor=&action=&entity=&ticket=&from=&to=&page=
+// GET /api/audit?actor=&action=&entity=&ticket=&bu=&from=&to=&page=
 // ---------------------------------------------------------------------------
 router.get(
   "/",
@@ -72,6 +72,16 @@ router.get(
       conds.push(`a.entity_type = $${params.length}`);
     }
 
+    // Business unit code (bu is preferred; business_unit is accepted as an alias).
+    const buParam = qstr(req.query.bu) || qstr(req.query.business_unit);
+    if (buParam) {
+      const businessUnit = buParam.toUpperCase();
+      if (!/^(CCEC|FNB|HOTEL|KLBS|KLW|HQ)$/.test(businessUnit))
+        throw new HttpError(400, "Invalid business unit filter.");
+      params.push(businessUnit);
+      conds.push(`bu.code = $${params.length}`);
+    }
+
     // A ticket number: HD-12 or 12
     const ticket = qstr(req.query.ticket);
     if (ticket) {
@@ -97,7 +107,11 @@ router.get(
 
     const total: number = (
       await query(
-        `SELECT count(*)::int AS n FROM audit_log a LEFT JOIN users u ON u.id = a.actor_id ${where}`,
+        `SELECT count(*)::int AS n
+           FROM audit_log a
+           LEFT JOIN users u ON u.id = a.actor_id
+           LEFT JOIN business_units bu ON bu.id = a.business_unit_id
+           ${where}`,
         params,
       )
     ).rows[0].n;
@@ -108,9 +122,11 @@ router.get(
     );
     const rows = await query(
       `SELECT a.id, a.action, a.entity_type, a.entity_id, a.ticket_id, a.details, a.created_at,
-              a.actor_id, u.name AS actor_name, u.email AS actor_email
+              a.actor_id, u.name AS actor_name, u.email AS actor_email,
+              bu.code AS business_unit_code, bu.name AS business_unit_name
          FROM audit_log a
          LEFT JOIN users u ON u.id = a.actor_id
+         LEFT JOIN business_units bu ON bu.id = a.business_unit_id
          ${where}
         ORDER BY a.id DESC
         LIMIT $${params.length + 1} OFFSET $${params.length + 2}`,
