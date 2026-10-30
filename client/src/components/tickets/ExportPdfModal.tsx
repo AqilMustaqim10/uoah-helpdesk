@@ -22,6 +22,7 @@ import FormError from "../ui/FormError";
 import Input from "../ui/Input";
 import Modal from "../ui/Modal";
 import Select from "../ui/Select";
+import ReportLogoPreview from "./ReportLogoPreview";
 
 interface Props {
   user: User;
@@ -165,6 +166,8 @@ export default function ExportPdfModal({
         )}
 
         {/* Period */}
+        {/* The logo the PDF will show for this business unit (IT: always their own unit) */}
+        <ReportLogoPreview bu={isAdmin ? bu || "all" : "all"} />
         <fieldset>
           <legend className="mb-1.5 text-sm font-medium text-slate-700">
             Period{" "}

@@ -46,3 +46,21 @@ export function exportPdf(listFilters: TicketQuery, o: ExportOptions) {
 
   return api.download(`/export/tickets.pdf?${p.toString()}`, "tickets.pdf");
 }
+
+/** What the PDF header will show for a business unit (the same picture or badge the server puts in the PDF). */
+export interface LogoPreview {
+  unit: string;
+  hasImage: boolean;
+  /** A data: address with the checked PNG or JPEG, or null when the PDF will show the badge. */
+  imageDataUrl: string | null;
+  badgeText: string;
+  badgeColor: string;
+  problem: "NO_LOGO" | "UNSUPPORTED_TYPE" | "UNREADABLE" | null;
+}
+
+/** bu = 'all' or a business unit id. */
+export function fetchLogoPreview(bu: string) {
+  return api.get<LogoPreview>(
+    `/export/logo-preview?bu=${encodeURIComponent(bu || "all")}`,
+  );
+}

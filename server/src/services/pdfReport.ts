@@ -1,5 +1,8 @@
 // Builds the ticket report as a PDF (A4, landscape). Used by routes/export.ts.
-// It knows nothing about the database: it receives plain rows, so it can be tested on its own (scripts/pdftest.ts).
+// It knows nothing about the database: it receives plain rows (and the logo bytes), so it can be tested on its own
+// (scripts/pdftest.ts and scripts/logotest.ts).
+// Header: the business unit's logo at the top right (or a colored badge with the unit code when there is no usable
+// picture), the title, and the filters that were applied ("Report for: ... - October 2026").
 // Fonts: the built-in PDF font (English and Malay). If the file server/fonts/report.ttf exists, it is used instead,
 // which makes other languages (for example Chinese) print correctly.
 import fs from "node:fs";
@@ -21,6 +24,14 @@ export const PRIORITY_LABEL: Record<string, string> = {
   URGENT: "Urgent",
 };
 
+/** The mark at the top right of the first page. */
+export interface ReportHeaderLogo {
+  /** A PNG or JPEG that was checked beforehand (lib/logoCheck.ts). null = draw the badge. */
+  image: Buffer | null;
+  badgeText: string; // for example "CCEC"
+  badgeColor: string; // #RRGGBB
+}
+
 export interface ReportRow {
   id: number;
   title: string;
@@ -41,6 +52,7 @@ export interface ReportInput {
   scope: string; // "All business units" or the unit's name
   subtitle?: string; // "Report for: Finance BU - October 2026": the filters applied, shown under the title
   periodLine?: string; // "Tickets created 1 Oct 2026 to 31 Oct 2026"
+  logo?: ReportHeaderLogo;
   filters: string[]; // readable filters, for example ["Status: Open"]
   total: number; // how many tickets match (can be more than rows.length)
   rows: ReportRow[];
@@ -51,6 +63,8 @@ const MARGIN = 36;
 const ROW_H = 15;
 const FONT_SIZE = 7.5;
 const FONT_FILE = path.resolve(process.cwd(), "fonts", "report.ttf");
+const LOGO_W = 150; // the box the logo must fit in (the picture keeps its proportions)
+const LOGO_H = 50;
 
 const INK = "#0f172a";
 const MUTED = "#64748b";
@@ -115,6 +129,43 @@ function fit(doc: Doc, text: string, maxW: number): string {
 
 // ---------------- the report ----------------
 
+/**
+ * The logo (or the badge) in the top right corner. If the picture cannot be drawn for any reason,
+ * the badge is drawn instead, so the report is never missing its header mark and never fails because of it.
+ */
+function drawLogo(
+  doc: Doc,
+  logo: ReportHeaderLogo,
+  x: number,
+  y: number,
+  boldFont: string,
+  clean: (s: string) => string,
+): void {
+  if (logo.image) {
+    try {
+      // "fit" shrinks the picture to fit the box and keeps its proportions; align: 'right' puts it against the right edge
+      doc.image(logo.image, x, y, { fit: [LOGO_W, LOGO_H], align: "right" });
+      return;
+    } catch {
+      /* the picture could not be used: the badge below is drawn instead */
+    }
+  }
+
+  const text = clean(logo.badgeText).trim().slice(0, 6) || "UOA";
+  doc.font(boldFont).fontSize(15);
+  const badgeW = Math.min(LOGO_W, Math.max(56, doc.widthOfString(text) + 28));
+  const bx = x + LOGO_W - badgeW;
+  const color = /^#[0-9a-fA-F]{6}$/.test(logo.badgeColor)
+    ? logo.badgeColor
+    : "#334155";
+  doc.roundedRect(bx, y, badgeW, LOGO_H, 8).fill(color);
+  doc.fillColor("#ffffff").text(text, bx, y + (LOGO_H - 15) / 2 - 1, {
+    width: badgeW,
+    align: "center",
+    lineBreak: false,
+  });
+}
+
 function drawHeaderRow(doc: Doc, y: number, boldFont: string): number {
   doc.rect(MARGIN, y, TABLE_W, ROW_H + 2).fill(HEAD_BG);
   doc.font(boldFont).fontSize(FONT_SIZE).fillColor(INK);
@@ -160,6 +211,19 @@ function draw(doc: Doc, input: ReportInput): void {
 
   const bottom = doc.page.height - 48; // rows stop here; the page number sits below
   const textWidth = doc.page.width - MARGIN * 2;
+  // The header text stops before the logo, so the two can never overlap
+  const headerTextW = input.logo ? textWidth - LOGO_W - 18 : textWidth;
+
+  // ---- the logo (first page only) ----
+  if (input.logo)
+    drawLogo(
+      doc,
+      input.logo,
+      doc.page.width - MARGIN - LOGO_W,
+      MARGIN - 4,
+      bold,
+      clean,
+    );
 
   // ---- title block (first page only) ----
   doc
@@ -175,7 +239,7 @@ function draw(doc: Doc, input: ReportInput): void {
       .font(bold)
       .fontSize(11)
       .fillColor(INK)
-      .text(fit(doc, clean(input.subtitle), textWidth), MARGIN, y, {
+      .text(fit(doc, clean(input.subtitle), headerTextW), MARGIN, y, {
         lineBreak: false,
       });
     y += 18;
@@ -195,7 +259,7 @@ function draw(doc: Doc, input: ReportInput): void {
   ];
   doc.font(regular).fontSize(8.5).fillColor(MUTED);
   for (const line of info) {
-    doc.text(fit(doc, line, textWidth), MARGIN, y, { lineBreak: false });
+    doc.text(fit(doc, line, headerTextW), MARGIN, y, { lineBreak: false });
     y += 12;
   }
   y += 6;
@@ -284,14 +348,25 @@ export function buildTicketReportPdf(input: ReportInput): Promise<Buffer> {
       },
     });
     const chunks: Buffer[] = [];
+
+    // A safety net: if the PDF library ever stops without finishing, the request fails instead of waiting forever
+    const timer = setTimeout(
+      () => reject(new Error("The PDF took too long to build.")),
+      45_000,
+    );
+    const finish = (action: () => void) => {
+      clearTimeout(timer);
+      action();
+    };
+
     doc.on("data", (c: Buffer) => chunks.push(c));
-    doc.on("end", () => resolve(Buffer.concat(chunks)));
-    doc.on("error", reject);
+    doc.on("end", () => finish(() => resolve(Buffer.concat(chunks))));
+    doc.on("error", (err) => finish(() => reject(err)));
     try {
       draw(doc, input);
       doc.end();
     } catch (err) {
-      reject(err);
+      finish(() => reject(err));
     }
   });
 }

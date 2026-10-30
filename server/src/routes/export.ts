@@ -20,6 +20,7 @@ import {
   resolveBusinessUnit,
   resolvePeriod,
 } from "../services/reportPeriod";
+import { reportLogoFor } from "../services/unitLogo";
 import { buildTicketFilters } from "../services/ticketFilters";
 import { SUMMARY_COLUMNS, TICKET_JOINS } from "../services/ticketQueries";
 
@@ -51,6 +52,9 @@ router.get(
     const unit = await resolveBusinessUnit(user, q.bu ?? q.unit);
     const period = resolvePeriod(q);
     const tz = await dbTimeZone(q.tz);
+    // The logo for this report: the chosen unit's own logo (IT: always their own unit's), the group logo for "all units",
+    // or a colored badge when there is no usable picture. Never fails the export.
+    const logo = await reportLogoFor(unit.id);
 
     // 2) Visibility (ticketScope, first) and the other list filters, from the ONE shared builder
     const { conds, params } = buildTicketFilters(user, {
@@ -91,7 +95,8 @@ router.get(
     if (q.active === "1") filters.push("Active tickets");
     if (q.overdue === "1") filters.push("Overdue tickets");
     const createdWithin = qstr(q.created_within);
-    if (createdWithin) filters.push(`Created within last ${createdWithin} days`);
+    if (createdWithin)
+      filters.push(`Created within last ${createdWithin} days`);
     const assignee = qstr(q.assignee);
     if (assignee === "unassigned") filters.push("Unassigned");
     if (assignee === "me") filters.push("Assigned to me");
@@ -112,6 +117,11 @@ router.get(
       filters,
       total,
       rows: r.rows,
+      logo: {
+        image: logo.image,
+        badgeText: logo.badgeText,
+        badgeColor: logo.badgeColor,
+      },
     });
 
     // Leave a trace of who exported what
@@ -135,6 +145,34 @@ router.get(
     );
     res.setHeader("Cache-Control", "no-store");
     res.send(pdf);
+  }),
+);
+
+// GET /api/export/logo-preview?bu=all|<id>
+// Exactly what the PDF header will show for this choice (the same checked picture, or the same badge),
+// so the export window can preview it. IT can only ask about their own unit (another unit gives 403).
+router.get(
+  "/logo-preview",
+  ah(async (req, res) => {
+    const unit = await resolveBusinessUnit(
+      req.user!,
+      (req.query as Record<string, unknown>).bu,
+    );
+    const logo = await reportLogoFor(unit.id);
+
+    res.setHeader("Cache-Control", "no-store");
+    res.json({
+      unit: unit.label,
+      hasImage: logo.image !== null,
+      // The picture travels inside the answer, so no extra picture address has to be protected
+      imageDataUrl:
+        logo.image && logo.mime
+          ? `data:${logo.mime};base64,${logo.image.toString("base64")}`
+          : null,
+      badgeText: logo.badgeText,
+      badgeColor: logo.badgeColor,
+      problem: logo.problem,
+    });
   }),
 );
 

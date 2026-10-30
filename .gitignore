@@ -13,3 +13,5 @@ server/uploads/*
 # Build output and logs
 client/dist/
 *.log
+
+start-dev.bat

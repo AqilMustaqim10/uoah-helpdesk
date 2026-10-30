@@ -24,6 +24,7 @@ import exportRoutes from "./routes/export";
 import userRoutes from "./routes/users";
 import userMfaRoutes from "./routes/usersMfa";
 import unitRoutes from "./routes/units";
+import departmentRoutes from "./routes/departments";
 import kbRoutes from "./routes/kb";
 import kbSuggestRoutes from "./routes/kbSuggest";
 import auditRoutes from "./routes/audit";
@@ -108,6 +109,9 @@ app.use("/api/audit", requireAuth, requireRole("ADMIN"), auditRoutes);
 // Branding: the logo is for any logged-in user of that unit;
 // changes are ADMIN only (checked inside)
 app.use("/api/units", requireAuth, unitRoutes);
+
+// Department management: ADMIN only
+app.use("/api/departments", requireAuth, requireRole("ADMIN"), departmentRoutes);
 
 // Knowledge base. The "suggest" route MUST come first,
 // or "suggest" would be read as an article id.
