@@ -143,6 +143,9 @@ const base: ReportInput = {
   periodLine: "Tickets created 1 Oct 2026 to 31 Oct 2026",
   filters: [],
   total: 3,
+  agentPerformance: [
+    { agent_id: 7, agent_name: "Test Agent", total_closed: 2 },
+  ],
   rows: [1, 2, 3].map((n) => ({
     id: n,
     title: `Test ticket ${n}`,

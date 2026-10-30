@@ -288,6 +288,10 @@ export default function ExportPdfModal({
           <p className="mt-1 text-sm font-semibold text-slate-900">
             Report for: {unitLabel} - {periodSummary(period, date, month, year)}
           </p>
+          <p className="mt-1 text-xs text-slate-500">
+            The performance summary counts tickets resolved or closed during
+            this period, by assigned IT agent.
+          </p>
         </div>
 
         <FormError message={error} />

@@ -138,6 +138,11 @@ export default function TicketModal({
   }
 
   async function move(to: TicketStatus) {
+    if (to === "CLOSED" && data?.ticket.assigned_to == null) {
+      setConfirmClose(false);
+      toast.error("Assign an IT support agent before closing this ticket.");
+      return;
+    }
     await run(
       to,
       () => ticketsApi.setStatus(ticketId, to),

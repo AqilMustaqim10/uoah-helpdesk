@@ -22,6 +22,7 @@ import {
 } from "../services/reportPeriod";
 import { reportLogoFor } from "../services/unitLogo";
 import { buildTicketFilters } from "../services/ticketFilters";
+import { ticketClosuresByAgent } from "../services/ticketPerformance";
 import { SUMMARY_COLUMNS, TICKET_JOINS } from "../services/ticketQueries";
 
 const router = Router();
@@ -84,6 +85,11 @@ router.get(
         LIMIT ${MAX_PDF_ROWS}`,
       params,
     );
+    const agentPerformance = await ticketClosuresByAgent(
+      unit.id,
+      period,
+      tz,
+    );
 
     // 4) A readable list of the OTHER filters (the unit and the period are in the header already)
     const filters: string[] = [];
@@ -117,6 +123,7 @@ router.get(
       filters,
       total,
       rows: r.rows,
+      agentPerformance,
       logo: {
         image: logo.image,
         badgeText: logo.badgeText,

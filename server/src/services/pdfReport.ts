@@ -45,6 +45,12 @@ export interface ReportRow {
   is_overdue: boolean;
 }
 
+export interface ReportAgentPerformance {
+  agent_id: number;
+  agent_name: string;
+  total_closed: number;
+}
+
 export interface ReportInput {
   generatedBy: string;
   generatedAt: Date;
@@ -56,11 +62,13 @@ export interface ReportInput {
   filters: string[]; // readable filters, for example ["Status: Open"]
   total: number; // how many tickets match (can be more than rows.length)
   rows: ReportRow[];
+  agentPerformance: ReportAgentPerformance[];
 }
 
 // ---------------- layout ----------------
 const MARGIN = 36;
 const ROW_H = 15;
+const AGENT_ROW_H = 17;
 const FONT_SIZE = 7.5;
 const FONT_FILE = path.resolve(process.cwd(), "fonts", "report.ttf");
 const LOGO_W = 150; // the box the logo must fit in (the picture keeps its proportions)
@@ -71,6 +79,7 @@ const MUTED = "#64748b";
 const HEAD_BG = "#e2e8f0";
 const STRIPE = "#f8fafc";
 const RED = "#be123c";
+const BORDER = "#cbd5e1";
 
 // Column widths add up to 762 points (the printable width of A4 landscape is 770)
 const COLUMNS = [
@@ -177,6 +186,117 @@ function drawHeaderRow(doc: Doc, y: number, boldFont: string): number {
   return y + ROW_H + 2;
 }
 
+function drawAgentPerformance(
+  doc: Doc,
+  y: number,
+  bottom: number,
+  input: ReportInput,
+  regular: string,
+  bold: string,
+  clean: (s: string) => string,
+): number {
+  const x = MARGIN;
+  const width = doc.page.width - MARGIN * 2;
+  const countWidth = 120;
+  const drawColumns = (at: number) => {
+    doc.rect(x, at, width, AGENT_ROW_H).fill(HEAD_BG);
+    doc.font(bold).fontSize(FONT_SIZE).fillColor(INK);
+    doc.text("IT support agent", x + 6, at + 5, { lineBreak: false });
+    doc.text("Closed / resolved", x + width - countWidth, at + 5, {
+      width: countWidth - 6,
+      align: "right",
+      lineBreak: false,
+    });
+  };
+  const total = input.agentPerformance.reduce(
+    (sum, agent) => sum + agent.total_closed,
+    0,
+  );
+
+  if (y + 22 + AGENT_ROW_H > bottom) {
+    doc.addPage();
+    y = MARGIN;
+  }
+  doc.roundedRect(x, y, width, 22, 4).fill("#1e293b");
+  doc
+    .font(bold)
+    .fontSize(10)
+    .fillColor("#ffffff")
+    .text("IT Support Performance: Total Tickets Closed", x + 10, y + 6, {
+      lineBreak: false,
+    });
+  y += 22;
+
+    if (y + AGENT_ROW_H > bottom) {
+      doc.addPage();
+      y = MARGIN;
+    }
+    drawColumns(y);
+    y += AGENT_ROW_H;
+
+    if (input.agentPerformance.length === 0) {
+      if (y + AGENT_ROW_H > bottom) {
+        doc.addPage();
+        y = MARGIN;
+      }
+      doc
+        .font(regular)
+      .fontSize(8.5)
+      .fillColor(MUTED)
+      .text("No resolved or closed tickets for this period.", x + 6, y + 5, {
+        lineBreak: false,
+      });
+    y += AGENT_ROW_H;
+  } else {
+    input.agentPerformance.forEach((agent, index) => {
+      if (y + AGENT_ROW_H > bottom) {
+        doc.addPage();
+        y = MARGIN;
+        drawColumns(y);
+        y += AGENT_ROW_H;
+      }
+      if (index % 2 === 1) doc.rect(x, y, width, AGENT_ROW_H).fill(STRIPE);
+      doc
+        .font(regular)
+        .fontSize(8)
+        .fillColor(INK)
+        .text(
+          fit(
+            doc,
+            clean(`${agent.agent_name} (#${agent.agent_id})`),
+            width - countWidth - 12,
+          ),
+          x + 6,
+          y + 5,
+          { width: width - countWidth - 12, lineBreak: false },
+        )
+        .text(String(agent.total_closed), x + width - countWidth, y + 5, {
+          width: countWidth - 6,
+          align: "right",
+          lineBreak: false,
+        });
+      y += AGENT_ROW_H;
+    });
+  }
+
+  if (y + AGENT_ROW_H > bottom) {
+    doc.addPage();
+    y = MARGIN;
+  }
+  doc.rect(x, y, width, AGENT_ROW_H).fill(HEAD_BG);
+  doc.font(bold).fontSize(8).fillColor(INK);
+  doc.text("Total tickets closed or resolved", x + 6, y + 5, {
+    lineBreak: false,
+  });
+  doc.text(String(total), x + width - countWidth, y + 5, {
+    width: countWidth - 6,
+    align: "right",
+    lineBreak: false,
+  });
+  y += AGENT_ROW_H + 10;
+  return y;
+}
+
 function draw(doc: Doc, input: ReportInput): void {
   // Choose the font: your own report.ttf when present, otherwise the built-in one
   let custom = fs.existsSync(FONT_FILE);
@@ -263,6 +383,16 @@ function draw(doc: Doc, input: ReportInput): void {
     y += 12;
   }
   y += 6;
+
+  y = drawAgentPerformance(
+    doc,
+    y,
+    bottom,
+    input,
+    regular,
+    bold,
+    clean,
+  );
 
   // ---- the table ----
   if (input.rows.length === 0) {

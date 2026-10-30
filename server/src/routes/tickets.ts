@@ -279,6 +279,12 @@ router.patch(
       if (!TRANSITIONS[from].includes(to)) {
         throw new HttpError(409, `A ticket cannot move from ${from} to ${to}.`);
       }
+      if (to === "CLOSED" && t.assigned_to == null) {
+        throw new HttpError(
+          409,
+          "Assign an IT support agent before closing this ticket.",
+        );
+      }
 
       await c.query(
         `UPDATE tickets

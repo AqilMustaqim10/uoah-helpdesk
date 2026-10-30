@@ -21,39 +21,39 @@ export async function audit(db: Db, e: AuditEntry): Promise<void> {
     `INSERT INTO audit_log
        (actor_id, ticket_id, business_unit_id, entity_type, entity_id, action, details)
      VALUES (
-       $1, $2,
+       $1::bigint, $2::bigint,
        CASE
          WHEN $7::smallint IS NOT NULL THEN $7::smallint
-         WHEN $3 = 'ticket' OR $2 IS NOT NULL THEN (
+         WHEN $3::text = 'ticket' OR $2::bigint IS NOT NULL THEN (
            SELECT t.business_unit_id
            FROM tickets t
            WHERE t.id = COALESCE(
-             $2,
-             CASE WHEN $4 ~ '^[0-9]+$' THEN $4::bigint END
+             $2::bigint,
+             CASE WHEN $4::text ~ '^[0-9]+$' THEN $4::bigint END
            )
          )
-         WHEN $3 = 'article' THEN (
+         WHEN $3::text = 'article' THEN (
            SELECT a.business_unit_id
            FROM articles a
-           WHERE a.id = CASE WHEN $4 ~ '^[0-9]+$' THEN $4::bigint END
+           WHERE a.id = CASE WHEN $4::text ~ '^[0-9]+$' THEN $4::bigint END
          )
-         WHEN $3 = 'user' THEN (
+         WHEN $3::text = 'user' THEN (
            SELECT u.business_unit_id
            FROM users u
-           WHERE u.id = CASE WHEN $4 ~ '^[0-9]+$' THEN $4::bigint END
+           WHERE u.id = CASE WHEN $4::text ~ '^[0-9]+$' THEN $4::bigint END
          )
-         WHEN $3 = 'unit' THEN (
+         WHEN $3::text = 'unit' THEN (
            SELECT bu.id
            FROM business_units bu
-           WHERE bu.id = CASE WHEN $4 ~ '^[0-9]+$' THEN $4::smallint END
+           WHERE bu.id = CASE WHEN $4::text ~ '^[0-9]+$' THEN $4::smallint END
          )
          ELSE (
            SELECT u.business_unit_id
            FROM users u
-           WHERE u.id = $1
+           WHERE u.id = $1::bigint
          )
        END,
-       $3, $4, $5, $6::jsonb
+       $3::text, $4::text, $5::text, $6::jsonb
      )`,
     [
       e.actorId,

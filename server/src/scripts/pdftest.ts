@@ -39,6 +39,11 @@ buildTicketReportPdf({
   filters: ["Status: Open", 'Search: "printer"'],
   total: 130,
   rows,
+  agentPerformance: [
+    { agent_id: 7, agent_name: "Aqil Mustaqim", total_closed: 42 },
+    { agent_id: 12, agent_name: "Siti Aminah", total_closed: 31 },
+    { agent_id: 19, agent_name: "Daniel Tan", total_closed: 18 },
+  ],
 })
   .then((pdf) => {
     const file = path.join(os.tmpdir(), "helpdesk-sample-report.pdf");
