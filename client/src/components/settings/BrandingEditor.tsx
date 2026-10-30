@@ -185,8 +185,9 @@ export default function BrandingEditor({ unit, onSaved }: Props) {
             </div>
           </div>
           <p className="mt-1.5 text-xs text-slate-500">
-            PNG, JPG or WebP, up to 1 MB. Without a logo the sidebar shows a
-            colored letter.
+            PNG, JPG or WebP, up to 1 MB. PDF reports can only use PNG or JPG
+            logos. Without a usable logo, the sidebar and the PDF show a colored
+            badge with the unit code.
           </p>
         </div>
 
