@@ -5,6 +5,10 @@
 export const ROLES = ["ADMIN", "IT", "USER"] as const;
 export type Role = (typeof ROLES)[number];
 
+export function requiresMfa(role: Role): boolean {
+  return role === "ADMIN" || role === "IT";
+}
+
 // ----- The six business units -----
 export const UNIT_CODES = [
   "CCEC",

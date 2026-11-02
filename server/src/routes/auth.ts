@@ -3,8 +3,8 @@
 //  - login, sign up and forgot password give the SAME answer whether an email exists or not
 //  - new accounts are ALWAYS role USER (the role is never read from the request)
 //  - a password reset signs out every old session (password_changed_at)
-//  - ADMIN and IT (and anyone with two-factor authentication on) do not get a session from the password
-//    alone. They get a short second-step cookie and must finish at /api/auth/2fa.
+//  - ADMIN and IT do not get a session from the password alone. They get a short
+//    second-step cookie and must finish at /api/auth/2fa. USER accounts sign in directly.
 //  - New in step I: sign-up needs a department from the fixed list (config/departments.ts).
 import { Router } from "express";
 import bcrypt from "bcryptjs";
@@ -38,7 +38,7 @@ import {
 } from "../middleware/rateLimit";
 import { issueCode, verifyCode } from "../lib/codes";
 import { sendAccountExistsEmail, sendCodeEmail } from "../services/authMail";
-import { needsMfa } from "../services/mfa";
+import { requiresMfa } from "../config/constants";
 import { publicUser } from "../services/publicUser";
 
 const router = Router();
@@ -125,8 +125,8 @@ router.post(
       throw new HttpError(401, "Invalid email or password.");
     }
 
-    // The password is right. ADMIN, IT and anyone with two-factor authentication on need the second step.
-    if (needsMfa(row.role, !!row.totp_enabled_at)) {
+    // The password is right. Only ADMIN and IT need the second step.
+    if (requiresMfa(row.role)) {
       clearAuthCookie(res); // no session until the second step is done
       setMfaChallengeCookie(res, row.id);
       res.json({ mfa: row.totp_enabled_at ? "verify" : "setup" });

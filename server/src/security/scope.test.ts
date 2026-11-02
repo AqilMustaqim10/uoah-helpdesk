@@ -2,6 +2,7 @@
 // It needs no database and no .env, it just checks the rule functions directly.
 import assert from "node:assert/strict";
 import type { AuthUser } from "../middleware/auth";
+import { requiresMfa } from "../config/constants";
 import {
   ticketScope,
   articleScope,
@@ -28,6 +29,10 @@ const itNoUnit: AuthUser = {
   business_unit_id: null,
 };
 const user: AuthUser = { ...base, id: 4, role: "USER", business_unit_id: 2 };
+
+assert.equal(requiresMfa("ADMIN"), true);
+assert.equal(requiresMfa("IT"), true);
+assert.equal(requiresMfa("USER"), false);
 
 // User management: ADMIN can manage anyone; IT can only manage normal users in their own unit.
 assert.equal(

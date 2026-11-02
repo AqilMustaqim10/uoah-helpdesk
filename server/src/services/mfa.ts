@@ -3,6 +3,7 @@
 import type { Request } from "express";
 import type { Db } from "../db/pool";
 import { audit } from "../db/audit";
+import { requiresMfa } from "../config/constants";
 import { HttpError } from "../lib/http";
 import { decryptSecret } from "../lib/mfaCrypto";
 import { hashRecoveryCode, normalizeRecoveryCode } from "../lib/recoveryCodes";
@@ -33,11 +34,6 @@ export interface MfaUser extends MfaState {
   password_changed_at: Date;
 }
 
-/** ADMIN and IT must use two-factor authentication; so must anyone who has it turned on. */
-export function needsMfa(role: string, enabled: boolean): boolean {
-  return role === "ADMIN" || role === "IT" || enabled;
-}
-
 /**
  * The person who passed the password step and is now entering a code (or setting up).
  * Throws 401 when the second-step cookie is missing or expired, the account was disabled,
@@ -64,7 +60,7 @@ export async function loadChallengeUser(
     Math.floor(new Date(u.password_changed_at).getTime() / 1000) > challenge.iat
   )
     throw new HttpError(401, EXPIRED);
-  if (!needsMfa(u.role, !!u.totp_enabled_at)) throw new HttpError(401, EXPIRED);
+  if (!requiresMfa(u.role)) throw new HttpError(401, EXPIRED);
   return u;
 }
 
