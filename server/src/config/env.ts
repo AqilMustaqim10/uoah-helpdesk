@@ -84,6 +84,8 @@ export const config = {
   ),
   appUrl: optional("APP_URL", "http://localhost:5173").replace(/\/+$/, ""), // used for links in emails
   databaseUrl: required("DATABASE_URL"),
+  groqApiKey: optional("GROQ_API_KEY"),
+  groqModel: optional("GROQ_MODEL", "openai/gpt-oss-120b"),
   jwtSecret, // signs the login cookie
   codeSecret, // hashes the 6-digit email codes and the recovery codes
   mfaKey: mfaKey.toLowerCase(), // encrypts the authenticator (2FA) secrets

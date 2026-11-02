@@ -38,6 +38,8 @@ export const ticketsApi = {
   list: (q: TicketQuery) =>
     api.get<TicketListResponse>(`/tickets?${toQueryString(q)}`),
   get: (id: number) => api.get<TicketDetailResponse>(`/tickets/${id}`),
+  aiSuggest: (id: number) =>
+    api.post<{ suggestion: string }>(`/tickets/${id}/ai-suggest`),
 
   create: (body: {
     title: string;

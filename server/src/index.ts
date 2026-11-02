@@ -15,6 +15,7 @@ import {
 import authRoutes from "./routes/auth";
 import mfaRoutes from "./routes/mfa";
 import ticketRoutes from "./routes/tickets";
+import aiSuggestRoutes from "./routes/aiSuggest";
 import commentRoutes from "./routes/comments";
 import ticketFileRoutes from "./routes/ticketFiles";
 import ticketDeleteRoutes from "./routes/ticketDelete";
@@ -80,6 +81,7 @@ app.use(
   requireAuth,
   itClosedTicketGuard,
   ticketRoutes,
+  aiSuggestRoutes,
   commentRoutes,
   ticketFileRoutes,
   ticketDeleteRoutes,

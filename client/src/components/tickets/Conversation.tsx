@@ -2,12 +2,14 @@
 //  - IT / ADMIN can switch between a public reply and an internal note (amber, never shown to the requester)
 //  - IT / ADMIN can LINK a published knowledge base article to the reply (search box with suggestions);
 //    the reader sees it as a card in the timeline and can click it to read the solution
+//  - IT / ADMIN can request an AI-drafted public reply and choose whether to use it
 //  - files can be attached to a reply: choose them, drop them, or paste a screenshot with Ctrl+V
 //  - a closed ticket shows a notice instead of the box
 // Text is shown as plain text (React escapes it), so nobody can inject HTML.
 import { useState } from "react";
-import { Lock, Send } from "lucide-react";
+import { Lock, Send, Sparkles } from "lucide-react";
 import { ApiError } from "../../api/client";
+import { ticketsApi } from "../../api/tickets";
 import type { LinkableArticle } from "../../api/kb";
 import { useToast } from "../../hooks/useToast";
 import { formatDateTime, timeAgo } from "../../lib/format";
@@ -61,10 +63,30 @@ export default function Conversation({
   const [pending, setPending] = useState<File[]>([]);
   const [linked, setLinked] = useState<LinkableArticle | null>(null); // the article chosen for this reply
   const [busy, setBusy] = useState(false);
+  const [suggestion, setSuggestion] = useState("");
+  const [suggestionBusy, setSuggestionBusy] = useState(false);
   const isNote = mode === "note";
   // A reply can be only text, only files, or only a linked article
   const canSend =
     text.trim().length > 0 || pending.length > 0 || linked !== null;
+
+  async function getSuggestion() {
+    if (!staff || isNote || busy || suggestionBusy) return;
+    setSuggestion("");
+    setSuggestionBusy(true);
+    try {
+      const result = await ticketsApi.aiSuggest(ticketId);
+      setSuggestion(result.suggestion);
+    } catch (err) {
+      toast.error(
+        err instanceof ApiError
+          ? err.message
+          : "Could not generate a suggestion. Please try again.",
+      );
+    } finally {
+      setSuggestionBusy(false);
+    }
+  }
 
   function addPending(chosen: File[]) {
     if (busy) return;
@@ -185,6 +207,7 @@ export default function Conversation({
                 <button
                   type="button"
                   onClick={() => setMode("reply")}
+                  disabled={busy || suggestionBusy}
                   aria-pressed={!isNote}
                   className={cn(
                     "rounded-md px-3 py-1 text-xs font-medium transition-colors",
@@ -197,7 +220,11 @@ export default function Conversation({
                 </button>
                 <button
                   type="button"
-                  onClick={() => setMode("note")}
+                  onClick={() => {
+                    setMode("note");
+                    setSuggestion("");
+                  }}
+                  disabled={busy || suggestionBusy}
                   aria-pressed={isNote}
                   className={cn(
                     "rounded-md px-3 py-1 text-xs font-medium transition-colors",
@@ -208,6 +235,31 @@ export default function Conversation({
                 >
                   Internal note
                 </button>
+              </div>
+            )}
+
+            {suggestion && !isNote && (
+              <div
+                className="space-y-2 rounded-xl border border-violet-200 bg-violet-50 p-3 dark:border-violet-800 dark:bg-violet-950"
+                aria-live="polite"
+              >
+                <p className="text-xs font-semibold text-violet-900 dark:text-violet-100">
+                  AI suggestion preview
+                </p>
+                <p className="whitespace-pre-wrap text-sm text-slate-700">
+                  {suggestion}
+                </p>
+                <Button
+                  size="sm"
+                  variant="secondary"
+                  disabled={busy || suggestionBusy}
+                  onClick={() => {
+                    setText(suggestion);
+                    setSuggestion("");
+                  }}
+                >
+                  Use this suggestion
+                </Button>
               </div>
             )}
 
@@ -280,18 +332,32 @@ export default function Conversation({
 
             <div className="flex items-center justify-between gap-3">
               <p className="text-xs text-slate-400">Ctrl + Enter to send</p>
-              <Button
-                size="sm"
-                icon={<Send className="h-4 w-4" />}
-                loading={busy}
-                disabled={!canSend}
-                onClick={() => void send()}
-                className={
-                  isNote ? "bg-amber-500 hover:bg-amber-500" : undefined
-                }
-              >
-                {isNote ? "Add note" : "Send reply"}
-              </Button>
+              <div className="flex flex-wrap justify-end gap-2">
+                {staff && !isNote && (
+                  <Button
+                    size="sm"
+                    variant="secondary"
+                    icon={<Sparkles className="h-4 w-4" />}
+                    loading={suggestionBusy}
+                    disabled={busy}
+                    onClick={() => void getSuggestion()}
+                  >
+                    AI Suggestion
+                  </Button>
+                )}
+                <Button
+                  size="sm"
+                  icon={<Send className="h-4 w-4" />}
+                  loading={busy}
+                  disabled={!canSend || suggestionBusy}
+                  onClick={() => void send()}
+                  className={
+                    isNote ? "bg-amber-500 hover:bg-amber-500" : undefined
+                  }
+                >
+                  {isNote ? "Add note" : "Send reply"}
+                </Button>
+              </div>
             </div>
           </div>
         )}

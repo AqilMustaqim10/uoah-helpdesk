@@ -67,3 +67,16 @@ export const writeLimiter = rateLimit({
     error: "You are doing that too often. Please wait a few minutes.",
   },
 });
+
+/** Gemini suggestions: max 10 requests per 15 minutes per logged-in user. */
+export const aiSuggestionLimiter = rateLimit({
+  windowMs: FIFTEEN_MIN,
+  limit: 10,
+  standardHeaders: true,
+  legacyHeaders: false,
+  keyGenerator: (req) => `user-${req.user?.id ?? "anon"}`,
+  message: {
+    error:
+      "AI suggestions are being requested too often. Please wait a few minutes.",
+  },
+});

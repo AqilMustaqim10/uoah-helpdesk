@@ -150,7 +150,7 @@ export default function TicketModal({
     );
   }
 
-  const staff = user.role !== "USER";
+  const staff = user.role === "ADMIN" || user.role === "IT";
   const closed = data?.ticket.status === "CLOSED";
   const canEdit = staff && !closed;
 
