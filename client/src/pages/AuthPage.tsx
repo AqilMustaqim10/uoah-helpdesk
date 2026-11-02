@@ -74,8 +74,11 @@ export default function AuthPage() {
               className="mb-2 h-9 w-auto max-w-36 object-contain dark:brightness-0 dark:invert"
             />
             <h1 className="text-base font-bold leading-tight tracking-tight text-slate-900">
-              Enterprise IT Helpdesk
+              UDESK
             </h1>
+            <p className="mt-1 text-xs leading-tight text-slate-600">
+              UOAH Digital Support &amp; Knowledge
+            </p>
           </div>
 
           <div
