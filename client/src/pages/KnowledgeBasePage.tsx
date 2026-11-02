@@ -105,7 +105,12 @@ export default function KnowledgeBasePage({ user }: { user: User }) {
       <FormError message={error} />
 
       {firstLoad ? (
-        <div className="grid gap-3 md:grid-cols-2" aria-busy="true">
+        <div
+          className="grid gap-3 md:grid-cols-2"
+          aria-busy="true"
+          role="status"
+          aria-label="Loading articles"
+        >
           {Array.from({ length: 4 }).map((_, i) => (
             <Skeleton key={i} className="h-28" />
           ))}
@@ -126,7 +131,10 @@ export default function KnowledgeBasePage({ user }: { user: User }) {
               </Button>
             )}
           </div>
-          <div className={cn("transition-opacity", loading && "opacity-60")}>
+          <div
+            aria-busy={loading}
+            className={cn("transition-opacity duration-150", loading && "opacity-60")}
+          >
             <ArticleList
               articles={data.articles}
               showStatus={staff}

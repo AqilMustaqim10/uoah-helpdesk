@@ -1,5 +1,6 @@
 // Draws the current toast (bottom-right; full width on phones).
 import { AlertCircle, CheckCircle2, Info, X } from "lucide-react";
+import { AnimatePresence, m, useReducedMotion } from "framer-motion";
 import type { ToastItem, ToastKind } from "../../types";
 import { cn } from "../../lib/cn";
 
@@ -22,18 +23,24 @@ export default function ToastViewport({
   toast: ToastItem | null;
   onClose: () => void;
 }) {
+  const reduceMotion = useReducedMotion();
+
   return (
     <div
       aria-live="polite"
       className="pointer-events-none fixed inset-x-4 bottom-4 z-[100] flex justify-end sm:inset-x-auto sm:right-4"
     >
-      {toast && (
-        // key={toast.id}: a new toast re-plays the slide-in animation
-        <div
+      <AnimatePresence mode="wait">
+        {toast && (
+        <m.div
           key={toast.id}
+          initial={reduceMotion ? false : { opacity: 0, y: 12 }}
+          animate={{ opacity: 1, y: 0 }}
+          exit={reduceMotion ? { opacity: 0 } : { opacity: 0, y: 8 }}
+          transition={{ duration: reduceMotion ? 0 : 0.18, ease: "easeOut" }}
           role={toast.kind === "error" ? "alert" : "status"}
           className={cn(
-            "pointer-events-auto flex w-full max-w-sm animate-slide-in items-start gap-3 rounded-xl border px-4 py-3 shadow-lg",
+            "pointer-events-auto flex w-full max-w-sm items-start gap-3 rounded-xl border px-4 py-3 shadow-lg",
             STYLES[toast.kind],
           )}
         >
@@ -50,8 +57,9 @@ export default function ToastViewport({
           >
             <X className="h-4 w-4" />
           </button>
-        </div>
-      )}
+        </m.div>
+        )}
+      </AnimatePresence>
     </div>
   );
 }

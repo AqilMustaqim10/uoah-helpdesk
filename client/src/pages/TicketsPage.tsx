@@ -147,6 +147,8 @@ export default function TicketsPage({
         <div
           className="space-y-px overflow-hidden rounded-2xl border border-slate-200 bg-white"
           aria-busy="true"
+          role="status"
+          aria-label="Loading tickets"
         >
           {Array.from({ length: 5 }).map((_, i) => (
             <div key={i} className="space-y-2 px-4 py-4">
@@ -175,7 +177,10 @@ export default function TicketsPage({
           </div>
 
           {/* Slightly dimmed while a new page is loading */}
-          <div className={cn("transition-opacity", loading && "opacity-60")}>
+          <div
+            aria-busy={loading}
+            className={cn("transition-opacity duration-150", loading && "opacity-60")}
+          >
             <TicketList
               tickets={data.tickets}
               role={user.role}

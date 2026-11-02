@@ -11,6 +11,7 @@ import {
   useState,
   type ReactNode,
 } from "react";
+import { AnimatePresence, m, useReducedMotion } from "framer-motion";
 import type { TabKey, TicketQuery, User } from "../../types";
 import { TAB_STORAGE_KEY, defaultTabFor, tabsForRole } from "../../lib/nav";
 import { getStored, setStored } from "../../lib/storage";
@@ -31,6 +32,7 @@ const COLLAPSED_KEY = "sidebarCollapsed";
 
 export default function AppShell({ user }: { user: User }) {
   const { logout } = useAuth();
+  const reduceMotion = useReducedMotion();
 
   const tabs = useMemo(() => tabsForRole(user.role), [user.role]);
 
@@ -155,10 +157,18 @@ export default function AppShell({ user }: { user: User }) {
           onLogout={logout}
         />
         <main className="flex-1 overflow-y-auto p-4 sm:p-6">
-          {/* key={tab}: switching tabs replays a soft fade-in. resetKey: a crashed page recovers when you change tab. */}
-          <div key={current.key} className="mx-auto max-w-6xl animate-fade-in">
-            <ErrorBoundary resetKey={current.key}>{page()}</ErrorBoundary>
-          </div>
+          <AnimatePresence mode="wait" initial={false}>
+            <m.div
+              key={current.key}
+              initial={reduceMotion ? false : { opacity: 0, y: 6 }}
+              animate={{ opacity: 1, y: 0 }}
+              exit={{ opacity: 0, y: -4 }}
+              transition={{ duration: reduceMotion ? 0 : 0.16, ease: "easeOut" }}
+              className="mx-auto max-w-6xl"
+            >
+              <ErrorBoundary resetKey={current.key}>{page()}</ErrorBoundary>
+            </m.div>
+          </AnimatePresence>
         </main>
       </div>
 

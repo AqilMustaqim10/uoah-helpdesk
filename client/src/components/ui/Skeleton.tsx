@@ -5,7 +5,10 @@ export default function Skeleton({ className }: { className?: string }) {
   return (
     <div
       aria-hidden
-      className={cn("animate-shimmer rounded-lg bg-slate-100", className)}
+      className={cn(
+        "animate-shimmer rounded-lg bg-slate-100 motion-reduce:animate-none",
+        className,
+      )}
     />
   );
 }

@@ -38,8 +38,8 @@ export default function Button({
       type={type}
       disabled={disabled || loading}
       className={cn(
-        "inline-flex items-center justify-center gap-2 rounded-lg font-medium transition",
-        "active:scale-[0.98] disabled:cursor-not-allowed disabled:opacity-60 disabled:active:scale-100",
+        "inline-flex items-center justify-center gap-2 rounded-lg font-medium transition duration-150 ease-out",
+        "hover:-translate-y-px active:translate-y-0 active:scale-[0.98] disabled:cursor-not-allowed disabled:opacity-60 disabled:hover:translate-y-0 disabled:active:scale-100 motion-reduce:transform-none motion-reduce:transition-none",
         VARIANTS[variant],
         SIZES[size],
         className,

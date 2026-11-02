@@ -1,6 +1,7 @@
 // The left menu. On desktop it can collapse to icons; on phones it slides in over the page.
 // The header shows ONLY the unit logo (no text).
 import { PanelLeftClose, PanelLeftOpen } from "lucide-react";
+import { m, useReducedMotion } from "framer-motion";
 import type { Branding, TabKey } from "../../types";
 import type { TabDef } from "../../lib/nav";
 import { cn } from "../../lib/cn";
@@ -25,6 +26,8 @@ export default function Sidebar({
   onToggleCollapsed,
   mobileOpen,
 }: Props) {
+  const reduceMotion = useReducedMotion();
+
   return (
     <aside
       className={cn(
@@ -64,15 +67,25 @@ export default function Sidebar({
               aria-current={isActive ? "page" : undefined}
               title={collapsed ? t.label : undefined}
               className={cn(
-                "flex h-10 w-full items-center gap-3 rounded-lg px-3 text-sm font-medium transition-colors",
-                isActive
-                  ? "bg-brand text-onbrand shadow-sm"
-                  : "text-slate-600 hover:bg-slate-100",
+                "relative isolate flex h-10 w-full items-center gap-3 rounded-lg px-3 text-sm font-medium transition-colors",
+                isActive ? "text-onbrand" : "text-slate-600 hover:bg-slate-100",
                 collapsed && "md:justify-center md:px-0",
               )}
             >
-              <Icon className="h-5 w-5 shrink-0" aria-hidden />
-              <span className={cn("truncate", collapsed && "md:hidden")}>
+              {isActive &&
+                (reduceMotion ? (
+                  <span className="absolute inset-0 -z-10 rounded-lg bg-brand shadow-sm" />
+                ) : (
+                  <m.span
+                    layoutId="sidebar-active-tab"
+                    className="absolute inset-0 -z-10 rounded-lg bg-brand shadow-sm"
+                    transition={{ type: "spring", stiffness: 500, damping: 38 }}
+                  />
+                ))}
+              <Icon className="relative h-5 w-5 shrink-0" aria-hidden />
+              <span
+                className={cn("relative truncate", collapsed && "md:hidden")}
+              >
                 {t.label}
               </span>
             </button>
