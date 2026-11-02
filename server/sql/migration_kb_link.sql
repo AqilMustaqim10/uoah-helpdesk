@@ -1,6 +1,6 @@
 -- Lets a reply carry a link to a knowledge base article. Run ONCE as the postgres user:
 --   psql -U postgres -d uoa_helpdesk -f server\sql\migration_kb_link.sql
--- Articles are never deleted (only archived), so the link can never point at nothing.
+-- When an article is deleted, the application clears linked_kb_id before removing it.
 BEGIN;
 
 ALTER TABLE comments ADD COLUMN linked_kb_id BIGINT REFERENCES articles(id);

@@ -104,7 +104,8 @@ export function canSeeTicketRow(
 /**
  * Knowledge-base visibility (same idea as ticketScope):
  *   ADMIN -> every article
- *   IT    -> all articles of their own unit (any status) + published global articles
+ *   IT    -> all articles of their own unit (any status), published global articles,
+ *            and their own global articles (any status)
  *   USER  -> published articles that are global or in their own unit
  */
 export function articleScope(
@@ -118,13 +119,13 @@ export function articleScope(
     case "IT":
       if (user.business_unit_id == null) {
         return {
-          sql: `(${alias}.business_unit_id IS NULL AND ${alias}.status = 'PUBLISHED')`,
-          params: [],
+          sql: `(${alias}.business_unit_id IS NULL AND (${alias}.status = 'PUBLISHED' OR ${alias}.created_by = $${nextParam}))`,
+          params: [user.id],
         };
       }
       return {
-        sql: `(${alias}.business_unit_id = $${nextParam} OR (${alias}.business_unit_id IS NULL AND ${alias}.status = 'PUBLISHED'))`,
-        params: [user.business_unit_id],
+        sql: `(${alias}.business_unit_id = $${nextParam} OR (${alias}.business_unit_id IS NULL AND (${alias}.status = 'PUBLISHED' OR ${alias}.created_by = $${nextParam + 1})))`,
+        params: [user.business_unit_id, user.id],
       };
     case "USER":
       if (user.business_unit_id == null) {
@@ -142,13 +143,24 @@ export function articleScope(
   }
 }
 
-/** Who may create or edit an article in a unit? (null unit = global, ADMIN only.) */
+/** Who may create or edit an article in a unit? IT may publish global articles they authored. */
 export function canWriteArticle(
   user: AuthUser,
   articleUnitId: number | null,
+  authorId?: number,
 ): boolean {
   if (user.role === "ADMIN") return true;
   if (user.role === "IT")
-    return articleUnitId != null && articleUnitId === user.business_unit_id;
+    return articleUnitId === null
+      ? authorId === user.id
+      : articleUnitId === user.business_unit_id;
   return false;
+}
+
+/** Permanent deletion is limited to the author; ADMIN can delete any article. */
+export function canDeleteArticle(
+  user: AuthUser,
+  authorId: number,
+): boolean {
+  return user.role === "ADMIN" || (user.role === "IT" && authorId === user.id);
 }

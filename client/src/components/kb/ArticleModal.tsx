@@ -2,7 +2,7 @@
 //  - articleId = null  -> starts with the empty "New article" form
 //  - otherwise         -> loads the article; people who may edit see an Edit button
 import { useEffect, useState } from "react";
-import { AlertCircle, Globe2, Pencil } from "lucide-react";
+import { AlertCircle, Globe2, Pencil, Trash2 } from "lucide-react";
 import { ApiError } from "../../api/client";
 import { kbApi } from "../../api/kb";
 import { useToast } from "../../hooks/useToast";
@@ -14,6 +14,7 @@ import Skeleton from "../ui/Skeleton";
 import ArticleAttachments from "./ArticleAttachments";
 import ArticleForm from "./ArticleForm";
 import ArticleStatusBadge from "./ArticleStatusBadge";
+import ConfirmModal from "../ui/ConfirmModal";
 
 interface Props {
   user: User;
@@ -34,6 +35,8 @@ export default function ArticleModal({
   const [data, setData] = useState<ArticleDetailResponse | null>(null);
   const [editing, setEditing] = useState(articleId === null);
   const [error, setError] = useState("");
+  const [deleteOpen, setDeleteOpen] = useState(false);
+  const [deleteBusy, setDeleteBusy] = useState(false);
 
   // Load the article. A missing article and one you may not see look the same: "not found".
   useEffect(() => {
@@ -61,6 +64,24 @@ export default function ArticleModal({
     setData({ ...result, files: result.files ?? [] });
     onChanged();
     toast.success(message);
+  }
+
+  async function confirmDelete() {
+    if (id === null || deleteBusy) return;
+    setDeleteBusy(true);
+    try {
+      await kbApi.delete(id);
+      onChanged();
+      toast.success("Article deleted");
+      onClose();
+    } catch (err) {
+      toast.error(
+        err instanceof ApiError
+          ? err.message
+          : "Could not delete the article. Please try again.",
+      );
+      setDeleteBusy(false);
+    }
   }
 
   const label = data
@@ -127,16 +148,31 @@ export default function ArticleModal({
               {data.article.editor_name} on{" "}
               {formatDateTime(data.article.updated_at)}.
             </p>
-            {data.article.can_edit && (
-              <div className="mt-3">
-                <Button
-                  size="sm"
-                  variant="secondary"
-                  icon={<Pencil className="h-4 w-4" />}
-                  onClick={() => setEditing(true)}
-                >
-                  Edit
-                </Button>
+            {(data.article.can_edit ||
+              user.role === "ADMIN" ||
+              data.article.created_by === user.id) && (
+              <div className="mt-3 flex flex-wrap gap-2">
+                {data.article.can_edit && (
+                  <Button
+                    size="sm"
+                    variant="secondary"
+                    icon={<Pencil className="h-4 w-4" />}
+                    onClick={() => setEditing(true)}
+                  >
+                    Edit
+                  </Button>
+                )}
+                {(user.role === "ADMIN" ||
+                  data.article.created_by === user.id) && (
+                  <button
+                    type="button"
+                    onClick={() => setDeleteOpen(true)}
+                    className="inline-flex h-9 items-center gap-2 rounded-lg border border-rose-200 bg-rose-50 px-3 text-sm font-medium text-rose-700 transition hover:bg-rose-100"
+                  >
+                    <Trash2 className="h-4 w-4" aria-hidden />
+                    Delete
+                  </button>
+                )}
               </div>
             )}
           </header>
@@ -168,6 +204,17 @@ export default function ArticleModal({
             />
           </div>
         </div>
+      )}
+      {deleteOpen && data && (
+        <ConfirmModal
+          title={`Delete "${data.article.title}"?`}
+          message="This permanently deletes the article and its attachments. Any ticket replies linked to it will keep their text, but the article link will be removed."
+          confirmLabel="Delete article"
+          danger
+          busy={deleteBusy}
+          onConfirm={() => void confirmDelete()}
+          onClose={() => !deleteBusy && setDeleteOpen(false)}
+        />
       )}
     </Modal>
   );

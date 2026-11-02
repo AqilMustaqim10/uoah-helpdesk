@@ -283,7 +283,7 @@ export interface ArticleQuery {
   page: number;
 }
 
-/** What the editor sends. business_unit_id: null = global (ADMIN only). */
+/** What the editor sends. business_unit_id: null = global (IT/ADMIN). */
 export interface ArticleInput {
   title: string;
   body: string;

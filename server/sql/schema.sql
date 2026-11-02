@@ -223,6 +223,7 @@ CREATE INDEX article_files_article_idx ON article_files (article_id);
 -- The app connects as helpdesk_app, which can only do what is listed here.
 GRANT SELECT, INSERT, UPDATE ON business_units, users, tickets, comments,
       articles, processed_messages TO helpdesk_app;
+GRANT DELETE ON articles TO helpdesk_app;
 GRANT SELECT, INSERT, UPDATE, DELETE ON email_codes, email_rejections,
       ticket_files, article_files TO helpdesk_app;
 GRANT SELECT, INSERT ON audit_log TO helpdesk_app;     -- no UPDATE/DELETE, ever

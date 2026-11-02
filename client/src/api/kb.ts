@@ -42,6 +42,7 @@ export const kbApi = {
   create: (body: ArticleInput) => api.post<ArticleDetailResponse>("/kb", body),
   update: (id: number, body: Partial<ArticleInput>) =>
     api.patch<ArticleDetailResponse>(`/kb/${id}`, body),
+  delete: (id: number) => api.del<void>(`/kb/${id}`),
 
   /** Up to 5 published articles that may answer the question in this title. */
   suggest: (q: string) =>

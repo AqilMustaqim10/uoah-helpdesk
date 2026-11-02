@@ -1,6 +1,6 @@
 // The article editor form (used for both "New article" and "Edit").
-//  - ADMIN chooses the unit (or "All units" = global)
-//  - IT always writes for their own unit, so there is no unit field
+//  - ADMIN chooses the unit (or "Global" = all units)
+//  - IT chooses their own unit or Global
 // The server repeats every check and decides who may write where.
 import { useEffect, useState, type FormEvent } from "react";
 import { authApi } from "../../api/auth";
@@ -164,18 +164,27 @@ export default function ArticleForm({
             </option>
           ))}
         </Select>
-        {isAdmin && (
+        {user.role !== "USER" && (
           <Select
             label="Visible to"
             value={unitId}
             onChange={(e) => setUnitId(e.target.value)}
           >
-            <option value="">All units (global)</option>
-            {units.map((u) => (
-              <option key={u.id} value={u.id}>
-                {u.name} ({u.code})
-              </option>
-            ))}
+            <option value="">Global (all units)</option>
+            {isAdmin
+              ? units.map((u) => (
+                  <option key={u.id} value={u.id}>
+                    {u.name} ({u.code})
+                  </option>
+                ))
+              : user.business_unit_id !== null && (
+                  <option value={user.business_unit_id}>
+                    My business unit
+                    {user.branding
+                      ? `: ${user.branding.name} (${user.branding.code})`
+                      : ""}
+                  </option>
+                )}
           </Select>
         )}
       </div>

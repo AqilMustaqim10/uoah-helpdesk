@@ -1,8 +1,8 @@
 // Knowledge base: articles with tags, status and attachments. Mounted at /api/kb (login required).
 //  - what you can SEE comes from articleScope() (out of scope = 404)
 //  - what you can WRITE comes from canWriteArticle() (visible but read-only = 403)
-//  - IT writes only in their own unit, ADMIN anywhere (including "global"), USER reads published only
-//  - articles are never deleted; use status ARCHIVED
+//  - IT writes in their own unit or globally, ADMIN anywhere, USER reads published only
+//  - IT may permanently delete their own articles; ADMIN may delete any article
 import { Router } from "express";
 import { pool, query, withTx } from "../db/pool";
 import type { Db } from "../db/pool";
@@ -13,7 +13,11 @@ import { escapeLike } from "../lib/sql";
 import { ARTICLE_STATUSES, FILE_LIMITS, PAGINATION } from "../config/constants";
 import type { AuthUser } from "../middleware/auth";
 import { writeLimiter } from "../middleware/rateLimit";
-import { articleScope, canWriteArticle } from "../security/scope";
+import {
+  articleScope,
+  canDeleteArticle,
+  canWriteArticle,
+} from "../security/scope";
 import { sendStoredFile } from "../services/sendFile";
 import {
   prepareFiles,
@@ -101,7 +105,10 @@ async function buildArticleDetail(db: Db, user: AuthUser, id: number) {
   );
 
   return {
-    article: { ...row, can_edit: canWriteArticle(user, row.business_unit_id) },
+    article: {
+      ...row,
+      can_edit: canWriteArticle(user, row.business_unit_id, row.created_by),
+    },
     files: files.rows,
   };
 }
@@ -112,11 +119,11 @@ const articleWritable = ah(async (req, _res, next) => {
   const id = idParam(req.params.id);
   const scope = articleScope(user, 2, "a");
   const r = await query(
-    `SELECT a.business_unit_id FROM articles a WHERE a.id = $1 AND ${scope.sql}`,
+    `SELECT a.business_unit_id, a.created_by FROM articles a WHERE a.id = $1 AND ${scope.sql}`,
     [id, ...scope.params],
   );
   if (!r.rows[0]) throw new HttpError(404, "Not found");
-  if (!canWriteArticle(user, r.rows[0].business_unit_id))
+  if (!canWriteArticle(user, r.rows[0].business_unit_id, r.rows[0].created_by))
     throw new HttpError(403, "You cannot change this article.");
   next();
 });
@@ -163,7 +170,7 @@ router.delete(
     const removed = await withTx(async (c) => {
       const scope = articleScope(user, 2, "a");
       const r = await c.query(
-        `SELECT f.id, f.article_id, f.original_name, f.stored_name, a.business_unit_id
+        `SELECT f.id, f.article_id, f.original_name, f.stored_name, a.business_unit_id, a.created_by
            FROM article_files f
            JOIN articles a ON a.id = f.article_id
           WHERE f.id = $1 AND ${scope.sql}
@@ -172,7 +179,7 @@ router.delete(
       );
       const f = r.rows[0];
       if (!f) throw new HttpError(404, "Not found");
-      if (!canWriteArticle(user, f.business_unit_id))
+      if (!canWriteArticle(user, f.business_unit_id, f.created_by))
         throw new HttpError(403, "You cannot change this article.");
 
       await c.query("DELETE FROM article_files WHERE id = $1", [fileId]);
@@ -283,7 +290,7 @@ router.post(
         : oneOf(req.body.status, ARTICLE_STATUSES, "status");
     const tags = parseTags(req.body?.tags);
 
-    // IT articles go to the IT person's own unit. ADMIN chooses (empty = global, for all units).
+    // IT chooses their own unit or global. ADMIN may choose any unit or global.
     const unitId =
       req.body?.business_unit_id === undefined
         ? user.role === "IT"
@@ -291,10 +298,10 @@ router.post(
           : null
         : await parseUnit(pool, req.body.business_unit_id);
 
-    if (!canWriteArticle(user, unitId)) {
+    if (!canWriteArticle(user, unitId, user.id)) {
       throw new HttpError(
         403,
-        "You can only write articles for your own business unit.",
+        "You can only write articles for your own business unit or globally.",
       );
     }
 
@@ -343,7 +350,7 @@ router.patch(
     await withTx(async (c) => {
       const scope = articleScope(user, 2, "a");
       const r = await c.query(
-        `SELECT a.id, a.status, a.business_unit_id
+        `SELECT a.id, a.status, a.business_unit_id, a.created_by
            FROM articles a
           WHERE a.id = $1 AND ${scope.sql}
           FOR UPDATE OF a`,
@@ -351,7 +358,7 @@ router.patch(
       );
       const cur = r.rows[0];
       if (!cur) throw new HttpError(404, "Not found");
-      if (!canWriteArticle(user, cur.business_unit_id))
+      if (!canWriteArticle(user, cur.business_unit_id, cur.created_by))
         throw new HttpError(403, "You cannot change this article.");
 
       // Build the UPDATE only from the fields that were sent (column names come from this code, never from users)
@@ -386,8 +393,8 @@ router.patch(
       if (b.tags !== undefined) set("tags", parseTags(b.tags), "tags");
       if (b.business_unit_id !== undefined) {
         const unit = await parseUnit(c, b.business_unit_id);
-        // IT cannot move an article to another unit or make it global
-        if (!canWriteArticle(user, unit))
+        // IT may move articles within their unit or make their own article global.
+        if (!canWriteArticle(user, unit, cur.created_by))
           throw new HttpError(403, "You cannot move this article there.");
         set("business_unit_id", unit, "unit");
       }
@@ -420,6 +427,54 @@ router.patch(
 );
 
 // ---------------------------------------------------------------------------
+// DELETE /api/kb/:id
+// ---------------------------------------------------------------------------
+router.delete(
+  "/:id",
+  writeLimiter,
+  ah(async (req, res) => {
+    const user = req.user!;
+    const id = idParam(req.params.id);
+    const removed = await withTx(async (c) => {
+      const scope = articleScope(user, 2, "a");
+      const r = await c.query(
+        `SELECT a.id, a.title, a.status, a.business_unit_id, a.created_by
+           FROM articles a
+          WHERE a.id = $1 AND ${scope.sql}
+          FOR UPDATE OF a`,
+        [id, ...scope.params],
+      );
+      const article = r.rows[0];
+      if (!article) throw new HttpError(404, "Not found");
+      if (!canDeleteArticle(user, article.created_by))
+        throw new HttpError(403, "You can only delete articles you posted.");
+
+      const files = await c.query(
+        "SELECT stored_name FROM article_files WHERE article_id = $1",
+        [id],
+      );
+      await c.query("DELETE FROM article_files WHERE article_id = $1", [id]);
+      await c.query(
+        "UPDATE comments SET linked_kb_id = NULL WHERE linked_kb_id = $1",
+        [id],
+      );
+      await audit(c, {
+        actorId: user.id,
+        action: "ARTICLE_DELETED",
+        entityType: "article",
+        entityId: id,
+        details: { title: article.title, status: article.status },
+      });
+      await c.query("DELETE FROM articles WHERE id = $1", [id]);
+      return files.rows.map((file) => file.stored_name as string);
+    });
+
+    await removeStored(removed);
+    res.status(204).end();
+  }),
+);
+
+// ---------------------------------------------------------------------------
 // POST /api/kb/:id/files   (pictures and PDFs; multipart field "files")
 // ---------------------------------------------------------------------------
 router.post(
@@ -443,11 +498,11 @@ router.post(
       await withTx(async (c) => {
         const scope = articleScope(user, 2, "a");
         const r = await c.query(
-          `SELECT a.business_unit_id FROM articles a WHERE a.id = $1 AND ${scope.sql} FOR UPDATE OF a`,
+          `SELECT a.business_unit_id, a.created_by FROM articles a WHERE a.id = $1 AND ${scope.sql} FOR UPDATE OF a`,
           [id, ...scope.params],
         );
         if (!r.rows[0]) throw new HttpError(404, "Not found");
-        if (!canWriteArticle(user, r.rows[0].business_unit_id))
+        if (!canWriteArticle(user, r.rows[0].business_unit_id, r.rows[0].created_by))
           throw new HttpError(403, "You cannot change this article.");
 
         const count = await c.query(

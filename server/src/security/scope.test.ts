@@ -7,6 +7,7 @@ import {
   ticketScope,
   articleScope,
   canWriteArticle,
+  canDeleteArticle,
   canSeeTicketRow,
   canManageUserTarget,
 } from "./scope";
@@ -96,10 +97,22 @@ assert.equal(
 
 // Knowledge base rules
 assert.equal(articleScope(admin, 1).sql, "TRUE");
+assert.deepEqual(articleScope(itFnb, 2), {
+  sql: "(a.business_unit_id = $2 OR (a.business_unit_id IS NULL AND (a.status = 'PUBLISHED' OR a.created_by = $3)))",
+  params: [2, itFnb.id],
+});
+assert.deepEqual(articleScope(itNoUnit, 1), {
+  sql: "(a.business_unit_id IS NULL AND (a.status = 'PUBLISHED' OR a.created_by = $1))",
+  params: [itNoUnit.id],
+});
 assert.equal(canWriteArticle(itFnb, 2), true); // IT can write in own unit
 assert.equal(canWriteArticle(itFnb, 3), false); // but not in another unit
-assert.equal(canWriteArticle(itFnb, null), false); // global articles are ADMIN only
+assert.equal(canWriteArticle(itFnb, null), false); // existing global articles are author-only
+assert.equal(canWriteArticle(itFnb, null, itFnb.id), true); // IT can create/edit their global articles
 assert.equal(canWriteArticle(user, 2), false); // USER can never write
 assert.equal(canWriteArticle(admin, null), true);
+assert.equal(canDeleteArticle(itFnb, itFnb.id), true);
+assert.equal(canDeleteArticle(itFnb, 99), false);
+assert.equal(canDeleteArticle(admin, 99), true);
 
 console.log("scope.test.ts: all checks passed");
