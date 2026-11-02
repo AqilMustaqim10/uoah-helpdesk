@@ -11,9 +11,9 @@ export function sanitizeBody(s: string, max: number): string {
   return s.replace(/\r\n?/g, '\n').replace(CTRL, '').trim().slice(0, max);
 }
 
-/** A ticket title from an email subject: no [HD-n] tags, no "Re:" / "Fwd:" prefixes, one line, max 200. */
+/** A ticket title from an email subject: no ticket tags, no "Re:" / "Fwd:" prefixes, one line, max 200. */
 export function cleanSubject(subject: string): string {
-  let s = subject.replace(/[\r\n\t]+/g, ' ').replace(CTRL, '').replace(/\[HD-\d+\]/gi, ' ');
+  let s = subject.replace(/[\r\n\t]+/g, ' ').replace(CTRL, '').replace(/\[(?:TKT|HD)-\d+\]/gi, ' ');
   for (;;) {
     const next = s.replace(/^\s*(re|fw|fwd|aw|sv|vs|ref)\s*:\s*/i, '');
     if (next === s) break;

@@ -1,7 +1,7 @@
 // Small helpers for showing ids, dates and names.
 
-/** 12 -> "HD-12" */
-export const ticketRef = (id: number): string => `HD-${id}`;
+/** 12 -> "TKT-12" */
+export const ticketRef = (id: number): string => `TKT-${id}`;
 
 /** "13 Oct 2026" */
 export function formatDate(iso: string): string {

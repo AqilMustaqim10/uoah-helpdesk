@@ -47,13 +47,13 @@ export default function AuditTicketDetailModal({ ticket, onClose }: Props) {
 
   return (
     <Modal
-      label={`Audit history for ticket HD-${ticket.ticket_id}`}
+      label={`Audit history for ticket TKT-${ticket.ticket_id}`}
       onClose={onClose}
       size="wide"
     >
       <div className="border-b border-slate-200 px-6 py-5 pr-14">
         <p className="font-mono text-xs font-medium text-brand">
-          HD-{ticket.ticket_id}
+          TKT-{ticket.ticket_id}
         </p>
         <h2 className="mt-1 text-lg font-semibold text-slate-900">
           {ticket.title}

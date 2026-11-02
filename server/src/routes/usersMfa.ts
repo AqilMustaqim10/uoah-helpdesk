@@ -1,11 +1,11 @@
-// ADMIN only (index.ts mounts this behind requireRole('ADMIN') at /api/users):
-// reset someone's two-factor authentication, for example after they lost their phone.
+// Reset a user's two-factor authentication (IT is restricted to their own unit's normal users).
 import { Router } from "express";
 import { withTx } from "../db/pool";
 import { audit } from "../db/audit";
 import { ah, HttpError } from "../lib/http";
 import { idParam } from "../lib/validate";
 import { writeLimiter } from "../middleware/rateLimit";
+import { canManageUserTarget } from "../security/scope";
 
 const router = Router();
 
@@ -19,7 +19,10 @@ router.post(
 
     await withTx(async (c) => {
       const r = await c.query(
-        "SELECT id, email, totp_enabled_at, totp_secret_enc FROM users WHERE id = $1 FOR UPDATE",
+        `SELECT id, email, role, business_unit_id, totp_enabled_at, totp_secret_enc
+           FROM users
+          WHERE id = $1 AND deleted_at IS NULL
+          FOR UPDATE`,
         [id],
       );
       const target = r.rows[0];
@@ -29,6 +32,9 @@ router.post(
           403,
           "You cannot reset your own two-factor authentication. Ask another administrator.",
         );
+      }
+      if (!canManageUserTarget(actor, target)) {
+        throw new HttpError(404, "Not found");
       }
       if (!target.totp_enabled_at && !target.totp_secret_enc) {
         throw new HttpError(

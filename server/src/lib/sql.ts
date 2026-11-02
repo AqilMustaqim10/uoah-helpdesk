@@ -1,8 +1,8 @@
 // Small SQL helpers shared by several routes.
 import { OVERDUE_HOURS } from "../config/constants";
 
-/** Display id of a ticket: 12 -> "HD-12". */
-export const ticketRef = (id: number): string => `HD-${id}`;
+/** Display id of a ticket: 12 -> "TKT-12". */
+export const ticketRef = (id: number): string => `TKT-${id}`;
 
 /**
  * SQL condition that is TRUE when a ticket is overdue:

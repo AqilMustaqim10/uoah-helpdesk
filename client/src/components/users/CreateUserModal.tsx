@@ -17,7 +17,7 @@ import Select from "../ui/Select";
 
 interface Props {
   actor: User;
-  /** The business units (only ADMIN needs them). */
+  /** Business units for ADMIN creation and staff user editing. */
   units: UnitOption[];
   onClose: () => void;
   onCreated: (user: ManagedUser) => void;

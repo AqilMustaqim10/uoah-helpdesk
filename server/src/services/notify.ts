@@ -69,7 +69,7 @@ function excerpt(text: string, max = 1500): string {
   return clean.length > max ? `${clean.slice(0, max)}…` : clean;
 }
 
-/** Builds and sends one ticket email. The [HD-n] tag goes FIRST in the subject so replies can be matched. */
+/** Builds and sends one ticket email. The [TKT-n] tag goes FIRST in the subject so replies can be matched. */
 async function emailAbout(
   t: TicketInfo,
   to: string,

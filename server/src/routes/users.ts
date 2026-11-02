@@ -2,7 +2,7 @@
 //   ADMIN: sees everyone, creates users in any unit, changes roles / units / departments,
 //          enables / disables, and deletes accounts.
 //   IT:    sees only the normal user accounts of THEIR OWN business unit, may create normal user accounts
-//          in that unit, and may delete them. Everything else is ADMIN only.
+//          in that unit, and may manage or delete those users.
 // Rules enforced here, on the server:
 //  - you cannot change, disable or delete your own account
 //  - the last active ADMIN can never be demoted, disabled or deleted
@@ -30,6 +30,7 @@ import {
 import { requireRole } from "../middleware/auth";
 import { writeLimiter } from "../middleware/rateLimit";
 import { sendInvitationEmail } from "../services/inviteMail";
+import { canManageUserTarget } from "../security/scope";
 
 const router = Router();
 
@@ -258,11 +259,11 @@ router.post(
 );
 
 // ---------------------------------------------------------------------------
-// PATCH /api/users/:id/role   { role, confirm? }   (ADMIN only)
+// PATCH /api/users/:id/role   { role, confirm? }
 // ---------------------------------------------------------------------------
 router.patch(
   "/:id/role",
-  requireRole("ADMIN"),
+  requireRole("ADMIN", "IT"),
   writeLimiter,
   ah(async (req, res) => {
     const actor = req.user!;
@@ -276,6 +277,8 @@ router.patch(
 
       if (target.id === actor.id)
         throw new HttpError(403, "You cannot change your own role.");
+      if (!canManageUserTarget(actor, target))
+        throw new HttpError(404, "Not found");
       if (target.role === role) return; // nothing to change
 
       // Anything that adds or removes administrator power must be confirmed
@@ -307,12 +310,12 @@ router.patch(
 );
 
 // ---------------------------------------------------------------------------
-// PATCH /api/users/:id/unit   { business_unit_id }   (ADMIN only)
+// PATCH /api/users/:id/unit   { business_unit_id }
 // (Existing tickets stay in the unit they were created in.)
 // ---------------------------------------------------------------------------
 router.patch(
   "/:id/unit",
-  requireRole("ADMIN"),
+  requireRole("ADMIN", "IT"),
   writeLimiter,
   ah(async (req, res) => {
     const actor = req.user!;
@@ -321,6 +324,8 @@ router.patch(
 
     await withTx(async (c) => {
       const target = await lockUser(c, id);
+      if (!canManageUserTarget(actor, target))
+        throw new HttpError(404, "Not found");
 
       const unit = await c.query(
         "SELECT id, code FROM business_units WHERE id = $1",
@@ -357,12 +362,12 @@ router.patch(
 );
 
 // ---------------------------------------------------------------------------
-// PATCH /api/users/:id/department   { department }   (ADMIN only)
-// Lets an administrator set or correct a person's department (everyone created before step I has none).
+// PATCH /api/users/:id/department   { department }
+// Lets staff set or correct a person's department.
 // ---------------------------------------------------------------------------
 router.patch(
   "/:id/department",
-  requireRole("ADMIN"),
+  requireRole("ADMIN", "IT"),
   writeLimiter,
   ah(async (req, res) => {
     const actor = req.user!;
@@ -371,6 +376,8 @@ router.patch(
 
     await withTx(async (c) => {
       const target = await lockUser(c, id);
+      if (!canManageUserTarget(actor, target))
+        throw new HttpError(404, "Not found");
       if (target.department === department) return; // nothing to change
 
       await c.query(
@@ -395,12 +402,12 @@ router.patch(
 );
 
 // ---------------------------------------------------------------------------
-// PATCH /api/users/:id/active   { is_active: true | false }   (ADMIN only)
+// PATCH /api/users/:id/active   { is_active: true | false }
 // A disabled person is signed out on their very next request (requireAuth reads is_active every time).
 // ---------------------------------------------------------------------------
 router.patch(
   "/:id/active",
-  requireRole("ADMIN"),
+  requireRole("ADMIN", "IT"),
   writeLimiter,
   ah(async (req, res) => {
     const actor = req.user!;
@@ -415,6 +422,8 @@ router.patch(
 
       if (target.id === actor.id && !active)
         throw new HttpError(403, "You cannot disable your own account.");
+      if (!canManageUserTarget(actor, target))
+        throw new HttpError(404, "Not found");
       if (target.is_active === active) return; // nothing to change
       if (!active && target.role === "ADMIN" && admins <= 1) {
         throw new HttpError(
@@ -487,11 +496,8 @@ router.post(
 
       if (target.id === actor.id)
         throw new HttpError(403, "You cannot delete your own account.");
-      if (!isAdmin && target.role !== "USER")
-        throw new HttpError(
-          403,
-          "IT staff can only delete normal user accounts.",
-        );
+      if (!canManageUserTarget(actor, target))
+        throw new HttpError(404, "Not found");
       if (target.role === "ADMIN" && target.is_active && admins <= 1) {
         throw new HttpError(
           409,

@@ -97,13 +97,13 @@ router.get(
       conds.push(`${FINISHED_AT} <= $${params.length}`);
     }
 
-    // Search: ticket number (HD-12 or 12), title, description, requester email
+    // Search: ticket number (TKT-12 or 12), title, description, requester email
     const q = qstr(req.query.q).slice(0, 100);
     if (q) {
       params.push(`%${escapeLike(q)}%`);
       const n = params.length;
       let c = `(t.title ILIKE $${n} OR t.description ILIKE $${n} OR t.requester_email ILIKE $${n}`;
-      const m = /^(?:hd-?)?(\d{1,15})$/i.exec(q);
+      const m = /^(?:(?:tkt|hd)-?)?(\d{1,15})$/i.exec(q);
       if (m) {
         params.push(Number(m[1]));
         c += ` OR t.id = $${params.length}`;
@@ -233,7 +233,7 @@ router.get(
         entityType: "ticket",
         entityId: id,
         ticketId: id,
-        details: { ref: `HD-${id}`, unit: ticket.unit_code },
+        details: { ref: `TKT-${id}`, unit: ticket.unit_code },
       });
     }
 

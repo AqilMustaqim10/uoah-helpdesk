@@ -142,10 +142,10 @@ router.get(
       conds.push(`bu.code = $${params.length}`);
     }
 
-    // A ticket number: HD-12 or 12
+    // A ticket number: TKT-12 or 12
     const ticket = qstr(req.query.ticket);
     if (ticket) {
-      const m = /^(?:hd-?)?(\d{1,15})$/i.exec(ticket);
+      const m = /^(?:(?:tkt|hd)-?)?(\d{1,15})$/i.exec(ticket);
       if (!m) throw new HttpError(400, "Invalid ticket number.");
       params.push(Number(m[1]));
       conds.push(`a.ticket_id = $${params.length}`);

@@ -3,6 +3,7 @@
 // route must use ticketScope(). Never write your own visibility rule elsewhere.
 import type { Db } from "../db/pool";
 import type { AuthUser } from "../middleware/auth";
+import type { Role } from "../config/constants";
 import { HttpError } from "../lib/http";
 
 export interface ScopeClause {
@@ -10,6 +11,20 @@ export interface ScopeClause {
   sql: string;
   /** The values for the $n placeholders used by `sql`. */
   params: unknown[];
+}
+
+/** ADMIN can manage any user; IT can manage only normal users in their own unit. */
+export function canManageUserTarget(
+  actor: Pick<AuthUser, "role" | "business_unit_id">,
+  target: { role: Role; business_unit_id: number | null },
+): boolean {
+  return (
+    actor.role === "ADMIN" ||
+    (actor.role === "IT" &&
+      target.role === "USER" &&
+      actor.business_unit_id != null &&
+      target.business_unit_id === actor.business_unit_id)
+  );
 }
 
 /**

@@ -1,6 +1,6 @@
 // The User Directory tab.
 //  - ADMIN: search, filter, add users anywhere, change role / unit / department, enable / disable, delete
-//  - IT:    only the normal user accounts of their own unit: search, add users to that unit, delete
+//  - IT:    only the normal user accounts of their own unit: search, add, manage, and delete
 // Deleting is PERMANENT and always asks for a written reason (recorded in the audit log).
 import { useEffect, useRef, useState } from "react";
 import { Plus, Search, SearchX, Users as UsersIcon } from "lucide-react";
@@ -68,6 +68,7 @@ export default function UsersPage({ user: me }: { user: User }) {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
   const [units, setUnits] = useState<UnitOption[]>([]);
+  const [unitError, setUnitError] = useState("");
   const [version, setVersion] = useState(0); // changes when the list must be loaded again
   const [busyId, setBusyId] = useState<number | null>(null);
   const [pending, setPending] = useState<Pending>(null);
@@ -78,13 +79,19 @@ export default function UsersPage({ user: me }: { user: User }) {
   const [deleteError, setDeleteError] = useState("");
   const requestId = useRef(0);
 
-  // The business units are needed by ADMIN (filters, unit dropdowns, the "Add user" window)
+  // Business units are needed for editing and for ADMIN filters and user creation.
   useEffect(() => {
-    if (!isAdmin) return;
+    setUnitError("");
     authApi
       .units()
       .then((r) => setUnits(r.units))
-      .catch(() => undefined);
+      .catch((err) =>
+        setUnitError(
+          err instanceof ApiError
+            ? err.message
+            : "Could not load business units.",
+        ),
+      );
   }, [isAdmin]);
 
   // The search runs 300 ms after you stop typing
@@ -124,14 +131,24 @@ export default function UsersPage({ user: me }: { user: User }) {
   }
 
   function replaceUser(updated: ManagedUser) {
-    setData((d) =>
-      d
-        ? {
-            ...d,
-            users: d.users.map((u) => (u.id === updated.id ? updated : u)),
-          }
-        : d,
-    );
+    setData((d) => {
+      if (!d) return d;
+      if (
+        !isAdmin &&
+        (updated.role !== "USER" ||
+          updated.business_unit_id !== me.business_unit_id)
+      ) {
+        return {
+          ...d,
+          users: d.users.filter((u) => u.id !== updated.id),
+          total: Math.max(0, d.total - 1),
+        };
+      }
+      return {
+        ...d,
+        users: d.users.map((u) => (u.id === updated.id ? updated : u)),
+      };
+    });
   }
 
   /** Runs one change, shows the result as a toast, and returns whether it worked. */
@@ -300,6 +317,7 @@ export default function UsersPage({ user: me }: { user: User }) {
       </div>
 
       <FormError message={error} />
+      <FormError message={unitError} />
 
       {itWithoutUnit ? (
         <EmptyState

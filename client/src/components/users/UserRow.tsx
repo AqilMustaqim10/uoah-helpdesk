@@ -1,7 +1,7 @@
 // One person in the User Directory.
 //  - mode "admin": role, unit and department controls, 2FA status and reset, enable/disable, delete
-//  - mode "it":    read-only details and a Delete button (IT only ever sees normal users of their own unit)
-// Your OWN row is read-only (you cannot change your own role, disable or delete yourself; the server enforces it too).
+//  - mode "it":    the same controls for normal users in their own unit, and delete
+// You cannot change your own role, disable or delete yourself; the server enforces this too.
 import { useState } from "react";
 import {
   ShieldAlert,
@@ -65,7 +65,11 @@ export default function UserRow({
   const [resetDone, setResetDone] = useState(false); // after a reset this row shows "pending" without reloading the list
 
   const admin = mode === "admin";
-  const staffRole = user.role === "ADMIN" || user.role === "IT";
+  const canManage =
+    admin || (mode === "it" && !isSelf && user.role === "USER");
+  const canViewTwoFactor =
+    (admin && (user.role === "ADMIN" || user.role === "IT")) ||
+    (mode === "it" && canManage);
   const twoFactorOn = !!user.two_factor && !resetDone;
 
   // The person's current department is always selectable, even if it was removed from the list later
@@ -122,8 +126,7 @@ export default function UserRow({
                 Disabled
               </span>
             )}
-            {admin &&
-              staffRole &&
+            {canViewTwoFactor &&
               (twoFactorOn ? (
                 <span className="inline-flex items-center gap-1 rounded-full bg-emerald-50 px-2 py-0.5 text-xs font-medium text-emerald-700 ring-1 ring-inset ring-emerald-200">
                   <ShieldCheck className="h-3 w-3" aria-hidden /> 2FA on
@@ -150,7 +153,7 @@ export default function UserRow({
 
       {/* Controls */}
       <div className="flex flex-wrap items-center gap-2">
-        {admin &&
+        {canManage &&
           (isSelf ? (
             <RoleBadge role={user.role} />
           ) : (
@@ -169,7 +172,7 @@ export default function UserRow({
             </select>
           ))}
 
-        {admin && (
+        {canManage && (
           <select
             aria-label={`Business unit of ${user.name}`}
             className={SELECT_CLASS}
@@ -190,7 +193,7 @@ export default function UserRow({
           </select>
         )}
 
-        {admin && (
+        {canManage && (
           <select
             aria-label={`Department of ${user.name}`}
             className={SELECT_CLASS}
@@ -211,7 +214,7 @@ export default function UserRow({
           </select>
         )}
 
-        {admin && !isSelf && twoFactorOn && (
+        {canManage && !isSelf && twoFactorOn && (
           <Button
             size="sm"
             variant="ghost"
@@ -223,7 +226,7 @@ export default function UserRow({
           </Button>
         )}
 
-        {admin && !isSelf && (
+        {canManage && !isSelf && (
           <Button
             size="sm"
             variant="secondary"

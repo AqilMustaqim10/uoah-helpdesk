@@ -47,7 +47,7 @@ const BUSINESS_UNITS = [
   { code: "KLW", label: "KLW" },
   { code: "HQ", label: "HQ" },
 ];
-const TICKET_RE = /^(hd-?)?\d{1,15}$/i;
+const TICKET_RE = /^(?:(tkt|hd)-?)?\d{1,15}$/i;
 
 const FIELD =
   "h-9 rounded-lg border border-slate-200 bg-white px-2.5 text-sm text-slate-700 transition " +
@@ -194,7 +194,7 @@ export default function AuditLogViewer() {
             type="search"
             aria-label="Filter by ticket number"
             aria-invalid={ticketInvalid || undefined}
-            placeholder="Ticket (HD-12)"
+            placeholder="Ticket (TKT-12)"
             value={ticketText}
             onChange={(e) => setTicketText(e.target.value)}
             maxLength={20}
@@ -229,7 +229,7 @@ export default function AuditLogViewer() {
       </div>
       {ticketInvalid && (
         <p className="text-xs text-rose-600">
-          Use a ticket number such as HD-12 or 12.
+          Use a ticket number such as TKT-12 or 12.
         </p>
       )}
 
@@ -272,7 +272,7 @@ export default function AuditLogViewer() {
                           {r.title}
                         </span>
                         <span className="mt-1 block font-mono text-xs text-slate-500">
-                          HD-{r.ticket_id}
+                          TKT-{r.ticket_id}
                         </span>
                       </span>
                       <span className="flex flex-wrap items-center gap-2 text-xs text-slate-500 sm:justify-end">

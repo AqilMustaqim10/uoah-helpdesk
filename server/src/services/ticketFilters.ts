@@ -87,7 +87,7 @@ export function buildTicketFilters(user: AuthUser, q: Record<string, unknown>) {
     params.push(`%${escapeLike(text)}%`);
     const n = params.length;
     let c = `(t.title ILIKE $${n} OR t.description ILIKE $${n} OR t.requester_email ILIKE $${n}`;
-    const m = /^(?:hd-?)?(\d{1,15})$/i.exec(text);
+    const m = /^(?:(?:tkt|hd)-?)?(\d{1,15})$/i.exec(text);
     if (m) {
       params.push(Number(m[1]));
       c += ` OR t.id = $${params.length}`;

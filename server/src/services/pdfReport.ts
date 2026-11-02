@@ -413,7 +413,7 @@ function draw(doc: Doc, input: ReportInput): void {
       if (i % 2 === 1) doc.rect(MARGIN, y, TABLE_W, ROW_H).fill(STRIPE);
 
       const cells: Array<{ text: string; color?: string }> = [
-        { text: `HD-${r.id}` },
+        { text: `TKT-${r.id}` },
         { text: clean(r.title) },
         { text: STATUS_LABEL[r.status] ?? r.status },
         {

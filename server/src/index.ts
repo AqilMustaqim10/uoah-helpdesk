@@ -102,10 +102,9 @@ app.use("/api/history", requireAuth, requireRole("ADMIN", "IT"), historyRoutes);
 
 // User Directory: ADMIN gets everything, IT gets a limited version
 // (each route checks its own rules).
-// The 2FA reset is ADMIN only; IT requests for it fall through to the
-// second line and get "not found".
+// IT management actions are limited to normal users in their own unit.
 app.use("/api/users", requireAuth, requireRole("ADMIN", "IT"), userRoutes);
-app.use("/api/users", requireAuth, requireRole("ADMIN"), userMfaRoutes);
+app.use("/api/users", requireAuth, requireRole("ADMIN", "IT"), userMfaRoutes);
 
 // The audit log viewer: ADMIN only
 app.use("/api/audit", requireAuth, requireRole("ADMIN"), auditRoutes);

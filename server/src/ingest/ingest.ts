@@ -69,9 +69,9 @@ function senderOf(mail: ParsedMail): string | null {
   return address ? tryNormEmail(address) : null;
 }
 
-/** "[HD-12]" in the subject -> 12 */
+/** "[TKT-12]" or a legacy "[HD-12]" in the subject -> 12 */
 function threadedTicketId(subject: string): number | null {
-  const m = /\[HD-(\d{1,15})\]/i.exec(subject);
+  const m = /\[(?:TKT|HD)-(\d{1,15})\]/i.exec(subject);
   if (!m) return null;
   const n = Number(m[1]);
   return Number.isSafeInteger(n) && n > 0 ? n : null;

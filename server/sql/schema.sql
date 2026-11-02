@@ -40,7 +40,7 @@ CREATE TABLE users (
 CREATE INDEX users_unit_idx        ON users (business_unit_id);
 CREATE INDEX users_role_active_idx ON users (role, is_active);
 
--- ---------- Tickets (shown in the app as HD-<id>) ----------
+-- ---------- Tickets (shown in the app as TKT-<id>) ----------
 CREATE TABLE tickets (
   id                BIGSERIAL PRIMARY KEY,
   title             TEXT NOT NULL CHECK (char_length(title) BETWEEN 3 AND 200),

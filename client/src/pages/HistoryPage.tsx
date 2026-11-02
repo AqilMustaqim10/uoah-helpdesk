@@ -174,7 +174,7 @@ export default function HistoryPage({ user, version, onManage }: Props) {
             value={text}
             onChange={(e) => setText(e.target.value)}
             maxLength={100}
-            placeholder="Search by number (HD-12), title, text or requester email"
+            placeholder="Search by number (TKT-12), title, text or requester email"
             aria-label="Search the history"
             className="h-10 w-full rounded-lg border border-slate-200 bg-white pl-9 pr-3 text-sm text-slate-900 transition placeholder:text-slate-400 focus:border-brand focus:outline-none focus:ring-2 focus:ring-brand/25"
           />

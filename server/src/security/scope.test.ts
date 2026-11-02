@@ -7,6 +7,7 @@ import {
   articleScope,
   canWriteArticle,
   canSeeTicketRow,
+  canManageUserTarget,
 } from "./scope";
 
 // Make a few pretend users
@@ -27,6 +28,32 @@ const itNoUnit: AuthUser = {
   business_unit_id: null,
 };
 const user: AuthUser = { ...base, id: 4, role: "USER", business_unit_id: 2 };
+
+// User management: ADMIN can manage anyone; IT can only manage normal users in their own unit.
+assert.equal(
+  canManageUserTarget(admin, { role: "ADMIN", business_unit_id: 99 }),
+  true,
+);
+assert.equal(
+  canManageUserTarget(itFnb, { role: "USER", business_unit_id: 2 }),
+  true,
+);
+assert.equal(
+  canManageUserTarget(itFnb, { role: "USER", business_unit_id: 3 }),
+  false,
+);
+assert.equal(
+  canManageUserTarget(itFnb, { role: "IT", business_unit_id: 2 }),
+  false,
+);
+assert.equal(
+  canManageUserTarget(itNoUnit, { role: "USER", business_unit_id: 2 }),
+  false,
+);
+assert.equal(
+  canManageUserTarget(user, { role: "USER", business_unit_id: 2 }),
+  false,
+);
 
 // ticketScope: admin sees all, IT sees own unit, IT without unit sees nothing, USER sees own tickets
 assert.deepEqual(ticketScope(admin, 1), { sql: "TRUE", params: [] });
