@@ -112,10 +112,18 @@ CREATE INDEX audit_actor_idx  ON audit_log (actor_id, created_at);
 CREATE INDEX audit_entity_idx ON audit_log (entity_type, entity_id);
 CREATE INDEX audit_business_unit_idx ON audit_log (business_unit_id);
 
--- This function simply refuses any change. The triggers below call it.
+-- Only the table owner can delete entries, and then only after 14 days.
+-- All other changes remain blocked.
 CREATE FUNCTION audit_log_block_changes() RETURNS trigger
 LANGUAGE plpgsql AS $$
 BEGIN
+  IF TG_OP = 'DELETE'
+     AND current_user = pg_catalog.pg_get_userbyid(
+       (SELECT relowner FROM pg_catalog.pg_class WHERE oid = TG_RELID)
+     )
+     AND OLD.created_at < pg_catalog.now() - INTERVAL '14 days' THEN
+    RETURN OLD;
+  END IF;
   RAISE EXCEPTION 'audit_log is append-only: % is not allowed', TG_OP;
 END;
 $$;
@@ -129,6 +137,24 @@ CREATE TRIGGER audit_log_no_update_delete
 CREATE TRIGGER audit_log_no_truncate
   BEFORE TRUNCATE ON audit_log
   FOR EACH STATEMENT EXECUTE FUNCTION audit_log_block_changes();
+
+-- The app can request expiry cleanup but cannot delete arbitrary audit rows.
+CREATE FUNCTION purge_old_audit_log() RETURNS BIGINT
+LANGUAGE plpgsql
+SECURITY DEFINER
+SET search_path = pg_catalog, public
+AS $$
+DECLARE
+  deleted_count BIGINT;
+BEGIN
+  DELETE FROM public.audit_log
+  WHERE created_at < pg_catalog.now() - INTERVAL '14 days';
+  GET DIAGNOSTICS deleted_count = ROW_COUNT;
+  RETURN deleted_count;
+END;
+$$;
+REVOKE ALL ON FUNCTION purge_old_audit_log() FROM PUBLIC;
+GRANT EXECUTE ON FUNCTION purge_old_audit_log() TO helpdesk_app;
 
 -- ---------- Email ingestion bookkeeping ----------
 -- One row per mailbox message already handled (UIDL = the mail server's unique id).

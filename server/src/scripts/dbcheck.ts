@@ -27,6 +27,11 @@ const PROBES: Probe[] = [
     expect: "allowed",
   },
   {
+    label: "purge expired audit log rows",
+    sql: "SELECT public.purge_old_audit_log()",
+    expect: "allowed",
+  },
+  {
     label: "delete tickets (erase)",
     sql: "DELETE FROM tickets WHERE false",
     expect: "allowed",

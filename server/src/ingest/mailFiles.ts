@@ -3,14 +3,14 @@
 // plus two rules for email:
 //   - a REAL attachment is always a candidate
 //   - a picture embedded in the body (a pasted screenshot, but also a signature logo) is only
-//     a candidate when it is at least 30 KB, so small logos and icons are left out
+//     a candidate when it is at least 50 KB, so small footer logos and icons are left out
 import { createHash } from "node:crypto";
 import type { Attachment, ParsedMail } from "mailparser";
 import { FILE_LIMITS } from "../config/constants";
 import { detectFileType } from "../lib/fileType";
 import type { PreparedFile } from "../services/upload";
 
-export const MIN_INLINE_PICTURE_BYTES = 30 * 1024;
+export const MIN_INLINE_PICTURE_BYTES = 50 * 1024;
 
 export interface PickedFiles {
   files: PreparedFile[]; // ready to be saved
@@ -20,9 +20,10 @@ export interface PickedFiles {
 
 /** Is this file embedded in the body of the email (instead of attached to it)? */
 function isInline(a: Attachment): boolean {
+  if (a.related === true || !!a.cid) return true;
   if (a.contentDisposition === "inline") return true;
   if (a.contentDisposition === "attachment") return false;
-  return a.related === true || !!a.cid;
+  return false;
 }
 
 /** A safe name to SHOW (it is never used as a path; the file is stored under a random name). */
@@ -58,7 +59,7 @@ export function pickMailFiles(mail: ParsedMail): PickedFiles {
       continue;
     }
 
-    // Small pictures embedded in the body are almost always signature logos or icons
+    // Small pictures embedded in the body are usually signature logos or icons
     if (
       isInline(a) &&
       kind.mime !== "application/pdf" &&

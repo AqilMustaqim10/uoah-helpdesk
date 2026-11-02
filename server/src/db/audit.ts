@@ -66,3 +66,10 @@ export async function audit(db: Db, e: AuditEntry): Promise<void> {
     ],
   );
 }
+
+export async function purgeOldAuditLogs(db: Db): Promise<number> {
+  const result = await db.query<{ deleted_count: number }>(
+    "SELECT public.purge_old_audit_log() AS deleted_count",
+  );
+  return result.rows[0].deleted_count;
+}

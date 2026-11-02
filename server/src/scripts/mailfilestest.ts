@@ -48,19 +48,32 @@ r = pickMailFiles(
 assert.equal(r.files.length, 0);
 assert.equal(r.ignoredSmall, 1);
 
-// 3) A big picture embedded in the body (a pasted screenshot) is kept
+// 3) A related footer image is ignored even when the mail client labels it as an attachment
+r = pickMailFiles(
+  mailWith({
+    filename: "image001.png",
+    contentDisposition: "attachment",
+    cid: "footer@company",
+    related: true,
+    content: png(44 * 1024),
+  }),
+);
+assert.equal(r.files.length, 0);
+assert.equal(r.ignoredSmall, 1);
+
+// 4) A larger picture embedded in the body (a pasted screenshot) is kept
 r = pickMailFiles(
   mailWith({
     filename: "image002.png",
     contentDisposition: "inline",
     cid: "c@d",
     related: true,
-    content: png(40 * 1024),
+    content: png(60 * 1024),
   }),
 );
 assert.equal(r.files.length, 1);
 
-// 4) A program disguised as a picture is refused
+// 5) A program disguised as a picture is refused
 r = pickMailFiles(
   mailWith({
     filename: "evil.png",
@@ -71,7 +84,7 @@ r = pickMailFiles(
 assert.equal(r.files.length, 0);
 assert.equal(r.skipped, 1);
 
-// 5) Plain text named .pdf is refused, but a real PDF with a vague type is accepted as a PDF
+// 6) Plain text named .pdf is refused, but a real PDF with a vague type is accepted as a PDF
 r = pickMailFiles(
   mailWith(
     {
@@ -90,7 +103,7 @@ assert.equal(r.files.length, 1);
 assert.equal(r.files[0].kind.mime, "application/pdf");
 assert.equal(r.skipped, 1);
 
-// 6) The same picture twice is saved once
+// 7) The same picture twice is saved once
 r = pickMailFiles(
   mailWith(
     { filename: "a.png", contentDisposition: "attachment", content: png(3000) },
@@ -99,7 +112,7 @@ r = pickMailFiles(
 );
 assert.equal(r.files.length, 1);
 
-// 7) File names are cleaned (folders removed), and a missing name gets a fallback
+// 8) File names are cleaned (folders removed), and a missing name gets a fallback
 r = pickMailFiles(
   mailWith(
     {
@@ -120,7 +133,7 @@ assert.deepEqual(
   ["evil.png", "scan.png", "email-attachment-3.png"],
 );
 
-// 8) At most 10 files are kept
+// 9) At most 10 files are kept
 r = pickMailFiles(
   mailWith(
     ...Array.from({ length: 12 }, (_, i) => ({
@@ -133,7 +146,7 @@ r = pickMailFiles(
 assert.equal(r.files.length, 10);
 assert.equal(r.skipped, 2);
 
-// 9) No attachments at all
+// 10) No attachments at all
 assert.equal(
   pickMailFiles({ attachments: [] } as unknown as ParsedMail).files.length,
   0,

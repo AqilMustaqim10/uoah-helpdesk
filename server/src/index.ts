@@ -3,6 +3,7 @@ import cookieParser from "cookie-parser";
 import cors from "cors";
 import { config } from "./config/env";
 import { query } from "./db/pool";
+import { purgeOldAuditLogs } from "./db/audit";
 import { ah, HttpError } from "./lib/http";
 import { requireAuth, requireRole } from "./middleware/auth";
 import { errorHandler } from "./middleware/errorHandler";
@@ -33,6 +34,7 @@ import historyRoutes from "./routes/history";
 import kbSearchRoutes from "./routes/kbSearch";
 
 const app = express();
+const AUDIT_LOG_CLEANUP_INTERVAL_MS = 24 * 60 * 60 * 1000;
 
 app.disable("x-powered-by"); // don't advertise that we use Express
 
@@ -138,10 +140,32 @@ async function start() {
   // (clearer than failing on the first request)
   try {
     await query("SELECT 1");
+    const deletedCount = await purgeOldAuditLogs({ query });
+    if (deletedCount > 0) {
+      console.log(`[audit] deleted ${deletedCount} log entries older than 14 days`);
+    }
   } catch (e) {
-    console.error("Cannot connect to the database:", (e as Error).message);
+    console.error(
+      "Cannot connect to the database or enforce audit log retention:",
+      (e as Error).message,
+    );
     process.exit(1);
   }
+
+  const cleanupTimer = setInterval(() => {
+    void purgeOldAuditLogs({ query })
+      .then((deletedCount) => {
+        if (deletedCount > 0) {
+          console.log(
+            `[audit] deleted ${deletedCount} log entries older than 14 days`,
+          );
+        }
+      })
+      .catch((e: Error) =>
+        console.error("[audit] retention cleanup failed:", e.message),
+      );
+  }, AUDIT_LOG_CLEANUP_INTERVAL_MS);
+  cleanupTimer.unref();
 
   app.listen(config.port, () =>
     console.log(`API running on http://localhost:${config.port}`),
