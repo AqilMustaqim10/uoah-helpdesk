@@ -8,7 +8,7 @@
     "worker": "tsx src/ingest/worker.ts",
     "seed": "tsx src/scripts/seed.ts",
     "typecheck": "tsc --noEmit",
-    "test": "tsx src/security/scope.test.ts"
+    "test": "tsx src/security/scope.test.ts && tsx src/ingest/priorityValue.test.ts"
   },
   "dependencies": {
     "@google/genai": "^2.32.0",

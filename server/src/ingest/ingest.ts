@@ -5,7 +5,7 @@
 //  - a database lock makes sure two workers never run at the same time
 // New in step G: real attachments and larger pasted pictures are saved with the ticket or reply.
 import { simpleParser, type ParsedMail } from "mailparser";
-import { DEFAULT_PRIORITY } from "../config/constants";
+import { DEFAULT_PRIORITY, type Priority } from "../config/constants";
 import { audit } from "../db/audit";
 import { pool, withTx } from "../db/pool";
 import type { Db } from "../db/pool";
@@ -26,6 +26,7 @@ import {
 import { classifyMessage } from "./classify";
 import { cleanBody, cleanSubject, sanitizeBody } from "./cleaner";
 import { pickMailFiles, type PickedFiles } from "./mailFiles";
+import { classifyEmailPriority } from "./priority";
 import { Pop3Client, pop3FromConfig, type MailboxEntry } from "./pop3";
 import { config } from "../config/env";
 
@@ -156,6 +157,7 @@ async function createTicket(
   text: string,
   followUpOf: number | null,
   names: string[],
+  priority: Priority,
 ): Promise<number> {
   let title = cleanSubject(subject);
   if (title.length < 3) title = "Email request";
@@ -173,7 +175,7 @@ async function createTicket(
       title,
       description,
       raw,
-      DEFAULT_PRIORITY,
+      priority,
       u.business_unit_id,
       u.id,
       u.email,
@@ -187,13 +189,95 @@ async function createTicket(
     entityId: id,
     ticketId: id,
     details: {
-      priority: DEFAULT_PRIORITY,
+      priority,
       business_unit_id: u.business_unit_id,
       source: "EMAIL",
       ...(followUpOf ? { follow_up_of: followUpOf } : {}),
     },
   });
   return id;
+}
+
+function priorityErrorDetails(error: unknown): string {
+  if (typeof error !== "object" || error === null)
+    return "Unknown classification error";
+
+  const status =
+    "status" in error && typeof error.status === "number"
+      ? `HTTP ${error.status}`
+      : undefined;
+  let message =
+    "message" in error && typeof error.message === "string"
+      ? error.message
+      : undefined;
+  if (message) {
+    if (config.geminiPriorityApiKey)
+      message = message.replaceAll(config.geminiPriorityApiKey, "[redacted]");
+    message = message.replace(/\s+/g, " ").slice(0, 300);
+  }
+
+  return (
+    [status, message].filter(Boolean).join(": ") ||
+    "Unknown classification error"
+  );
+}
+
+async function priorityForMessage(
+  uidl: string,
+  from: string | null,
+  subject: string,
+  text: string,
+  isAutomatic: boolean,
+): Promise<Priority> {
+  if (isAutomatic || !from) return DEFAULT_PRIORITY;
+
+  const processed = await pool.query(
+    "SELECT 1 FROM processed_messages WHERE uidl = $1",
+    [uidl],
+  );
+  if (processed.rows[0]) return DEFAULT_PRIORITY;
+
+  const found = await pool.query(
+    `SELECT id, email, name, role, business_unit_id
+       FROM users
+      WHERE email = $1 AND is_active = TRUE`,
+    [from],
+  );
+  const user: KnownUser | undefined = found.rows[0];
+  if (!user || user.business_unit_id == null) return DEFAULT_PRIORITY;
+
+  const threadId = threadedTicketId(subject);
+  if (threadId) {
+    const ticketResult = await pool.query(
+      "SELECT id, status, created_by, business_unit_id FROM tickets WHERE id = $1",
+      [threadId],
+    );
+    const ticket = ticketResult.rows[0];
+    if (
+      ticket &&
+      ticket.status !== "CLOSED" &&
+      canSeeTicketRow(user, ticket)
+    ) {
+      return DEFAULT_PRIORITY;
+    }
+  }
+
+  if (!config.geminiPriorityApiKey) {
+    console.warn(
+      "[ingest] GEMINI_PRIORITY_API_KEY is not configured; defaulting to MEDIUM",
+    );
+    return DEFAULT_PRIORITY;
+  }
+
+  try {
+    return await classifyEmailPriority(subject, text);
+  } catch (error) {
+    const reason = priorityErrorDetails(error);
+    console.warn(
+      `[ingest] Gemini priority classification failed (${reason}); defaulting to MEDIUM`,
+    );
+    return DEFAULT_PRIORITY;
+  }
 }
 
 // ---------------------------------------------------------------------------
@@ -208,6 +292,13 @@ async function handleMessage(uidl: string, mail: ParsedMail): Promise<void> {
 
   // Chosen BEFORE the transaction (it only looks at the message, nothing is saved yet)
   const picked = pickMailFiles(mail);
+  const priority = await priorityForMessage(
+    uidl,
+    from,
+    subject,
+    text,
+    verdict.auto,
+  );
   // Names of files written to disk during the transaction, so they can be removed if it fails
   const written: string[] = [];
 
@@ -317,6 +408,7 @@ async function handleMessage(uidl: string, mail: ParsedMail): Promise<void> {
         text,
         target ? target.id : null,
         names,
+        priority,
       );
       const saved = await saveMailFiles(
         c,

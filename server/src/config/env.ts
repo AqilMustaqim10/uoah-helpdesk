@@ -85,6 +85,7 @@ export const config = {
   appUrl: optional("APP_URL", "http://localhost:5173").replace(/\/+$/, ""), // used for links in emails
   databaseUrl: required("DATABASE_URL"),
   geminiApiKey: optional("GEMINI_API_KEY"),
+  geminiPriorityApiKey: optional("GEMINI_PRIORITY_API_KEY"),
   geminiModel: optional("GEMINI_MODEL", "gemini-3.5-flash-lite"),
   jwtSecret, // signs the login cookie
   codeSecret, // hashes the 6-digit email codes and the recovery codes

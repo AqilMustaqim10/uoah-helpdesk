@@ -99,7 +99,7 @@ Keep the generated secrets private. Do not replace `CODE_HMAC_SECRET` or `MFA_EN
 
 Set `SEED_ADMIN_EMAIL`, `SEED_ADMIN_NAME`, and `SEED_ADMIN_PASSWORD` in `server/.env` to create the first administrator. The password must be at least 10 characters, include a letter and a number, and fit bcrypt's 72-byte limit.
 
-For signup verification, password recovery, and outgoing notifications, configure `SMTP_HOST`, `SMTP_PORT`, `SMTP_USER`, `SMTP_PASS`, and `MAIL_FROM`. Incoming email is optional; configure `POP3_HOST`, `POP3_PORT`, `POP3_TLS`, `POP3_USER`, and `POP3_PASS` if you want to run the email worker. `GEMINI_API_KEY` is optional and enables AI reply suggestions; `GEMINI_MODEL` defaults to `gemini-3.5-flash-lite`.
+For signup verification, password recovery, and outgoing notifications, configure `SMTP_HOST`, `SMTP_PORT`, `SMTP_USER`, `SMTP_PASS`, and `MAIL_FROM`. Incoming email is optional; configure `POP3_HOST`, `POP3_PORT`, `POP3_TLS`, `POP3_USER`, and `POP3_PASS` if you want to run the email worker. `GEMINI_API_KEY` enables optional AI reply suggestions. To classify priorities on new email tickets, configure the separate optional `GEMINI_PRIORITY_API_KEY`; new-ticket subject and body text are sent to Gemini, and classification failures are logged while the ticket defaults to `MEDIUM`. Both features use `GEMINI_MODEL`, which defaults to `gemini-3.5-flash-lite`.
 
 ### 4. Install and start the client
 
