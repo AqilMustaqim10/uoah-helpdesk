@@ -1,14 +1,15 @@
 // PDF export of tickets. Mounted at /api/export for IT/ADMIN only (index.ts), and scoped exactly like the list:
 // buildTicketFilters() puts ticketScope() first, so an IT user only ever exports their own unit's tickets.
-// New: the report can be limited to a business unit (bu) and to a period (day, week, month or year, by the
-// day each ticket was CREATED), and the PDF header says which filters were applied.
+// The report can be limited to a business unit (bu), an IT staff member (ADMIN only), and a period
+// (day, week, month or year, by the day each ticket was CREATED); the PDF header lists applied filters.
 //   GET /api/export/tickets.pdf?bu=all|<id>&period=all|day|week|month|year
 //                              &date=YYYY-MM-DD (day, week) &month=1-12&year=YYYY (month, year)
-//                              &tz=Asia/Kuala_Lumpur  [&status=&priority=&assignee=&q=]
+//                              &tz=Asia/Kuala_Lumpur  [&status=&priority=&assignee=&q=&it_staff=]
 import { Router } from "express";
 import { pool, query } from "../db/pool";
 import { audit } from "../db/audit";
-import { ah } from "../lib/http";
+import { ah, HttpError } from "../lib/http";
+import { bodyId } from "../lib/validate";
 import {
   PRIORITY_LABEL,
   STATUS_LABEL,
@@ -44,24 +45,85 @@ function displayZone(tz: string): string {
 }
 
 router.get(
+  "/it-staff",
+  ah(async (req, res) => {
+    if (req.user!.role !== "ADMIN") {
+      throw new HttpError(403, "Only administrators can view IT staff.");
+    }
+
+    const result = await query(
+      `SELECT u.id, u.name, u.is_active, u.business_unit_id,
+              bu.code AS unit_code, bu.name AS unit_name
+         FROM users u
+         LEFT JOIN business_units bu ON bu.id = u.business_unit_id
+        WHERE u.role = 'IT' AND u.deleted_at IS NULL
+        ORDER BY u.is_active DESC, lower(u.name), u.id`,
+    );
+    res.setHeader("Cache-Control", "no-store");
+    res.json({ staff: result.rows });
+  }),
+);
+
+router.get(
   "/tickets.pdf",
   ah(async (req, res) => {
     const user = req.user!;
     const q = req.query as Record<string, unknown>;
 
-    // 1) Validate the new filters. Anything odd stops here with a 400 (or a 403 for another unit).
-    const unit = await resolveBusinessUnit(user, q.bu ?? q.unit);
+    const itStaffFilter = qstr(q.it_staff);
+    let selectedItStaff: {
+      id: number;
+      name: string;
+      business_unit_id: number | null;
+    } | null = null;
+    if (itStaffFilter) {
+      if (user.role !== "ADMIN") {
+        throw new HttpError(
+          403,
+          "Only administrators can filter exports by IT staff.",
+        );
+      }
+
+      const staffId = bodyId(itStaffFilter, "IT staff");
+      const staffResult = await query(
+        `SELECT id, name, business_unit_id
+           FROM users
+          WHERE id = $1 AND role = 'IT' AND deleted_at IS NULL`,
+        [staffId],
+      );
+      selectedItStaff = staffResult.rows[0] ?? null;
+      if (!selectedItStaff) throw new HttpError(400, "Invalid IT staff filter.");
+      if (selectedItStaff.business_unit_id === null) {
+        throw new HttpError(
+          400,
+          "The selected IT staff member has no business unit.",
+        );
+      }
+    }
+
+    // Selecting an IT staff member automatically scopes the export to their business unit.
+    const unit = await resolveBusinessUnit(
+      user,
+      selectedItStaff
+        ? String(selectedItStaff.business_unit_id)
+        : (q.bu ?? q.unit),
+    );
     const period = resolvePeriod(q);
     const tz = await dbTimeZone(q.tz);
     // The logo for this report: the chosen unit's own logo (IT: always their own unit's), the group logo for "all units",
     // or a colored badge when there is no usable picture. Never fails the export.
     const logo = await reportLogoFor(unit.id);
 
-    // 2) Visibility (ticketScope, first) and the other list filters, from the ONE shared builder
+    // Visibility (ticketScope, first) and the other list filters, from the ONE shared builder
     const { conds, params } = buildTicketFilters(user, {
       ...q,
       unit: unit.id ? String(unit.id) : "",
     });
+
+    if (selectedItStaff) {
+      params.push(selectedItStaff.id);
+      conds.push(`t.assigned_to = $${params.length}`);
+    }
 
     // 3) The period (a range of days in the person's time zone)
     const pc = periodCondition(period, tz, params.length + 1);
@@ -89,6 +151,7 @@ router.get(
       unit.id,
       period,
       tz,
+      selectedItStaff?.id,
     );
 
     // 4) A readable list of the OTHER filters (the unit and the period are in the header already)
@@ -106,6 +169,7 @@ router.get(
     const assignee = qstr(q.assignee);
     if (assignee === "unassigned") filters.push("Unassigned");
     if (assignee === "me") filters.push("Assigned to me");
+    if (selectedItStaff) filters.push(`IT staff: ${selectedItStaff.name}`);
     const search = qstr(q.q).slice(0, 60);
     if (search) filters.push(`Search: "${search}"`);
 
@@ -142,6 +206,7 @@ router.get(
         format: "PDF",
         unit: unit.code ?? "ALL",
         period: period.slug,
+        itStaffId: selectedItStaff?.id ?? null,
       },
     });
 

@@ -6,6 +6,8 @@ import type { TicketQuery } from "../types";
 export interface ExportOptions {
   /** 'all', or a business unit id (IT always sends their own). */
   bu: string;
+  /** An IT staff user id (ADMIN only); empty means all staff. */
+  itStaffId?: string;
   period: ExportPeriod;
   /** YYYY-MM-DD, used by day and week. */
   date: string;
@@ -34,6 +36,7 @@ export function exportPdf(listFilters: TicketQuery, o: ExportOptions) {
     if (listFilters.assignee) p.set("assignee", listFilters.assignee);
   }
 
+  if (o.itStaffId) p.set("it_staff", o.itStaffId);
   p.set("bu", o.bu || "all");
   p.set("period", o.period);
   if (o.period === "day" || o.period === "week") p.set("date", o.date);
@@ -63,4 +66,18 @@ export function fetchLogoPreview(bu: string) {
   return api.get<LogoPreview>(
     `/export/logo-preview?bu=${encodeURIComponent(bu || "all")}`,
   );
+}
+
+export interface ExportItStaff {
+  id: number;
+  name: string;
+  is_active: boolean;
+  business_unit_id: number | null;
+  unit_code: string | null;
+  unit_name: string | null;
+}
+
+/** Active and inactive IT staff accounts that may appear in ticket history (ADMIN only). */
+export function fetchExportItStaff() {
+  return api.get<{ staff: ExportItStaff[] }>("/export/it-staff");
 }

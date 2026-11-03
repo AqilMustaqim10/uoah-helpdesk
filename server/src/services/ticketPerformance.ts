@@ -15,12 +15,18 @@ export async function ticketClosuresByAgent(
   businessUnitId: number | null,
   period: PeriodRange,
   timeZone: string,
+  agentId?: number,
 ): Promise<TicketClosuresByAgent[]> {
   const conditions = [
     "t.status IN ('RESOLVED','CLOSED')",
     "u.role = 'IT'",
   ];
   const params: unknown[] = [];
+
+  if (agentId !== undefined) {
+    params.push(agentId);
+    conditions.push(`u.id = $${params.length}`);
+  }
 
   if (businessUnitId !== null) {
     params.push(businessUnitId);

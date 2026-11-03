@@ -1,5 +1,5 @@
 // The Tickets tab: filters, the list, paging, and (for IT/ADMIN) the PDF export.
-// "Export PDF" opens a window where you choose the business unit and the period (day, week, month or year).
+// "Export PDF" opens a window where you choose the business unit, IT staff and period.
 // Clicking a row opens the ticket window (which AppShell shows). The list reloads whenever `version` changes.
 import { useEffect, useRef, useState } from "react";
 import { Download, SearchX, Ticket as TicketIcon } from "lucide-react";

@@ -1,9 +1,13 @@
-// The "Export PDF report" window: choose the business unit and the period, see exactly what the report will say,
+// The "Export PDF report" window: choose the business unit, IT staff and period, see exactly what the report will say,
 // then download. IT can only export their own unit (the unit box is fixed). The server checks everything again.
-import { useState, type FormEvent } from "react";
+import { useEffect, useState, type FormEvent } from "react";
 import { Download } from "lucide-react";
 import { ApiError } from "../../api/client";
-import { exportPdf } from "../../api/export";
+import {
+  exportPdf,
+  fetchExportItStaff,
+  type ExportItStaff,
+} from "../../api/export";
 import { useToast } from "../../hooks/useToast";
 import { cn } from "../../lib/cn";
 import { saveBlob } from "../../lib/download";
@@ -71,16 +75,45 @@ export default function ExportPdfModal({
   const [month, setMonth] = useState(now.getMonth() + 1);
   const [year, setYear] = useState(thisYear);
   const [applyList, setApplyList] = useState(true);
+  const [itStaffId, setItStaffId] = useState("");
+  const [itStaff, setItStaff] = useState<ExportItStaff[]>([]);
+  const [staffLoading, setStaffLoading] = useState(isAdmin);
+  const [staffError, setStaffError] = useState("");
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState("");
 
   const listLines = listFilterLines(filters);
+  const selectedItStaff = itStaff.find(
+    (staff) => String(staff.id) === itStaffId,
+  );
+  const detectedBu = selectedItStaff?.business_unit_id;
+  const exportBu =
+    detectedBu != null ? String(detectedBu) : bu;
+
+  useEffect(() => {
+    if (!isAdmin) return;
+    fetchExportItStaff()
+      .then((response) => setItStaff(response.staff))
+      .catch((err) =>
+        setStaffError(
+          err instanceof ApiError
+            ? err.message
+            : "Could not load IT staff.",
+        ),
+      )
+      .finally(() => setStaffLoading(false));
+  }, [isAdmin]);
 
   const unitLabel = isAdmin
-    ? bu === ""
+    ? exportBu === ""
       ? "All business units"
       : (() => {
-          const u = units.find((x) => String(x.id) === bu);
+          const staffUnit =
+            detectedBu != null ? selectedItStaff : undefined;
+          if (staffUnit?.unit_name) {
+            return `${staffUnit.unit_name}${staffUnit.unit_code ? ` (${staffUnit.unit_code})` : ""}`;
+          }
+          const u = units.find((x) => String(x.id) === exportBu);
           return u ? `${u.name} (${u.code})` : "the chosen unit";
         })()
     : `${user.branding?.name ?? "Your business unit"}${user.branding?.code ? ` (${user.branding.code})` : ""}`;
@@ -101,10 +134,11 @@ export default function ExportPdfModal({
     try {
       const { blob, filename } = await exportPdf(filters, {
         bu: isAdmin
-          ? bu || "all"
+          ? exportBu || "all"
           : user.business_unit_id
             ? String(user.business_unit_id)
             : "all",
+        itStaffId: isAdmin ? itStaffId : "",
         period,
         date,
         month,
@@ -143,11 +177,20 @@ export default function ExportPdfModal({
         {/* Business unit */}
         {isAdmin ? (
           <Select
-            label="Business unit"
-            value={bu}
+            label={selectedItStaff ? "Business unit (detected from IT staff)" : "Business unit"}
+            value={exportBu}
+            disabled={!!selectedItStaff}
             onChange={(e) => setBu(e.target.value)}
           >
-            <option value="">All business units</option>
+            {!selectedItStaff && <option value="">All business units</option>}
+            {selectedItStaff ? (
+              <option value={exportBu}>
+                {selectedItStaff.unit_name ?? "Business unit"}
+                {selectedItStaff.unit_code
+                  ? ` (${selectedItStaff.unit_code})`
+                  : ""}
+              </option>
+            ) : null}
             {units.map((u) => (
               <option key={u.id} value={u.id}>
                 {u.name} ({u.code})
@@ -165,9 +208,38 @@ export default function ExportPdfModal({
           </Select>
         )}
 
+        {isAdmin && (
+          <Select
+            label="IT staff"
+            value={itStaffId}
+            disabled={staffLoading || !!staffError}
+            onChange={(e) => setItStaffId(e.target.value)}
+          >
+            <option value="">
+              {staffLoading
+                ? "Loading IT staff..."
+                : staffError
+                  ? "IT staff unavailable"
+                  : "All IT staff"}
+            </option>
+            {itStaff.map((staff) => (
+              <option
+                key={staff.id}
+                value={staff.id}
+                disabled={staff.business_unit_id === null}
+              >
+                {staff.name}
+                {staff.unit_code ? ` (${staff.unit_code})` : ""}
+                {!staff.is_active ? " (inactive)" : ""}
+                {staff.business_unit_id === null ? " (no business unit)" : ""}
+              </option>
+            ))}
+          </Select>
+        )}
+
         {/* Period */}
         {/* The logo the PDF will show for this business unit (IT: always their own unit) */}
-        <ReportLogoPreview bu={isAdmin ? bu || "all" : "all"} />
+        <ReportLogoPreview bu={isAdmin ? exportBu || "all" : "all"} />
         <fieldset>
           <legend className="mb-1.5 text-sm font-medium text-slate-700">
             Period{" "}
@@ -294,7 +366,7 @@ export default function ExportPdfModal({
           </p>
         </div>
 
-        <FormError message={error} />
+        <FormError message={error || staffError} />
 
         <div className="flex justify-end gap-2">
           <Button variant="secondary" onClick={onClose} disabled={busy}>
