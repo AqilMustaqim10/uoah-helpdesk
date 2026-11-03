@@ -1,4 +1,4 @@
-import Groq from "groq-sdk";
+import { GoogleGenAI } from "@google/genai";
 import { Router } from "express";
 import { config } from "../config/env";
 import { pool, query } from "../db/pool";
@@ -36,10 +36,10 @@ router.post(
     if (!canSeeInternal(user)) throw new HttpError(404, "Not found");
     if (ticket.status === "CLOSED")
       throw new HttpError(409, "This ticket is closed and cannot be changed.");
-    if (!config.groqApiKey)
+    if (!config.geminiApiKey)
       throw new HttpError(
         503,
-        "AI suggestions are not configured. Add GROQ_API_KEY to the server environment.",
+        "AI suggestions are not configured. Add GEMINI_API_KEY to the server environment.",
       );
 
     const comments = await query(
@@ -77,23 +77,22 @@ router.post(
 
     let suggestion: string;
     try {
-      const groq = new Groq({ apiKey: config.groqApiKey });
-      const response = await groq.chat.completions.create(
-        {
-          model: config.groqModel,
-          messages: [{ role: "user", content: prompt }],
-          max_tokens: 1024,
-          temperature: 0.4,
-        },
-        { timeout: 30_000 },
-      );
-      const choice = response.choices[0];
-      if (choice?.finish_reason === "length")
+      const gemini = new GoogleGenAI({
+        apiKey: config.geminiApiKey,
+        httpOptions: { timeout: 30_000 },
+      });
+      const response = await gemini.models.generateContent({
+        model: config.geminiModel,
+        contents: prompt,
+        config: { maxOutputTokens: 1024, temperature: 0.4 },
+      });
+      const candidate = response.candidates?.[0];
+      if (candidate?.finishReason === "MAX_TOKENS")
         throw new HttpError(
           502,
-          "Groq truncated the suggestion. Please try again.",
+          "Gemini truncated the suggestion. Please try again.",
         );
-      suggestion = choice?.message.content?.trim() ?? "";
+      suggestion = response.text?.trim() ?? "";
     } catch (error) {
       if (error instanceof HttpError) throw error;
       const status = providerStatus(error);
@@ -104,32 +103,32 @@ router.post(
       )
         throw new HttpError(
           504,
-          "Groq took too long to generate a suggestion. Please try again.",
+          "Gemini took too long to generate a suggestion. Please try again.",
         );
       if (status === 429)
         throw new HttpError(
           429,
-          "Groq's free-tier quota is temporarily exhausted. Please try again later.",
+          "Gemini's free-tier quota is temporarily exhausted. Please try again later.",
         );
       if (status === 401 || status === 403)
         throw new HttpError(
           503,
-          "AI suggestions are unavailable because of a Groq API configuration issue.",
+          "AI suggestions are unavailable because of a Gemini API configuration issue.",
         );
       if (status === 404)
         throw new HttpError(
           503,
-          "The configured Groq model is unavailable or retired. Set GROQ_MODEL to an active model such as openai/gpt-oss-120b.",
+          "The configured Gemini model is unavailable. Check the GEMINI_MODEL setting.",
         );
       if (status === 400)
         throw new HttpError(
           502,
-          "Groq rejected the suggestion request. If the problem continues, check the model configuration.",
+          "Gemini rejected the suggestion request. If the problem continues, check the model configuration.",
         );
       if (status !== undefined && status >= 500)
         throw new HttpError(
           503,
-          "Groq suggestions are temporarily unavailable. Please try again later.",
+          "Gemini suggestions are temporarily unavailable. Please try again later.",
         );
       throw error;
     }
@@ -137,7 +136,7 @@ router.post(
     if (!suggestion)
       throw new HttpError(
         502,
-        "Groq returned an empty suggestion. Please try again.",
+        "Gemini returned an empty suggestion. Please try again.",
       );
     res.json({ suggestion });
   }),

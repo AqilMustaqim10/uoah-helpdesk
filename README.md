@@ -11,7 +11,7 @@ A web-based helpdesk for UOA Hospitality. Employees can submit and follow suppor
 - User, business-unit, department, and branding administration
 - Email verification, password recovery, and optional two-factor authentication
 - Optional email-to-ticket ingestion using a dedicated POP3 worker
-- Optional AI reply suggestions using Groq
+- Optional AI reply suggestions using Google Gemini
 
 ### Roles
 
@@ -99,7 +99,7 @@ Keep the generated secrets private. Do not replace `CODE_HMAC_SECRET` or `MFA_EN
 
 Set `SEED_ADMIN_EMAIL`, `SEED_ADMIN_NAME`, and `SEED_ADMIN_PASSWORD` in `server/.env` to create the first administrator. The password must be at least 10 characters, include a letter and a number, and fit bcrypt's 72-byte limit.
 
-For signup verification, password recovery, and outgoing notifications, configure `SMTP_HOST`, `SMTP_PORT`, `SMTP_USER`, `SMTP_PASS`, and `MAIL_FROM`. Incoming email is optional; configure `POP3_HOST`, `POP3_PORT`, `POP3_TLS`, `POP3_USER`, and `POP3_PASS` if you want to run the email worker. `GROQ_API_KEY` is also optional and enables AI reply suggestions.
+For signup verification, password recovery, and outgoing notifications, configure `SMTP_HOST`, `SMTP_PORT`, `SMTP_USER`, `SMTP_PASS`, and `MAIL_FROM`. Incoming email is optional; configure `POP3_HOST`, `POP3_PORT`, `POP3_TLS`, `POP3_USER`, and `POP3_PASS` if you want to run the email worker. `GEMINI_API_KEY` is optional and enables AI reply suggestions; `GEMINI_MODEL` defaults to `gemini-3.5-flash-lite`.
 
 ### 4. Install and start the client
 
