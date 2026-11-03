@@ -4,6 +4,7 @@ import {
   CircleDot,
   Clock,
   Flame,
+  Gauge,
   Ticket,
   type LucideIcon,
 } from "lucide-react";
@@ -16,6 +17,7 @@ interface CardDef {
   hint?: string;
   icon: LucideIcon;
   tone: string; // colors of the small icon bubble
+  suffix?: string;
 }
 
 const CARDS: CardDef[] = [
@@ -50,6 +52,14 @@ const CARDS: CardDef[] = [
     icon: Flame,
     tone: "bg-rose-50 text-rose-700",
   },
+  {
+    key: "sla",
+    label: "SLA met",
+    hint: "Active tickets on track",
+    icon: Gauge,
+    tone: "bg-sky-50 text-sky-700",
+    suffix: "%",
+  },
 ];
 
 function Card({
@@ -81,6 +91,7 @@ function Card({
       </div>
       <p className="mt-2 text-3xl font-semibold tabular-nums text-slate-900">
         {shown}
+        {def.suffix ?? ""}
       </p>
       {def.hint && <p className="mt-0.5 text-xs text-slate-400">{def.hint}</p>}
     </button>
@@ -95,7 +106,7 @@ export default function KpiCards({
   onSelect: (key: keyof DashboardStats["kpis"]) => void;
 }) {
   return (
-    <div className="grid grid-cols-2 gap-3 lg:grid-cols-5">
+    <div className="grid grid-cols-2 gap-3 lg:grid-cols-6">
       {CARDS.map((c) => (
         <Card
           key={c.key}

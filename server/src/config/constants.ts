@@ -42,13 +42,16 @@ export const TRANSITIONS: Record<Status, readonly Status[]> = {
   CLOSED: [],
 };
 
-/** Hours after creation before an OPEN/IN_PROGRESS ticket is "overdue" (only when no manual due date is set). */
-export const OVERDUE_HOURS: Record<Priority, number> = {
+/** The default SLA target, in hours, for each priority when no manual due date is set. */
+export const SLA_TARGET_HOURS: Record<Priority, number> = {
   URGENT: 4,
   HIGH: 8,
   MEDIUM: 24,
   LOW: 72,
 };
+
+/** Backward-compatible alias used by the overdue logic. */
+export const OVERDUE_HOURS = SLA_TARGET_HOURS;
 
 /** Names used by the seed script to create the six units. */
 export const UNIT_DEFAULTS: ReadonlyArray<{ code: UnitCode; name: string }> = [

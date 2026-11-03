@@ -1,5 +1,5 @@
 // Small SQL helpers shared by several routes.
-import { OVERDUE_HOURS } from "../config/constants";
+import { SLA_TARGET_HOURS } from "../config/constants";
 
 /** Display id of a ticket: 12 -> "TKT-12". */
 export const ticketRef = (id: number): string => `TKT-${id}`;
@@ -12,7 +12,7 @@ export const ticketRef = (id: number): string => `TKT-${id}`;
  * The numbers come from our own constants (never from users), so building the text here is safe.
  */
 export function overdueSql(alias = "t"): string {
-  const cases = Object.entries(OVERDUE_HOURS)
+  const cases = Object.entries(SLA_TARGET_HOURS)
     .map(
       ([priority, hours]) =>
         `WHEN '${priority}' THEN interval '${hours} hours'`,

@@ -45,6 +45,13 @@ export const STATUS_META: Record<
 
 export const PRIORITY_LIST: Priority[] = ["LOW", "MEDIUM", "HIGH", "URGENT"];
 
+export const SLA_TARGET_HOURS: Record<Priority, number> = {
+  LOW: 72,
+  MEDIUM: 24,
+  HIGH: 8,
+  URGENT: 4,
+};
+
 export const PRIORITY_META: Record<Priority, { label: string; chip: string }> =
   {
     LOW: { label: "Low", chip: "bg-slate-100 text-slate-500 ring-slate-200" },

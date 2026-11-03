@@ -7,7 +7,11 @@ import { SlidersHorizontal } from "lucide-react";
 import { ticketsApi } from "../../api/tickets";
 import { useToast } from "../../hooks/useToast";
 import { formatDateTime, toLocalInputValue } from "../../lib/format";
-import { PRIORITY_LIST, PRIORITY_META } from "../../lib/ticketMeta";
+import {
+  PRIORITY_LIST,
+  PRIORITY_META,
+  SLA_TARGET_HOURS,
+} from "../../lib/ticketMeta";
 import type {
   Assignee,
   Priority,
@@ -116,7 +120,7 @@ export default function TicketManage({
     >
       <ProgressSteps status={ticket.status} />
 
-      <dl className="mt-5 grid gap-4 border-t border-slate-200 pt-4 sm:grid-cols-3">
+      <dl className="mt-5 grid gap-4 border-t border-slate-200 pt-4 sm:grid-cols-4">
         <Field label="Priority">
           {canEdit ? (
             <select
@@ -145,6 +149,15 @@ export default function TicketManage({
           ) : (
             <PriorityBadge priority={ticket.priority} />
           )}
+        </Field>
+
+        <Field label="SLA target">
+          <p className="text-sm text-slate-800">
+            {SLA_TARGET_HOURS[ticket.priority]} hours
+          </p>
+          <p className="mt-1 text-[11px] text-slate-500">
+            Priority-based service target
+          </p>
         </Field>
 
         <Field label="Assignee">

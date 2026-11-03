@@ -172,6 +172,7 @@ export interface DashboardStats {
     closed: number;
     urgent: number;
     overdue: number;
+    sla: number;
   };
   /** Active tickets (Open + In progress) per priority. */
   byPriority: Record<Priority, number>;

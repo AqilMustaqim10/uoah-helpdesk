@@ -71,7 +71,17 @@ router.get(
               count(*) FILTER (WHERE t.status = 'RESOLVED')::int AS resolved,
               count(*) FILTER (WHERE t.status = 'CLOSED')::int AS closed,
               count(*) FILTER (WHERE t.priority = 'URGENT' AND t.status IN ('OPEN','IN_PROGRESS'))::int AS urgent,
-              count(*) FILTER (WHERE ${overdueSql("t")})::int AS overdue
+              count(*) FILTER (WHERE ${overdueSql("t")})::int AS overdue,
+              COALESCE(
+                CASE
+                  WHEN count(*) FILTER (WHERE t.status IN ('OPEN','IN_PROGRESS')) = 0 THEN 0
+                  ELSE ROUND(
+                    100.0 * count(*) FILTER (WHERE t.status IN ('OPEN','IN_PROGRESS') AND NOT ${overdueSql("t")}) /
+                    count(*) FILTER (WHERE t.status IN ('OPEN','IN_PROGRESS'))
+                  )
+                END,
+                0
+              )::int AS sla
          FROM tickets t
         WHERE ${where}`,
       params,

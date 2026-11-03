@@ -224,8 +224,8 @@ export default function DashboardPage({
     return (
       <div className="space-y-4" aria-busy="true" aria-label="Loading dashboard">
         {filterBar}
-        <div className="grid grid-cols-2 gap-3 lg:grid-cols-5">
-          {Array.from({ length: 5 }).map((_, i) => <Skeleton key={i} className="h-24" />)}
+        <div className="grid grid-cols-2 gap-3 lg:grid-cols-6">
+          {Array.from({ length: 6 }).map((_, i) => <Skeleton key={i} className="h-24" />)}
         </div>
         <Skeleton className="h-64" />
         <Skeleton className="h-48" />
@@ -322,9 +322,11 @@ export default function DashboardPage({
     };
     const status = statusByKpi[key];
     if (status) filters.status = status;
+    if (key === "urgent" || key === "sla") {
+      filters.activeOnly = true;
+    }
     if (key === "urgent") {
       filters.priority = "URGENT";
-      filters.activeOnly = true;
     }
     onShowTickets({ ...currentTicketFilters, ...filters });
   }
