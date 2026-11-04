@@ -1,15 +1,21 @@
-// Reads and checks every setting from server/.env.
-// If something important is missing or weak, the server refuses to start
-// and prints a simple message saying what to fix.
-import "dotenv/config";
+// Reads and checks every setting from the env file.
+// Supports DOTENV_CONFIG_PATH so UAT / PROD can use different files.
+import dotenv from "dotenv";
 import path from "node:path";
+
+// Load the file indicated by DOTENV_CONFIG_PATH (or fall back to .env)
+dotenv.config({
+  path: process.env.DOTENV_CONFIG_PATH
+    ? path.resolve(process.cwd(), process.env.DOTENV_CONFIG_PATH)
+    : path.resolve(process.cwd(), ".env"),
+});
 
 /** A setting that MUST exist. Stops the program with a friendly message if missing. */
 function required(name: string): string {
   const v = process.env[name];
   if (!v || !v.trim()) {
     console.error(
-      `\nMissing setting ${name} in server/.env. Open server/.env and fill it in.\n`,
+      `\nMissing setting ${name} in the environment file. Open the correct .env.* file and fill it in.\n`,
     );
     process.exit(1);
   }
@@ -72,8 +78,12 @@ if (!/^[0-9a-fA-F]{64}$/.test(mfaKey)) {
 /** All settings in one place. Other files import { config } from this file. */
 export const config = {
   nodeEnv,
-  isProd, // production turns on secure cookies
+  isProd,
   port: intOf("PORT", 3000),
+  bindAddress: optional("BIND_ADDRESS", "0.0.0.0"),
+  trustProxy:
+    optional("TRUST_PROXY", isProd ? "1" : "0") === "1" ||
+    optional("TRUST_PROXY", "0") === "true",
   clientOrigin: clientOrigins[0] ?? "http://localhost:5173",
   clientOrigins,
   requireHttps,
@@ -82,21 +92,19 @@ export const config = {
     process.cwd(),
     optional("CLIENT_DIST", "../client/dist"),
   ),
-  appUrl: optional("APP_URL", "http://localhost:5173").replace(/\/+$/, ""), // used for links in emails
+  appUrl: optional("APP_URL", "http://localhost:5173").replace(/\/+$/, ""),
   databaseUrl: required("DATABASE_URL"),
   geminiApiKey: optional("GEMINI_API_KEY"),
   geminiPriorityApiKey: optional("GEMINI_PRIORITY_API_KEY"),
   geminiModel: optional("GEMINI_MODEL", "gemini-3.5-flash-lite"),
-  jwtSecret, // signs the login cookie
-  codeSecret, // hashes the 6-digit email codes and the recovery codes
-  mfaKey: mfaKey.toLowerCase(), // encrypts the authenticator (2FA) secrets
-  // Only these email domains may register
+  jwtSecret,
+  codeSecret,
+  mfaKey: mfaKey.toLowerCase(),
   allowedDomains: optional("ALLOWED_SENDER_DOMAINS")
     .split(",")
     .map((d) => d.trim().toLowerCase())
     .filter(Boolean),
   uploadDir: path.resolve(process.cwd(), optional("UPLOAD_DIR", "./uploads")),
-  // Outgoing mail
   smtp: {
     host: optional("SMTP_HOST"),
     port: intOf("SMTP_PORT", 587),
@@ -105,7 +113,6 @@ export const config = {
     pass: optional("SMTP_PASS"),
     from: optional("MAIL_FROM"),
   },
-  // Incoming mail (POP3)
   pop3: {
     host: optional("POP3_HOST"),
     port: intOf("POP3_PORT", 995),
@@ -113,9 +120,7 @@ export const config = {
     user: optional("POP3_USER"),
     pass: optional("POP3_PASS"),
   },
-  // How often the worker checks the mailbox (never faster than every 10 seconds)
   ingestIntervalSeconds: Math.max(10, intOf("INGEST_INTERVAL_SECONDS", 10)),
-  // First admin account (used only by the seed script)
   seed: {
     email: optional("SEED_ADMIN_EMAIL").toLowerCase(),
     name: optional("SEED_ADMIN_NAME", "Administrator"),

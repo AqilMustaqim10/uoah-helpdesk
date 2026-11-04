@@ -1,6 +1,7 @@
 import express from "express";
 import cookieParser from "cookie-parser";
 import cors from "cors";
+import path from "node:path";
 import { config } from "./config/env";
 import { query } from "./db/pool";
 import { purgeOldAuditLogs } from "./db/audit";
@@ -36,17 +37,43 @@ import kbSearchRoutes from "./routes/kbSearch";
 const app = express();
 const AUDIT_LOG_CLEANUP_INTERVAL_MS = 24 * 60 * 60 * 1000;
 
-app.disable("x-powered-by"); // don't advertise that we use Express
+app.disable("x-powered-by");
 
-// Basic safety headers on every response
+// Behind a reverse proxy (IIS, nginx, Cloudflare, etc.)
+if (config.trustProxy) {
+  app.set("trust proxy", 1);
+}
+
+// Force HTTPS in production / UAT when required
+if (config.requireHttps) {
+  app.use((req, res, next) => {
+    if (req.secure || req.headers["x-forwarded-proto"] === "https") {
+      return next();
+    }
+    // Only redirect GET/HEAD so we don't break API clients that POST over HTTP
+    if (req.method === "GET" || req.method === "HEAD") {
+      return res.redirect(301, `https://${req.headers.host}${req.url}`);
+    }
+    return res.status(403).json({ error: "HTTPS required" });
+  });
+}
+
+// Basic + extra safety headers
 app.use((_req, res, next) => {
   res.setHeader("X-Content-Type-Options", "nosniff");
   res.setHeader("X-Frame-Options", "DENY");
   res.setHeader("Referrer-Policy", "no-referrer");
+  res.setHeader(
+    "Strict-Transport-Security",
+    "max-age=31536000; includeSubDomains",
+  );
+  res.setHeader(
+    "Content-Security-Policy",
+    "default-src 'self'; script-src 'self'; style-src 'self' 'unsafe-inline'; img-src 'self' data:; font-src 'self'; connect-src 'self'; frame-ancestors 'none'",
+  );
   next();
 });
 
-// Only our web app may call the API from a browser, and it may send the login cookie.
 app.use(
   cors({
     origin: (origin, callback) => {
@@ -56,15 +83,11 @@ app.use(
   }),
 );
 
-// 256 KB: knowledge base articles can be up to 50,000 characters
-// (some may use multi-byte letters)
 app.use(express.json({ limit: "256kb" }));
 app.use(cookieParser());
 
-// Overall rate limit + "must come from our web app" check for every /api call
 app.use("/api", apiLimiter, originCheck);
 
-// A quick "is it alive?" check (also tests the database connection)
 app.get(
   "/api/health",
   ah(async (_req, res) => {
@@ -73,11 +96,9 @@ app.get(
   }),
 );
 
-// Two-factor authentication first (its own login rules), then the rest of sign-in
 app.use("/api/auth/2fa", mfaRoutes);
 app.use("/api/auth", authRoutes);
 
-// Everything below needs a logged-in user (requireAuth runs first)
 app.use(
   "/api/tickets",
   requireAuth,
@@ -91,35 +112,21 @@ app.use(
 
 app.use("/api/files", requireAuth, itClosedFileGuard, fileRoutes);
 
-// Dashboard numbers and PDF export: IT and ADMIN only
-// A USER gets "not found"
 app.use("/api/stats", requireAuth, requireRole("ADMIN", "IT"), statsRoutes);
 app.use("/api/export", requireAuth, requireRole("ADMIN", "IT"), exportRoutes);
-
-// Ticket History: finished tickets of every unit, read-only.
-// Standard users get "not found".
 app.use("/api/history", requireAuth, requireRole("ADMIN", "IT"), historyRoutes);
-
-// User Directory: ADMIN gets everything, IT gets a limited version
-// (each route checks its own rules).
-// IT management actions are limited to normal users in their own unit.
 app.use("/api/users", requireAuth, requireRole("ADMIN", "IT"), userRoutes);
 app.use("/api/users", requireAuth, requireRole("ADMIN", "IT"), userMfaRoutes);
-
-// The audit log viewer: ADMIN only
 app.use("/api/audit", requireAuth, requireRole("ADMIN"), auditRoutes);
-
-// Branding: the logo is for any logged-in user of that unit;
-// changes are ADMIN only (checked inside)
 app.use("/api/units", requireAuth, unitRoutes);
+app.use(
+  "/api/departments",
+  requireAuth,
+  requireRole("ADMIN"),
+  departmentRoutes,
+);
 
-// Department management: ADMIN only
-app.use("/api/departments", requireAuth, requireRole("ADMIN"), departmentRoutes);
-
-// Knowledge base. The "suggest" route MUST come first,
-// or "suggest" would be read as an article id.
 app.use("/api/kb/suggest", requireAuth, kbSuggestRoutes);
-// Searching articles to LINK in a reply: IT and ADMIN only (a standard user gets "not found")
 app.use(
   "/api/kb/search",
   requireAuth,
@@ -128,20 +135,26 @@ app.use(
 );
 app.use("/api/kb", requireAuth, kbRoutes);
 
-// Any other /api address does not exist
 app.use("/api", (_req, _res, next) => next(new HttpError(404, "Not found")));
 
-// Must be last: turns errors into clean JSON answers
+// Serve the built React client (production / UAT)
+if (config.serveClient) {
+  app.use(express.static(config.clientDist, { index: false }));
+  app.get("*", (_req, res) => {
+    res.sendFile(path.join(config.clientDist, "index.html"));
+  });
+}
+
 app.use(errorHandler);
 
 async function start() {
-  // Refuse to start if the database is unreachable
-  // (clearer than failing on the first request)
   try {
     await query("SELECT 1");
     const deletedCount = await purgeOldAuditLogs({ query });
     if (deletedCount > 0) {
-      console.log(`[audit] deleted ${deletedCount} log entries older than 14 days`);
+      console.log(
+        `[audit] deleted ${deletedCount} log entries older than 14 days`,
+      );
     }
   } catch (e) {
     console.error(
@@ -166,8 +179,10 @@ async function start() {
   }, AUDIT_LOG_CLEANUP_INTERVAL_MS);
   cleanupTimer.unref();
 
-  app.listen(config.port, () =>
-    console.log(`API running on http://localhost:${config.port}`),
+  app.listen(config.port, config.bindAddress, () =>
+    console.log(
+      `API running on http://${config.bindAddress}:${config.port} (NODE_ENV=${config.nodeEnv})`,
+    ),
   );
 }
 

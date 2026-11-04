@@ -5,6 +5,9 @@ dist/
 # SECRETS: passwords and keys live here. NEVER upload to GitHub.
 .env
 server/.env
+server/.env.*
+!server/.env.example
+!server/.env.*.example
 
 # Uploaded files stay on the server only (keep the empty folder via .gitkeep)
 server/uploads/*

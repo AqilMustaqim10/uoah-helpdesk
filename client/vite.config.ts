@@ -1,18 +1,19 @@
 // Build tool settings.
-// The "proxy" forwards every /api request to the backend on port 3000.
-// This way the browser thinks the app and the API are on the same address,
-// so the login cookie works without any cross-site problems.
+// The "proxy" forwards every /api request to the backend.
+// Set VITE_API_PORT=3001 when running the client against UAT.
 import { defineConfig } from "vite";
 import react from "@vitejs/plugin-react";
 import tailwindcss from "@tailwindcss/vite";
+
+const apiPort = process.env.VITE_API_PORT || "3000";
 
 export default defineConfig({
   plugins: [react(), tailwindcss()],
   server: {
     port: 5173,
-    strictPort: true, // fail loudly if 5173 is busy (the server only trusts this address)
+    strictPort: true,
     proxy: {
-      "/api": { target: "http://localhost:3000" },
+      "/api": { target: `http://localhost:${apiPort}` },
     },
   },
 });
