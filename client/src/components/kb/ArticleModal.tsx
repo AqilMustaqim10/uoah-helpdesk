@@ -124,7 +124,7 @@ export default function ArticleModal({
           <Skeleton className="h-48 w-full" />
         </div>
       ) : (
-        <div>
+        <div className="animate-fade-in">
           <header className="border-b border-slate-200 px-6 py-5 pr-14">
             <div className="flex flex-wrap items-center gap-2">
               {user.role !== "USER" && (

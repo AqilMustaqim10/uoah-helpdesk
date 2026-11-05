@@ -31,7 +31,7 @@ export default function SettingsPage({ user }: { user: User }) {
             onClick={() => setSection(s.key)}
             aria-pressed={section === s.key}
             className={cn(
-              "rounded-md px-4 py-1.5 text-sm font-medium transition-colors",
+              "rounded-md px-4 py-1.5 text-sm font-medium transition-colors active:scale-[0.97]",
               section === s.key
                 ? "bg-brand text-onbrand shadow-sm"
                 : "text-slate-600 hover:bg-slate-100",
