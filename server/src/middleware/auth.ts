@@ -50,12 +50,11 @@ declare global {
   }
 }
 
-// Cookie safety: JavaScript in the page cannot read it (httpOnly),
-// and it is only sent over HTTPS in production (secure).
+// Cookie safety: JavaScript cannot read it; Secure follows the HTTPS setting.
 const cookieOptions = {
   httpOnly: true,
   sameSite: "lax" as const,
-  secure: config.isProd,
+  secure: config.requireHttps,
   path: "/",
 };
 

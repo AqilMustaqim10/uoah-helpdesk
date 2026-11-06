@@ -32,11 +32,11 @@ There is no root `package.json`. Install dependencies and run commands from the 
 
 ## Requirements
 
-- Node.js and npm
+- Node.js 22.12 or newer and npm
 - PostgreSQL 14 or newer
 - A modern browser
 
-PHP is only needed if you choose to use the optional Adminer/development launcher.
+PHP is only needed if you choose to use the optional Adminer/development launcher. The launcher loads database settings from `server/.env.prod`; it keeps the app in local development mode and uses the Vite client on port 3000 with the API on port 3001.
 
 ## Local setup (Windows)
 
@@ -111,7 +111,7 @@ npm install
 npm run dev
 ```
 
-The Vite development server runs at <http://localhost:5173> and proxies `/api` requests to the server on port 3000.
+The Vite development server runs at <http://localhost:3000> and proxies `/api` requests to the server on port 3001.
 
 ### 5. Seed the initial data and administrator
 
@@ -132,9 +132,9 @@ Set-Location server
 npm run dev
 ```
 
-The API runs at <http://localhost:3000>. Check the database-backed health endpoint at <http://localhost:3000/api/health>.
+The API runs at <http://localhost:3001>. Check the database-backed health endpoint at <http://localhost:3001/api/health>.
 
-Open <http://localhost:5173> to use the app. Keep the client and server terminals running while developing.
+Open <http://localhost:3000> to use the app. Keep the client and server terminals running while developing.
 
 ### Optional: start email ingestion
 
@@ -161,8 +161,40 @@ Run each command from its package directory.
 
 ## Production and operations
 
-- Use HTTPS in production. Configure the deployment's trusted proxy and HTTPS settings in `server/.env`; see the comments in `server/.env.example`.
-- To serve the built client from Express, build it with `npm run build` in `client`, then set `SERVE_CLIENT=true` in the server environment. Otherwise, serve the client and API through your deployment's web server/reverse proxy.
+Do not use the UAT environment file or UAT database for production. Create `server/.env.prod` from `server/.env.prod.example`, use a separate production database and fresh secrets, and keep the production uploads and backups separate from UAT.
+
+For a Windows server where users connect by IP and port, use IIS with HTTPS and URL Rewrite plus Application Request Routing (ARR): bind IIS to the server's IP and chosen external HTTPS port, install a certificate trusted by users and valid for that IP, and proxy requests to the Node app on `127.0.0.1:3000`. Users open `https://172.17.50.66:<external-port>` (include `https://`). Do not expose the Node port through Windows Firewall. Plain HTTP is not suitable for production: authentication cookies are Secure and will not work over HTTP.
+
+Set these production values in `server/.env.prod` (the external origin must match the IIS HTTPS binding, including a non-default port; omit `:443` when using the default HTTPS port):
+
+```dotenv
+PORT=3000
+BIND_ADDRESS=127.0.0.1
+TRUST_PROXY=1
+REQUIRE_HTTPS=true
+SERVE_CLIENT=true
+CLIENT_DIST=../client/dist
+CLIENT_ORIGIN=https://172.17.50.66:<external-port>
+APP_URL=https://172.17.50.66:<external-port>
+```
+
+Replace `<external-port>` with the actual port number; do not include angle brackets in the values. Build and start from the repository root in PowerShell:
+
+```powershell
+Push-Location client
+npm ci
+npm run build
+Pop-Location
+
+Push-Location server
+npm ci
+npm run build
+npm run start:prod
+Pop-Location
+```
+
+Keep the Node process running with a Windows service manager or a supervised service, and configure IIS to forward the original HTTPS scheme (`X-Forwarded-Proto: https`). Allow the external HTTPS port through Windows Firewall, not the Node port. Verify `https://172.17.50.66:<external-port>/api/health` and test sign-in from another machine on the LAN.
+
 - Uploaded files are stored under `UPLOAD_DIR` (default `server/uploads`). Persist this directory alongside the database.
 - The database hardening script is optional and intended for production. Review `server/sql/hardening_db.sql` before running it: it restricts database access to the application and backup roles and requires a separately created `helpdesk_backup` role.
 - The backup script requires `BACKUP_DIR` to be outside the project, a read-only `BACKUP_DATABASE_URL`, `BACKUP_PASSPHRASE`, and PostgreSQL's `pg_dump`/`pg_restore` tools. Set `PG_BIN_DIR` if those tools are not on `PATH`. From `server`, run `npx tsx src/scripts/backup.ts` to create a backup.
