@@ -76,7 +76,7 @@ export default function ArticleFilters({
                     onClick={() => onChange({ status: c.key })}
                     aria-pressed={active}
                     className={cn(
-                      "inline-flex h-8 shrink-0 items-center rounded-full px-3 text-sm font-medium transition-colors active:scale-[0.97]",
+                      "inline-flex h-8 shrink-0 items-center rounded-full px-3 text-sm font-medium transition-colors",
                       active
                         ? "bg-brand text-onbrand shadow-sm"
                         : "border border-slate-200 bg-white text-slate-600 hover:bg-slate-50",

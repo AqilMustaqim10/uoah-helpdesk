@@ -243,9 +243,7 @@ export default function TicketModal({
               {/* Status chips and the title */}
               <div>
                 <div className="mb-2 flex flex-wrap items-center gap-2">
-                  <span key={data.ticket.status} className="inline-flex animate-scale-in">
-                    <StatusBadge status={data.ticket.status} />
-                  </span>
+                  <StatusBadge status={data.ticket.status} />
                   <PriorityBadge priority={data.ticket.priority} />
                   {data.ticket.is_overdue && <OverdueBadge />}
                   {data.ticket.source === "EMAIL" && (

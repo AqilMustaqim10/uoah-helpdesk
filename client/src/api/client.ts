@@ -1,5 +1,5 @@
 // One place that talks to the server. Every request:
-//  - goes to /api/... (the Vite proxy forwards it to port 3000)
+//  - goes to /api/... (the Vite proxy forwards it to port 4000)
 //  - sends the login cookie automatically
 //  - turns errors into a friendly ApiError with a readable message
 // It can send JSON, send files (FormData), and download files (Blob).

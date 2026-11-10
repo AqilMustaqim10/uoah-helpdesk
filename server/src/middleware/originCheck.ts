@@ -21,7 +21,7 @@ export function originCheck(
   if (origin && !ALLOWED.includes(origin)) {
     console.warn(
       `[origin] blocked ${req.method} ${req.originalUrl}: the page was opened at ${JSON.stringify(origin)} ` +
-        `but CLIENT_ORIGIN in server/.env allows ${JSON.stringify(ALLOWED)}`,
+        `but configured CLIENT_ORIGIN allows ${JSON.stringify(ALLOWED)}`,
     );
     res.status(403).json({ error: "Request blocked." });
     return;

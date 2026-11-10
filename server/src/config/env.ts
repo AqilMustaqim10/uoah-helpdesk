@@ -36,7 +36,7 @@ function intOf(name: string, fallback: number): number {
 
 const nodeEnv = optional("NODE_ENV", "development");
 const isProd = nodeEnv === "production";
-const clientOrigins = optional("CLIENT_ORIGIN", "http://localhost:5173")
+const clientOrigins = optional("CLIENT_ORIGIN", "http://localhost:3000")
   .split(",")
   .map((origin) => origin.trim().replace(/\/+$/, ""))
   .filter(Boolean);
@@ -79,12 +79,12 @@ if (!/^[0-9a-fA-F]{64}$/.test(mfaKey)) {
 export const config = {
   nodeEnv,
   isProd,
-  port: intOf("PORT", 3000),
+  port: intOf("PORT", 3001),
   bindAddress: optional("BIND_ADDRESS", "0.0.0.0"),
   trustProxy:
     optional("TRUST_PROXY", isProd ? "1" : "0") === "1" ||
     optional("TRUST_PROXY", "0") === "true",
-  clientOrigin: clientOrigins[0] ?? "http://localhost:5173",
+  clientOrigin: clientOrigins[0] ?? "http://localhost:3000",
   clientOrigins,
   requireHttps,
   serveClient: optional("SERVE_CLIENT", "false") === "true",
@@ -92,7 +92,7 @@ export const config = {
     process.cwd(),
     optional("CLIENT_DIST", "../client/dist"),
   ),
-  appUrl: optional("APP_URL", "http://localhost:5173").replace(/\/+$/, ""),
+  appUrl: optional("APP_URL", "http://localhost:3000").replace(/\/+$/, ""),
   databaseUrl: required("DATABASE_URL"),
   geminiApiKey: optional("GEMINI_API_KEY"),
   geminiPriorityApiKey: optional("GEMINI_PRIORITY_API_KEY"),
