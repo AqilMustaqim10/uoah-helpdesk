@@ -208,28 +208,48 @@ html.theme-transition *::after {
     }
 }
 
-.auth-background-image {
-    opacity: 0;
-    animation: auth-background-crossfade 72s ease-in-out infinite both;
-}
-
 .auth-form-transition {
     animation: auth-form-enter 220ms ease-out both;
 }
 
-@keyframes auth-background-crossfade {
-    0%,
-    100% {
-        opacity: 0;
+@media (min-width: 1024px) and (max-height: 850px) {
+    .auth-brand-panel {
+        padding-block: 1.5rem;
     }
 
-    2%,
-    10% {
-        opacity: 1;
+    .auth-brand-content {
+        padding-block: 0.5rem;
     }
 
-    12% {
-        opacity: 0;
+    .auth-form-panel {
+        padding-block: 1rem;
+    }
+
+    .auth-form-card {
+        padding: 1.25rem 1.5rem;
+    }
+
+    .auth-form-card[data-auth-view="signup"] {
+        padding-block: 1rem;
+    }
+
+    .auth-signup-form > :not(:last-child) {
+        margin-block-start: 0.5rem;
+    }
+
+    .auth-signup-form .grid {
+        gap: 0.5rem;
+    }
+
+    .auth-signup-form input,
+    .auth-signup-form select,
+    .auth-signup-form button[type="submit"] {
+        height: 2.25rem;
+    }
+
+    .auth-signup-form h2 {
+        font-size: 1.125rem;
+        line-height: 1.5rem;
     }
 }
 
@@ -248,13 +268,5 @@ html.theme-transition *::after {
 @media (prefers-reduced-motion: reduce) {
     .auth-form-transition {
         animation: none;
-    }
-
-    .auth-background-image {
-        animation: none;
-    }
-
-    .auth-background-image:first-child {
-        opacity: 1;
     }
 }

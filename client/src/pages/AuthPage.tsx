@@ -1,6 +1,8 @@
-// The screen before login: sign in, sign up, forgot password, or (after a correct password
-// for ADMIN / IT) the two-factor step. Switching between them fades softly.
-import { useState } from "react";
+import { useEffect, useState } from "react";
+import { ArrowDownRight, Building2 } from "lucide-react";
+import { ApiError } from "../api/client";
+import { authApi } from "../api/auth";
+import type { UnitOption } from "../types";
 import ThemeToggle from "../components/ui/ThemeToggle";
 import LoginForm from "../components/auth/LoginForm";
 import SignupForm from "../components/auth/SignupForm";
@@ -10,83 +12,165 @@ import TwoFactorSetup from "../components/auth/TwoFactorSetup";
 
 type View = "login" | "signup" | "forgot" | "mfa";
 
-const AUTH_BACKGROUND_IMAGES = [
-  "/bg-img/VE.webp",
-  "/bg-img/UOA.webp",
-  "/bg-img/Potager.webp",
-  "/bg-img/KLW.webp",
-  "/bg-img/KLBS.webp",
-  "/bg-img/Entier.webp",
-  "/bg-img/CCEC.webp",
-  "/bg-img/Botanica.webp",
-  "/bg-img/Astana.webp",
-] as const;
+const WORDMARK_STYLES = [
+  "font-serif tracking-[0.16em]",
+  "font-semibold tracking-[0.2em]",
+  "font-serif italic tracking-wide",
+  "font-bold tracking-tight",
+  "font-medium tracking-[0.12em]",
+  "font-serif font-semibold tracking-wide",
+  "font-bold tracking-[0.16em]",
+  "font-medium italic tracking-tight",
+  "font-semibold tracking-[0.1em]",
+];
 
 export default function AuthPage() {
   const [view, setView] = useState<View>("login");
-  // 'verify' = enter a code; 'setup' = first-time setup of the authenticator app
   const [mfaPhase, setMfaPhase] = useState<"verify" | "setup">("verify");
-  // After a password reset we return to login with the email already filled in
   const [prefillEmail, setPrefillEmail] = useState("");
-  const backgroundImageInterval = 8;
-  const backgroundCycleDuration =
-    AUTH_BACKGROUND_IMAGES.length * backgroundImageInterval;
+  const [units, setUnits] = useState<UnitOption[]>([]);
+  const [unitsError, setUnitsError] = useState("");
+
+  useEffect(() => {
+    let cancelled = false;
+    authApi
+      .units()
+      .then(({ units: availableUnits }) => {
+        if (!cancelled) setUnits(availableUnits);
+      })
+      .catch((error: unknown) => {
+        if (cancelled) return;
+        setUnitsError(
+          error instanceof ApiError
+            ? error.message
+            : "Business units could not be loaded.",
+        );
+      });
+    return () => {
+      cancelled = true;
+    };
+  }, []);
 
   return (
-    <div
-      className={`relative isolate flex min-h-dvh items-center justify-center bg-slate-50 px-4 ${
-        view === "signup" ? "py-3 sm:py-5" : "py-10"
-      }`}
-    >
-      <div className="pointer-events-none absolute inset-0 z-0 overflow-hidden" aria-hidden="true">
-        {AUTH_BACKGROUND_IMAGES.map((image, index) => (
-          <img
-            key={image}
-            src={image}
-            alt=""
-            loading={index === 0 ? "eager" : "lazy"}
-            fetchPriority={index === 0 ? "high" : "auto"}
-            className="auth-background-image absolute inset-0 h-full w-full object-cover"
-            style={{
-              animationDelay: `${index * backgroundImageInterval}s`,
-              animationDuration: `${backgroundCycleDuration}s`,
-            }}
-          />
-        ))}
-      </div>
-
-      <div className="absolute right-4 top-4 z-10">
-        <ThemeToggle />
-      </div>
-
-      <div
-        className={`relative z-10 w-full ${
-          view === "signup" ? "max-w-lg" : "max-w-md"
-        }`}
+    <main className="min-h-dvh bg-slate-50 lg:grid lg:grid-cols-2">
+      <section
+        aria-label="UDESK business units"
+        className="auth-brand-panel relative hidden min-h-dvh overflow-hidden bg-[#080b14] text-[#f8fafc] lg:flex lg:flex-col lg:justify-between lg:px-10 lg:py-9 xl:px-16 xl:py-12"
       >
-        {/* key={view}: a new view replays the fade-in */}
         <div
-          key={view}
-          className="auth-form-transition overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm"
-        >
-          <div className="flex flex-col items-center border-b border-slate-200 bg-white px-4 py-3 text-center">
-            <img
-              src="/uoah-logo.png"
-              alt="UOA Hospitality logo"
-              className="mb-2 h-9 w-auto max-w-36 object-contain dark:brightness-0 dark:invert"
-            />
-            <h1 className="text-base font-bold leading-tight tracking-tight text-slate-900">
-              UDESK
+          aria-hidden="true"
+          className="pointer-events-none absolute -left-36 -top-40 h-[32rem] w-[32rem] rounded-full bg-indigo-600/20 blur-[120px]"
+        />
+        <div
+          aria-hidden="true"
+          className="pointer-events-none absolute inset-0 opacity-[0.08] [background-image:linear-gradient(rgba(255,255,255,0.12)_1px,transparent_1px),linear-gradient(90deg,rgba(255,255,255,0.12)_1px,transparent_1px)] [background-size:72px_72px] [mask-image:linear-gradient(to_bottom,black,transparent_75%)]"
+        />
+
+        <header className="relative z-10 flex items-center gap-4">
+          <img
+            src="/uoah-logo.png"
+            alt="UOA Hospitality"
+            className="h-11 w-auto max-w-36 object-contain brightness-0 invert"
+          />
+          <span aria-hidden="true" className="h-8 w-px bg-white/20" />
+          <div>
+            <p className="text-sm font-bold tracking-[0.24em]">UDESK</p>
+            <p className="mt-1 text-xs text-[#94a3b8]">Digital Support &amp; Knowledge</p>
+          </div>
+        </header>
+
+        <div className="auth-brand-content relative z-10 mx-auto w-full max-w-2xl py-10">
+          <div className="mb-8 max-w-lg">
+            <p className="mb-3 text-xs font-semibold uppercase tracking-[0.24em] text-indigo-300">
+              One desk. Every team.
+            </p>
+            <h1 className="text-3xl font-semibold leading-tight tracking-tight xl:text-4xl">
+              Unified IT Service Desk across all Business Units
             </h1>
-            <p className="mt-1 text-xs leading-tight text-slate-600">
-              UOAH Digital Support &amp; Knowledge
+            <p className="mt-3 text-sm leading-6 text-[#cbd5e1]">
+              Connected support and knowledge, built around the teams that
+              power UOA Hospitality.
             </p>
           </div>
 
           <div
-            className={`${
-              view === "signup" ? "p-4 sm:p-5" : "p-6 sm:p-8"
-            }`}
+            aria-label="Business unit wordmarks"
+            className="grid grid-cols-3 gap-3 xl:gap-4"
+          >
+            {units.map((unit, index) => (
+              <div
+                key={unit.id}
+                className="group flex min-h-24 flex-col justify-between rounded-xl border border-white/[0.09] bg-white/[0.035] p-4 transition duration-300 hover:scale-[1.03] hover:border-indigo-300/30 hover:bg-white/[0.07] hover:shadow-[0_0_28px_rgba(99,102,241,0.12)] xl:min-h-28"
+                title={`${unit.name} (${unit.code})`}
+              >
+                <Building2
+                  aria-hidden="true"
+                  className="h-4 w-4 text-[#94a3b8] opacity-70 transition duration-300 group-hover:scale-110 group-hover:text-indigo-300 group-hover:opacity-100"
+                  strokeWidth={1.5}
+                />
+                <div className="mt-3 min-w-0">
+                  <p
+                    className={`truncate text-[11px] text-[#f8fafc]/60 opacity-70 grayscale transition duration-300 group-hover:text-indigo-100 group-hover:opacity-100 group-hover:grayscale-0 xl:text-xs ${WORDMARK_STYLES[index % WORDMARK_STYLES.length]}`}
+                  >
+                    {unit.code}
+                  </p>
+                  <p className="mt-1 truncate text-[10px] leading-tight text-[#94a3b8] transition-colors group-hover:text-[#e2e8f0] xl:text-[11px]">
+                    {unit.name}
+                  </p>
+                </div>
+              </div>
+            ))}
+
+            {units.length === 0 && !unitsError && (
+              <p className="col-span-3 rounded-xl border border-white/[0.09] bg-white/[0.035] px-4 py-6 text-sm text-[#cbd5e1]">
+                Loading business units…
+              </p>
+            )}
+            {unitsError && (
+              <p role="status" className="col-span-3 text-xs text-[#cbd5e1]">
+                {unitsError}
+              </p>
+            )}
+          </div>
+          <div className="mt-5 flex items-center gap-2 text-xs text-[#94a3b8]">
+            <ArrowDownRight aria-hidden="true" className="h-4 w-4 text-indigo-300/70" />
+            <span>Support that brings every business unit together</span>
+          </div>
+        </div>
+
+        <footer className="relative z-10 flex items-center justify-between gap-4 border-t border-white/10 pt-5 text-xs text-[#94a3b8]">
+          <span>Powering IT Operations across UOA Hospitality</span>
+          <span className="hidden text-[#64748b] xl:inline">UOA HOSPITALITY</span>
+        </footer>
+      </section>
+
+      <section className="auth-form-panel relative flex min-h-dvh items-center justify-center px-4 py-10 sm:px-8 lg:px-10">
+        <div className="absolute right-4 top-4 sm:right-6 sm:top-6">
+          <ThemeToggle />
+        </div>
+
+        <div
+          className={`w-full ${
+            view === "signup" ? "max-w-2xl" : "max-w-md"
+          }`}
+        >
+          <div className="mb-8 flex items-center gap-3 lg:hidden">
+            <img
+              src="/uoah-logo.png"
+              alt="UOA Hospitality"
+              className="h-9 w-auto max-w-28 object-contain dark:brightness-0 dark:invert"
+            />
+            <span className="h-7 w-px bg-slate-300 dark:bg-slate-700" />
+            <div>
+              <p className="text-sm font-bold tracking-[0.2em] text-slate-900">UDESK</p>
+              <p className="text-xs text-slate-500">Digital Support &amp; Knowledge</p>
+            </div>
+          </div>
+
+          <div
+            key={view}
+            data-auth-view={view}
+            className="auth-form-card auth-form-transition rounded-2xl border border-slate-200/80 bg-white p-6 shadow-[0_18px_60px_-32px_rgba(15,23,42,0.22)] sm:p-8"
           >
             {view === "login" && (
               <LoginForm
@@ -119,7 +203,7 @@ export default function AuthPage() {
               ))}
           </div>
         </div>
-      </div>
-    </div>
+      </section>
+    </main>
   );
 }

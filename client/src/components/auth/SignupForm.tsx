@@ -149,7 +149,7 @@ export default function SignupForm({
   // ---------- Step 2: enter the code ----------
   if (step === "code") {
     return (
-      <form onSubmit={submitCode} className="space-y-4" noValidate>
+      <form onSubmit={submitCode} className="auth-signup-form space-y-4" noValidate>
         <div className="space-y-1">
           <h2 className="text-xl font-semibold tracking-tight text-slate-900">
             Check your email
@@ -194,7 +194,7 @@ export default function SignupForm({
 
   // ---------- Step 1: your details ----------
   return (
-    <form onSubmit={submitDetails} className="space-y-3" noValidate>
+    <form onSubmit={submitDetails} className="auth-signup-form space-y-3" noValidate>
       <div className="space-y-1">
         <h2 className="text-xl font-semibold tracking-tight text-slate-900">
           Create your account
