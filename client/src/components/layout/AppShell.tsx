@@ -255,13 +255,16 @@ export default function AppShell({ user }: { user: User }) {
         collapsed={collapsed}
         onToggleCollapsed={toggleCollapsed}
         mobileOpen={mobileOpen}
+        onCloseMobile={() => setMobileOpen(false)}
       />
 
       <div className="flex min-w-0 flex-1 flex-col">
         <TopBar
           title={current.label}
           user={user}
+          mobileOpen={mobileOpen}
           onOpenMenu={() => setMobileOpen(true)}
+          onCloseMenu={() => setMobileOpen(false)}
           onCreateTicket={() => setCreateOpen(true)}
           onLogout={logout}
         />

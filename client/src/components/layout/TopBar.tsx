@@ -1,6 +1,6 @@
 // The bar across the top: page title, ticket creation, and the account menu.
 import { useEffect, useRef, useState } from "react";
-import { ChevronDown, LogOut, Menu, Plus, ShieldCheck } from "lucide-react";
+import { ChevronDown, LogOut, Menu, Plus, ShieldCheck, X } from "lucide-react";
 import type { User } from "../../types";
 import SecurityModal from "../auth/SecurityModal";
 import Avatar from "../ui/Avatar";
@@ -13,7 +13,9 @@ import ThemeToggle from "../ui/ThemeToggle";
 interface Props {
   title: string;
   user: User;
+  mobileOpen: boolean;
   onOpenMenu: () => void;
+  onCloseMenu: () => void;
   onCreateTicket: () => void;
   onLogout: () => void;
 }
@@ -21,7 +23,9 @@ interface Props {
 export default function TopBar({
   title,
   user,
+  mobileOpen,
   onOpenMenu,
+  onCloseMenu,
   onCreateTicket,
   onLogout,
 }: Props) {
@@ -59,11 +63,18 @@ export default function TopBar({
       <header className="flex h-16 shrink-0 items-center gap-3 border-b border-border bg-surface px-4 sm:px-6">
         {/* Menu button only appears on phones */}
         <IconButton
-          label="Open menu"
+          id="mobile-menu-button"
+          label={mobileOpen ? "Close menu" : "Open menu"}
+          aria-expanded={mobileOpen}
+          aria-controls="mobile-sidebar"
           className="md:hidden"
-          onClick={onOpenMenu}
+          onClick={mobileOpen ? onCloseMenu : onOpenMenu}
         >
-          <Menu className="h-5 w-5" />
+          {mobileOpen ? (
+            <X className="h-5 w-5" />
+          ) : (
+            <Menu className="h-5 w-5" />
+          )}
         </IconButton>
 
         <h1 className="truncate text-lg font-semibold text-foreground">

@@ -25,6 +25,7 @@ import ExportPdfModal from "../components/tickets/ExportPdfModal";
 import TicketFilters from "../components/tickets/TicketFilters";
 import TicketList from "../components/tickets/TicketList";
 import { cn } from "../lib/cn";
+import { TRANSITIONS } from "../lib/ticketMeta";
 
 const EMPTY_QUERY: TicketQuery = {
   q: "",
@@ -207,6 +208,18 @@ export default function TicketsPage({
     if (kind === "assignee" && bulkAssignee === "none") return;
     if (kind === "status" && !bulkStatus) return;
     setBulkBusy(true);
+    let previousStatuses: Array<TicketStatus | undefined> = [];
+    if (kind === "status") {
+      const snapshots = await Promise.allSettled(
+        selectedIds.map(async (id) => {
+          const current = data?.tickets.find((ticket) => ticket.id === id);
+          return current ? current.status : (await ticketsApi.get(id)).ticket.status;
+        }),
+      );
+      previousStatuses = snapshots.map((snapshot) =>
+        snapshot.status === "fulfilled" ? snapshot.value : undefined,
+      );
+    }
     const actions = selectedIds.map((id) =>
       kind === "assignee"
         ? ticketsApi.setAssignee(
@@ -219,9 +232,62 @@ export default function TicketsPage({
     const succeeded = results.filter((result) => result.status === "fulfilled").length;
     const failed = results.length - succeeded;
     if (succeeded > 0) {
-      toast.success(
-        `${kind === "assignee" ? "Assignment" : "Status"} updated for ${succeeded} ticket${succeeded === 1 ? "" : "s"}.`,
+      const succeededIds = selectedIds.filter(
+        (_, index) => results[index].status === "fulfilled",
       );
+      const missingUndoSnapshots =
+        kind === "status"
+          ? succeededIds.filter(
+              (id) => previousStatuses[selectedIds.indexOf(id)] === undefined,
+            ).length
+          : 0;
+      const undoTargets =
+        kind === "status"
+          ? succeededIds.flatMap((id) => {
+              const previousStatus = previousStatuses[selectedIds.indexOf(id)];
+              return previousStatus &&
+                TRANSITIONS[bulkStatus as TicketStatus].some(
+                  (transition) => transition.to === previousStatus,
+                )
+                ? [{ id, status: previousStatus }]
+                : [];
+            })
+          : [];
+      const undoStatusChanges = async () => {
+        const undoResults = await Promise.allSettled(
+          undoTargets.map(({ id, status }) => ticketsApi.setStatus(id, status)),
+        );
+        const undoFailed = undoResults.filter(
+          (result) => result.status === "rejected",
+        ).length;
+        setBulkVersion((v) => v + 1);
+        if (undoFailed > 0) {
+          toast.error(
+            `${undoFailed} ticket${undoFailed === 1 ? "" : "s"} could not be restored.`,
+          );
+        } else {
+          toast.success(
+            `Status changes undone for ${undoTargets.length} ticket${undoTargets.length === 1 ? "" : "s"}.`,
+          );
+        }
+      };
+      const statusMessage =
+        undoTargets.length > 0 && undoTargets.length < succeeded
+          ? `Status updated for ${succeeded} tickets; ${undoTargets.length} can be undone.`
+          : `Status updated for ${succeeded} ticket${succeeded === 1 ? "" : "s"}.`;
+      toast.success(
+        kind === "assignee"
+          ? `Assignment updated for ${succeeded} ticket${succeeded === 1 ? "" : "s"}.`
+          : statusMessage,
+        undoTargets.length > 0
+          ? { label: "Undo", onClick: () => void undoStatusChanges() }
+          : undefined,
+      );
+      if (missingUndoSnapshots > 0) {
+        toast.error(
+          `Previous status could not be loaded for ${missingUndoSnapshots} ticket${missingUndoSnapshots === 1 ? "" : "s"}; those changes cannot be undone.`,
+        );
+      }
       setSelectedIds([]);
       setBulkVersion((v) => v + 1);
     }

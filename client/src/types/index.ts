@@ -45,6 +45,10 @@ export interface ToastItem {
   id: number;
   kind: ToastKind;
   message: string;
+  action?: {
+    label: string;
+    onClick: () => void;
+  };
 }
 
 // ---------------- Tickets ----------------

@@ -1,8 +1,9 @@
-// Small pop-up messages (bottom-right). Only ONE at a time: a new one replaces the old one.
+// Small, independently timed pop-up messages (bottom-right).
 // Success/info vanish after 3 s, errors after 5 s.
 import {
   createContext,
   useCallback,
+  useEffect,
   useMemo,
   useRef,
   useState,
@@ -12,39 +13,61 @@ import type { ToastItem, ToastKind } from "../types";
 import ToastViewport from "../components/ui/ToastViewport";
 
 export interface ToastApi {
-  success: (message: string) => void;
-  error: (message: string) => void;
-  info: (message: string) => void;
+  success: (message: string, action?: ToastItem["action"]) => void;
+  error: (message: string, action?: ToastItem["action"]) => void;
+  info: (message: string, action?: ToastItem["action"]) => void;
   dismiss: () => void;
 }
 
 export const ToastContext = createContext<ToastApi | null>(null);
 
 export function ToastProvider({ children }: { children: ReactNode }) {
-  const [toast, setToast] = useState<ToastItem | null>(null);
-  const timer = useRef<number | undefined>(undefined);
+  const [toasts, setToasts] = useState<ToastItem[]>([]);
+  const timers = useRef(new Map<number, number>());
   const counter = useRef(0);
 
-  const dismiss = useCallback(() => {
-    window.clearTimeout(timer.current);
-    setToast(null);
+  const remove = useCallback((id: number) => {
+    const timer = timers.current.get(id);
+    if (timer !== undefined) window.clearTimeout(timer);
+    timers.current.delete(id);
+    setToasts((current) => current.filter((toast) => toast.id !== id));
   }, []);
 
-  const show = useCallback((kind: ToastKind, message: string) => {
-    window.clearTimeout(timer.current);
-    counter.current += 1;
-    setToast({ id: counter.current, kind, message });
-    timer.current = window.setTimeout(
-      () => setToast(null),
-      kind === "error" ? 5000 : 3000,
-    );
+  const dismiss = useCallback(() => {
+    timers.current.forEach((timer) => window.clearTimeout(timer));
+    timers.current.clear();
+    setToasts([]);
   }, []);
+
+  useEffect(
+    () => () => {
+      timers.current.forEach((timer) => window.clearTimeout(timer));
+      timers.current.clear();
+    },
+    [],
+  );
+
+  const show = useCallback(
+    (kind: ToastKind, message: string, action?: ToastItem["action"]) => {
+      counter.current += 1;
+      const id = counter.current;
+      setToasts((current) => [...current, { id, kind, message, action }]);
+      timers.current.set(
+        id,
+        window.setTimeout(
+          () => remove(id),
+          kind === "error" ? 5000 : 3000,
+        ),
+      );
+    },
+    [remove],
+  );
 
   const api = useMemo<ToastApi>(
     () => ({
-      success: (m) => show("success", m),
-      error: (m) => show("error", m),
-      info: (m) => show("info", m),
+      success: (m, action) => show("success", m, action),
+      error: (m, action) => show("error", m, action),
+      info: (m, action) => show("info", m, action),
       dismiss,
     }),
     [show, dismiss],
@@ -53,7 +76,7 @@ export function ToastProvider({ children }: { children: ReactNode }) {
   return (
     <ToastContext.Provider value={api}>
       {children}
-      <ToastViewport toast={toast} onClose={dismiss} />
+      <ToastViewport toasts={toasts} onClose={remove} />
     </ToastContext.Provider>
   );
 }

@@ -58,7 +58,7 @@ export const SLA_TARGET_HOURS: Record<Priority, number> = {
 
 export const PRIORITY_META: Record<Priority, { label: string; chip: string }> =
   {
-    LOW: { label: "Low", chip: "bg-slate-100 text-slate-500 ring-slate-200" },
+    LOW: { label: "Low", chip: "bg-slate-100 text-slate-700 ring-slate-200" },
     MEDIUM: {
       label: "Medium",
       chip: "bg-slate-100 text-slate-700 ring-slate-300",

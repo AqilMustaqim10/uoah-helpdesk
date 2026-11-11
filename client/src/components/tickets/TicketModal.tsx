@@ -126,10 +126,14 @@ export default function TicketModal({
   }, [confirmClose]);
 
   /** A change succeeded: show the fresh data, refresh the list, show a toast. */
-  function apply(result: TicketDetailResponse, message: string) {
+  function apply(
+    result: TicketDetailResponse,
+    message: string,
+    action?: { label: string; onClick: () => void },
+  ) {
     setData({ ...result, files: result.files ?? [] });
     onChanged();
-    toast.success(message);
+    toast.success(message, action);
   }
 
   /** Runs one change, shows the result, and reports a problem as a toast. */
@@ -137,11 +141,12 @@ export default function TicketModal({
     key: string,
     action: () => Promise<TicketDetailResponse>,
     message: string,
+    toastAction?: { label: string; onClick: () => void },
   ) {
     if (busy) return;
     setBusy(key);
     try {
-      apply(await action(), message);
+      apply(await action(), message, toastAction);
     } catch (err) {
       toast.error(
         err instanceof ApiError
@@ -159,10 +164,38 @@ export default function TicketModal({
       toast.error("Assign an IT support agent before closing this ticket.");
       return;
     }
+    const previousStatus = data?.ticket.status;
     await run(
       to,
       () => ticketsApi.setStatus(ticketId, to),
       `Status: ${STATUS_META[to].label}`,
+      previousStatus &&
+        TRANSITIONS[to].some((transition) => transition.to === previousStatus)
+        ? {
+            label: "Undo",
+            onClick: () => {
+              void (async () => {
+                try {
+                  const result = await ticketsApi.setStatus(
+                    ticketId,
+                    previousStatus,
+                  );
+                  setData({ ...result, files: result.files ?? [] });
+                  onChanged();
+                  toast.success(
+                    `Status restored: ${STATUS_META[previousStatus].label}`,
+                  );
+                } catch (err) {
+                  toast.error(
+                    err instanceof ApiError
+                      ? err.message
+                      : "Could not undo the status change.",
+                  );
+                }
+              })();
+            },
+          }
+        : undefined,
     );
   }
 

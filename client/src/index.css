@@ -6,7 +6,7 @@
 
 /* ---------- Design tokens ---------- */
 @theme {
-    --font-sans: "Segoe UI", system-ui, -apple-system, Roboto, "Helvetica Neue", Arial, sans-serif;
+    --font-sans: "Inter Variable", Inter, system-ui, -apple-system, Roboto, "Helvetica Neue", Arial, sans-serif;
     --font-mono: ui-monospace, "Cascadia Code", Consolas, "Courier New", monospace;
 
     /* Short, subtle animations (150-300 ms) */
