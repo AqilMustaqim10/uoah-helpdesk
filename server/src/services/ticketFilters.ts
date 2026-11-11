@@ -1,7 +1,7 @@
 // Builds the WHERE conditions for "which tickets match these filters", used by the ticket list and PDF export.
 // Visibility ALWAYS comes first and always from ticketScope().
 // (The ticket list route has the same filter logic written inline; both rely on ticketScope.)
-import { PRIORITIES, STATUSES } from "../config/constants";
+import { PRIORITIES, SLA_TARGET_HOURS, STATUSES } from "../config/constants";
 import type { AuthUser } from "../middleware/auth";
 import { HttpError } from "../lib/http";
 import { escapeLike, overdueSql } from "../lib/sql";
@@ -28,6 +28,19 @@ export function addTicketActivityFilters(
     throw new HttpError(400, "Invalid overdue filter.");
   }
   if (overdue === "1") conds.push(overdueSql("t"));
+
+  const dueSoon = qstr(q.due_soon);
+  if (dueSoon && dueSoon !== "1") {
+    throw new HttpError(400, "Invalid due soon filter.");
+  }
+  if (dueSoon === "1") {
+    const cases = Object.entries(SLA_TARGET_HOURS)
+      .map(([priority, hours]) => `WHEN '${priority}' THEN interval '${hours} hours'`)
+      .join(" ");
+    conds.push(
+      `t.status IN ('OPEN','IN_PROGRESS') AND COALESCE(t.due_at, t.created_at + (CASE t.priority ${cases} END)) BETWEEN now() AND now() + interval '24 hours'`,
+    );
+  }
 
   const createdWithin = qstr(q.created_within);
   if (createdWithin) {

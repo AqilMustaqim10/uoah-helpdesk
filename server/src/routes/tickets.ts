@@ -11,6 +11,7 @@ import {
   DEFAULT_PRIORITY,
   PAGINATION,
   PRIORITIES,
+  SLA_TARGET_HOURS,
   STATUSES,
   TRANSITIONS,
   type Status,
@@ -35,6 +36,19 @@ import {
 import { addTicketActivityFilters } from "../services/ticketFilters";
 
 const router = Router();
+const SLA_DEADLINE_SQL = `COALESCE(t.due_at, t.created_at + (CASE t.priority ${Object.entries(
+  SLA_TARGET_HOURS,
+)
+  .map(([priority, hours]) => `WHEN '${priority}' THEN interval '${hours} hours'`)
+  .join(" ")} END))`;
+const TICKET_SORT_SQL = {
+  title: "t.title",
+  priority: "CASE t.priority WHEN 'LOW' THEN 1 WHEN 'MEDIUM' THEN 2 WHEN 'HIGH' THEN 3 WHEN 'URGENT' THEN 4 END",
+  status:
+    "CASE t.status WHEN 'OPEN' THEN 1 WHEN 'IN_PROGRESS' THEN 2 WHEN 'RESOLVED' THEN 3 WHEN 'CLOSED' THEN 4 END",
+  sla: SLA_DEADLINE_SQL,
+  created_at: "t.created_at",
+} as const;
 
 /** A query-string value as clean text ('' when missing or not a string). */
 function qstr(v: unknown): string {
@@ -149,13 +163,24 @@ router.get(
         parseInt(qstr(req.query.page_size), 10) || PAGINATION.defaultPageSize,
       ),
     );
+    const sortBy = qstr(req.query.sort_by) || "created_at";
+    const sortDirection = qstr(req.query.sort_dir) || "desc";
+    const sortExpression = Object.prototype.hasOwnProperty.call(
+      TICKET_SORT_SQL,
+      sortBy,
+    )
+      ? TICKET_SORT_SQL[sortBy as keyof typeof TICKET_SORT_SQL]
+      : undefined;
+    if (!sortExpression || !["asc", "desc"].includes(sortDirection)) {
+      throw new HttpError(400, "Invalid ticket sort.");
+    }
     listParams.push(pageSize, (page - 1) * pageSize);
 
     const rows = await query(
       `SELECT ${SUMMARY_COLUMNS}
          FROM tickets t ${TICKET_JOINS}
         WHERE ${listConds.join(" AND ")}
-        ORDER BY t.created_at DESC, t.id DESC
+        ORDER BY ${sortExpression} ${sortDirection.toUpperCase()}, t.id ${sortDirection.toUpperCase()}
         LIMIT $${listParams.length - 1} OFFSET $${listParams.length}`,
       listParams,
     );

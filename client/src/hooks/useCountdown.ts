@@ -2,8 +2,10 @@
 // Returns [secondsLeft, start]. Call start(60) to begin.
 import { useEffect, useState } from "react";
 
-export function useCountdown(): [number, (seconds: number) => void] {
-  const [left, setLeft] = useState(0);
+export function useCountdown(
+  initialSeconds = 0,
+): [number, (seconds: number) => void] {
+  const [left, setLeft] = useState(initialSeconds);
 
   useEffect(() => {
     if (left <= 0) return;

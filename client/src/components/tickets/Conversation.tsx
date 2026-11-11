@@ -6,7 +6,7 @@
 //  - files can be attached to a reply: choose them, drop them, or paste a screenshot with Ctrl+V
 //  - a closed ticket shows a notice instead of the box
 // Text is shown as plain text (React escapes it), so nobody can inject HTML.
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { Lock, Send, Sparkles } from "lucide-react";
 import { ApiError } from "../../api/client";
 import { ticketsApi } from "../../api/tickets";
@@ -29,6 +29,7 @@ import Textarea from "../ui/Textarea";
 
 interface Props {
   ticketId: number;
+  userId: number;
   comments: CommentItem[];
   /** Every file of the ticket; each reply shows the ones that belong to it. */
   files: TicketFile[];
@@ -48,6 +49,7 @@ interface Props {
 
 export default function Conversation({
   ticketId,
+  userId,
   comments,
   files,
   staff,
@@ -58,8 +60,15 @@ export default function Conversation({
   onSend,
 }: Props) {
   const toast = useToast();
+  const draftKey = `ticket-reply-draft:${userId}:${ticketId}`;
   const [mode, setMode] = useState<"reply" | "note">("reply");
-  const [text, setText] = useState("");
+  const [text, setText] = useState(() => {
+    try {
+      return window.sessionStorage.getItem(draftKey) ?? "";
+    } catch {
+      return "";
+    }
+  });
   const [pending, setPending] = useState<File[]>([]);
   const [linked, setLinked] = useState<LinkableArticle | null>(null); // the article chosen for this reply
   const [busy, setBusy] = useState(false);
@@ -69,6 +78,25 @@ export default function Conversation({
   // A reply can be only text, only files, or only a linked article
   const canSend =
     text.trim().length > 0 || pending.length > 0 || linked !== null;
+
+  function updateDraft(value: string) {
+    setText(value);
+    try {
+      if (value) window.sessionStorage.setItem(draftKey, value);
+      else window.sessionStorage.removeItem(draftKey);
+    } catch {
+      // The reply editor remains usable when browser storage is unavailable.
+    }
+  }
+
+  useEffect(() => {
+    try {
+      if (text) window.sessionStorage.setItem(draftKey, text);
+      else window.sessionStorage.removeItem(draftKey);
+    } catch {
+      // The reply editor remains usable when browser storage is unavailable.
+    }
+  }, [draftKey, text]);
 
   async function getSuggestion() {
     if (!staff || isNote || busy || suggestionBusy) return;
@@ -101,6 +129,11 @@ export default function Conversation({
     try {
       await onSend(text.trim(), isNote, pending, linked ? linked.id : null);
       setText("");
+      try {
+        window.sessionStorage.removeItem(draftKey);
+      } catch {
+        // The text is cleared from the editor after a successful send regardless.
+      }
       setPending([]);
       setLinked(null);
     } catch (err) {
@@ -254,7 +287,7 @@ export default function Conversation({
                   variant="secondary"
                   disabled={busy || suggestionBusy}
                   onClick={() => {
-                    setText(suggestion);
+                    updateDraft(suggestion);
                     setSuggestion("");
                   }}
                 >
@@ -267,7 +300,7 @@ export default function Conversation({
               label={isNote ? "Internal note" : "Reply"}
               hideLabel
               value={text}
-              onChange={(e) => setText(e.target.value)}
+              onChange={(e) => updateDraft(e.target.value)}
               onKeyDown={(e) => {
                 if (e.key === "Enter" && (e.ctrlKey || e.metaKey)) {
                   e.preventDefault();

@@ -5,7 +5,10 @@ A web-based helpdesk for UOA Hospitality. Employees can submit and follow suppor
 ## Features
 
 - Ticket creation, assignment, priorities, statuses, replies, internal notes, and file attachments
-- Priority-based SLA tracking with overdue alerts and dashboard compliance metrics
+- Shareable ticket URLs (for example, `/tickets/TKT-12`) with browser Back/Forward support and direct links in ticket emails
+- Ticket triage drawer with per-ticket reply drafts saved for the browser session
+- Priority-based SLA countdowns, overdue alerts, and dashboard compliance metrics
+- Staff quick views, sortable ticket columns, and bulk assignment/status actions
 - IT dashboards, ticket history, audit logs, and PDF reports
 - Searchable knowledge base with unit-specific and shared articles
 - User, business-unit, department, and branding administration

@@ -134,6 +134,9 @@ export interface TicketListResponse {
   counts: Record<TicketStatus, number>;
 }
 
+export type TicketSortKey = "title" | "priority" | "status" | "sla" | "created_at";
+export type SortDirection = "asc" | "desc";
+
 /** A person a ticket can be assigned to. */
 export interface Assignee {
   id: number;
@@ -151,7 +154,10 @@ export interface TicketQuery {
   page: number;
   activeOnly?: boolean;
   overdueOnly?: boolean;
+  dueSoonOnly?: boolean;
   createdWithin?: "" | "7" | "30" | "90";
+  sortBy?: TicketSortKey;
+  sortDirection?: SortDirection;
 }
 
 export interface DashboardFilters {

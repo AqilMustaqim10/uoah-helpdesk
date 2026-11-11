@@ -152,26 +152,51 @@ export default function TicketFilters({
             </select>
           )}
 
-          {staff && (
-            <select
-              aria-label="Filter by assignee"
-              value={query.assignee}
-              onChange={(e) =>
-                onChange({
-                  assignee: e.target.value as TicketQuery["assignee"],
-                })
-              }
-              className={SELECT_CLASS}
-            >
-              <option value="">Any assignee</option>
-              <option value="unassigned">Unassigned</option>
-              <option value="me">Assigned to me</option>
-            </select>
-          )}
         </div>
       </div>
 
-      {(query.activeOnly || query.overdueOnly) && (
+      {staff && (
+        <div className="flex flex-wrap gap-2" role="group" aria-label="Staff quick views">
+          {[
+            {
+              label: "Assigned to me",
+              active: query.assignee === "me",
+              toggle: () =>
+                onChange({ assignee: query.assignee === "me" ? "" : "me" }),
+            },
+            {
+              label: "Unassigned",
+              active: query.assignee === "unassigned",
+              toggle: () =>
+                onChange({
+                  assignee: query.assignee === "unassigned" ? "" : "unassigned",
+                }),
+            },
+            {
+              label: "Due soon",
+              active: !!query.dueSoonOnly,
+              toggle: () => onChange({ dueSoonOnly: !query.dueSoonOnly }),
+            },
+          ].map((view) => (
+            <button
+              key={view.label}
+              type="button"
+              onClick={view.toggle}
+              aria-pressed={view.active}
+              className={cn(
+                "rounded-full px-3 py-1 text-xs font-medium transition-colors",
+                view.active
+                  ? "bg-brand text-onbrand"
+                  : "border border-slate-200 bg-white text-slate-600 hover:bg-slate-50",
+              )}
+            >
+              {view.label}
+            </button>
+          ))}
+        </div>
+      )}
+
+      {(query.activeOnly || query.overdueOnly || query.dueSoonOnly) && (
         <div className="flex flex-wrap gap-2" aria-label="Additional filters">
           {query.activeOnly && (
             <button
@@ -189,6 +214,15 @@ export default function TicketFilters({
               className="rounded-full border border-rose-200 bg-rose-50 px-3 py-1 text-xs font-medium text-rose-700 hover:bg-rose-100 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand"
             >
               Overdue tickets ×
+            </button>
+          )}
+          {query.dueSoonOnly && (
+            <button
+              type="button"
+              onClick={() => onChange({ dueSoonOnly: false })}
+              className="rounded-full border border-amber-200 bg-amber-50 px-3 py-1 text-xs font-medium text-amber-800 hover:bg-amber-100 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand"
+            >
+              Due within 24 hours ×
             </button>
           )}
         </div>

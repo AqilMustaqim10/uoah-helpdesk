@@ -20,7 +20,10 @@ function toQueryString(q: TicketQuery, withPage = true): string {
   if (q.assignee) p.set("assignee", q.assignee);
   if (q.activeOnly) p.set("active", "1");
   if (q.overdueOnly) p.set("overdue", "1");
+  if (q.dueSoonOnly) p.set("due_soon", "1");
   if (q.createdWithin) p.set("created_within", q.createdWithin);
+  if (q.sortBy) p.set("sort_by", q.sortBy);
+  if (q.sortDirection) p.set("sort_dir", q.sortDirection);
   if (withPage) p.set("page", String(q.page));
   return p.toString();
 }
