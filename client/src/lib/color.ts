@@ -16,3 +16,10 @@ function luminance(hex: string): number {
 export function contrastWithWhite(hex: string): number {
   return 1.05 / (luminance(hex) + 0.05);
 }
+
+/** Pick the foreground with the stronger contrast against a brand background. */
+export function onBrandForeground(hex: string): "#ffffff" | "#111827" {
+  const lightContrast = contrastWithWhite(hex);
+  const darkContrast = (luminance(hex) + 0.05) / 0.05;
+  return darkContrast > lightContrast ? "#111827" : "#ffffff";
+}

@@ -102,7 +102,7 @@ export default function AttachmentTiles({
           !overlay &&
             !confirming &&
             "text-slate-500 hover:bg-slate-100 hover:text-rose-600",
-          confirming && "bg-rose-600 text-onbrand opacity-100",
+          confirming && "bg-rose-600 text-on-danger opacity-100",
         )}
       >
         {busy ? (

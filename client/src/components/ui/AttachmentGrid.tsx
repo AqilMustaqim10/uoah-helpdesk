@@ -95,7 +95,7 @@ export default function AttachmentGrid<T extends GridFile>({
               "absolute right-1 top-1 flex h-6 w-6 items-center justify-center rounded-full shadow transition",
               "opacity-100 md:opacity-0 md:group-hover:opacity-100 focus-visible:opacity-100",
               confirming
-                ? "bg-rose-600 text-onbrand opacity-100"
+                ? "bg-rose-600 text-on-danger opacity-100"
                 : "bg-white text-slate-600 hover:text-rose-600",
             )}
           >

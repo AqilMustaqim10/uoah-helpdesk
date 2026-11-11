@@ -34,9 +34,9 @@ export default function ConfirmModal({
             Cancel
           </Button>
           <Button
+            variant={danger ? "danger" : "primary"}
             loading={busy}
             onClick={onConfirm}
-            className={danger ? "bg-rose-600 hover:bg-rose-600" : undefined}
           >
             {confirmLabel}
           </Button>

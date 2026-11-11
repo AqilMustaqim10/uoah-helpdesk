@@ -262,7 +262,7 @@ export default function Conversation({
                   className={cn(
                     "rounded-md px-3 py-1 text-xs font-medium transition-colors",
                     isNote
-                      ? "bg-amber-500 text-onbrand"
+                      ? "bg-amber-500 text-on-warning"
                       : "text-slate-600 hover:bg-slate-100",
                   )}
                 >
