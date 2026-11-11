@@ -1,9 +1,14 @@
 // The one button style used everywhere: primary (brand color), secondary, ghost.
 import type { ButtonHTMLAttributes, ReactNode } from "react";
 import { Loader2 } from "lucide-react";
+import { m } from "framer-motion";
 import { cn } from "../../lib/cn";
 
-interface Props extends ButtonHTMLAttributes<HTMLButtonElement> {
+interface Props
+  extends Omit<
+    ButtonHTMLAttributes<HTMLButtonElement>,
+    "onAnimationStart" | "onAnimationEnd" | "onDrag" | "onDragStart" | "onDragEnd"
+  > {
   variant?: "primary" | "secondary" | "ghost" | "danger";
   size?: "sm" | "md";
   loading?: boolean;
@@ -35,12 +40,16 @@ export default function Button({
   ...rest
 }: Props) {
   return (
-    <button
+    <m.button
       type={type}
       disabled={disabled || loading}
+      data-motion-button="true"
+      whileHover={disabled || loading ? undefined : { y: -1 }}
+      whileTap={disabled || loading ? undefined : { scale: 0.98 }}
+      transition={{ type: "spring", stiffness: 500, damping: 30 }}
       className={cn(
-        "inline-flex items-center justify-center gap-2 rounded-lg font-medium transition duration-150 ease-out",
-        "hover:-translate-y-px active:translate-y-0 active:scale-[0.98] disabled:cursor-not-allowed disabled:opacity-60 disabled:hover:translate-y-0 disabled:active:scale-100 motion-reduce:transform-none motion-reduce:transition-none",
+        "inline-flex items-center justify-center gap-2 rounded-lg font-medium transition-colors duration-150 ease-out",
+        "disabled:cursor-not-allowed disabled:opacity-60",
         VARIANTS[variant],
         SIZES[size],
         className,
@@ -53,6 +62,6 @@ export default function Button({
         icon
       )}
       {children}
-    </button>
+    </m.button>
   );
 }

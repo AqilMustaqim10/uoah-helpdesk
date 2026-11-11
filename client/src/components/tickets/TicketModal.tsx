@@ -248,6 +248,7 @@ export default function TicketModal({
         onClose={onClose}
         beforeClose={confirmDraftClose}
         presentation="drawer"
+        layoutId={`ticket-card-${ticketId}`}
       >
         {error ? (
           <div className="flex flex-col items-center px-6 py-16 text-center">
@@ -289,7 +290,7 @@ export default function TicketModal({
             </header>
 
             {/* ---------- body (scrolls) ---------- */}
-            <div className="min-h-0 flex-1 space-y-4 overflow-y-auto bg-slate-50 px-6 py-5">
+            <div className="min-h-0 flex-1 space-y-4 overflow-y-auto bg-slate-50 px-6 py-5" data-lenis-prevent>
               {/* Status chips and the title */}
               <div>
                 <div className="mb-2 flex flex-wrap items-center gap-2">

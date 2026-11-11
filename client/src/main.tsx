@@ -9,6 +9,7 @@ import App from "./App";
 import { ThemeProvider } from "./context/ThemeContext";
 import { ToastProvider } from "./context/ToastContext";
 import { AuthProvider } from "./context/AuthContext";
+import SmoothScroll from "./components/layout/SmoothScroll";
 
 createRoot(document.getElementById("root")!).render(
   <StrictMode>
@@ -17,6 +18,7 @@ createRoot(document.getElementById("root")!).render(
         <ThemeProvider>
           <ToastProvider>
             <AuthProvider>
+              <SmoothScroll />
               <App />
             </AuthProvider>
           </ToastProvider>

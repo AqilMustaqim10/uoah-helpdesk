@@ -54,13 +54,21 @@ export default function Sidebar({
   }, [mobileOpen, onCloseMobile]);
 
   return (
-    <aside
+    <m.aside
       id="mobile-sidebar"
       inert={isMobile && !mobileOpen}
+      initial={false}
+      animate={{ x: isMobile && !mobileOpen ? "-100%" : 0 }}
+      layout={!reduceMotion}
+      transition={
+        reduceMotion
+          ? { duration: 0 }
+          : { type: "spring", stiffness: 360, damping: 34 }
+      }
       className={cn(
-        "fixed inset-y-0 left-0 z-40 flex w-64 flex-col border-r border-slate-200 bg-white transition-all duration-200",
-        "md:static md:z-auto md:translate-x-0",
-        mobileOpen ? "translate-x-0 shadow-xl" : "-translate-x-full",
+        "fixed inset-y-0 left-0 z-40 flex w-64 flex-col border-r border-slate-200 bg-white transition-[width] duration-200",
+        "md:sticky md:top-0 md:h-dvh md:z-auto",
+        mobileOpen && isMobile && "shadow-xl",
         collapsed ? "md:w-[72px]" : "md:w-64",
       )}
     >
@@ -82,15 +90,19 @@ export default function Sidebar({
       </div>
 
       {/* Menu items */}
-      <nav className="flex-1 space-y-1 overflow-y-auto p-3" aria-label="Main">
+      <nav className="flex-1 space-y-1 overflow-y-auto p-3" data-lenis-prevent aria-label="Main">
         {tabs.map((t) => {
           const Icon = t.icon;
           const isActive = t.key === active;
           return (
-            <button
+            <m.button
               key={t.key}
               type="button"
+              data-motion-button="true"
               onClick={() => onSelect(t.key)}
+              whileHover={reduceMotion ? undefined : { scale: 1.02 }}
+              whileTap={reduceMotion ? undefined : { scale: 0.98 }}
+              transition={{ type: "spring", stiffness: 480, damping: 30 }}
               aria-current={isActive ? "page" : undefined}
               title={collapsed ? t.label : undefined}
               className={cn(
@@ -115,16 +127,20 @@ export default function Sidebar({
               >
                 {t.label}
               </span>
-            </button>
+            </m.button>
           );
         })}
       </nav>
 
       {/* Collapse button (desktop only) */}
       <div className="hidden shrink-0 border-t border-slate-200 p-3 md:block">
-        <button
+        <m.button
           type="button"
+          data-motion-button="true"
           onClick={onToggleCollapsed}
+          whileHover={reduceMotion ? undefined : { scale: 1.02 }}
+          whileTap={reduceMotion ? undefined : { scale: 0.98 }}
+          transition={{ type: "spring", stiffness: 480, damping: 30 }}
           aria-label={collapsed ? "Expand sidebar" : "Collapse sidebar"}
           className={cn(
             "flex h-10 w-full items-center gap-3 rounded-lg px-3 text-sm text-slate-500 transition-colors hover:bg-slate-100",
@@ -137,8 +153,8 @@ export default function Sidebar({
             <PanelLeftClose className="h-5 w-5" />
           )}
           {!collapsed && <span>Collapse</span>}
-        </button>
+        </m.button>
       </div>
-    </aside>
+    </m.aside>
   );
 }

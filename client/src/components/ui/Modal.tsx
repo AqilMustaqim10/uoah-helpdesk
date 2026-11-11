@@ -11,8 +11,8 @@ import {
   type ReactNode,
 } from "react";
 import { createPortal } from "react-dom";
+import { m, useReducedMotion } from "framer-motion";
 import { X } from "lucide-react";
-import "./modal.css";
 import { cn } from "../../lib/cn";
 
 interface Props {
@@ -22,6 +22,7 @@ interface Props {
   beforeClose?: () => boolean;
   size?: "md" | "lg" | "wide" | "xl";
   presentation?: "modal" | "drawer";
+  layoutId?: string;
   children: ReactNode;
 }
 
@@ -40,8 +41,10 @@ export default function Modal({
   beforeClose,
   size = "md",
   presentation = "modal",
+  layoutId,
   children,
 }: Props) {
+  const reduceMotion = useReducedMotion();
   const [closing, setClosing] = useState(false);
   const closingRef = useRef(false);
   const panelRef = useRef<HTMLDivElement>(null);
@@ -63,8 +66,11 @@ export default function Modal({
     if (beforeCloseRef.current && !beforeCloseRef.current()) return;
     closingRef.current = true;
     setClosing(true);
-    timerRef.current = window.setTimeout(() => onCloseRef.current(), 150);
-  }, []);
+    timerRef.current = window.setTimeout(
+      () => onCloseRef.current(),
+      reduceMotion ? 0 : 220,
+    );
+  }, [reduceMotion]);
 
   useEffect(() => () => window.clearTimeout(timerRef.current), []);
 
@@ -103,18 +109,21 @@ export default function Modal({
   }
 
   return createPortal(
-    <div
+    <m.div
+      initial={{ opacity: 0 }}
+      animate={{ opacity: closing ? 0 : 1 }}
+      exit={{ opacity: 0 }}
+      transition={{ duration: reduceMotion ? 0 : 0.18, ease: "easeOut" }}
       className={cn(
         "fixed inset-0 z-50 bg-black/40 backdrop-blur-sm",
         presentation === "drawer" ? "overflow-hidden" : "overflow-y-auto",
-        closing ? "modal-backdrop-out" : "modal-backdrop-in",
       )}
       onMouseDown={(e) => {
         if (e.target === e.currentTarget) requestClose(); // click on the dark area
       }}
     >
       {/* min-h-full + items-center keeps small windows centered and tall ones scrollable */}
-      <div
+      <m.div
         className={cn(
           "flex min-h-full",
           presentation === "drawer"
@@ -125,25 +134,51 @@ export default function Modal({
           if (e.target === e.currentTarget) requestClose();
         }}
       >
-        <div
+        <m.div
           ref={panelRef}
+          layoutId={layoutId}
           role="dialog"
           aria-modal="true"
           aria-label={label}
           tabIndex={-1}
           onKeyDown={onKeyDown}
+          initial={
+            reduceMotion
+              ? false
+              : presentation === "drawer"
+                ? { x: "100%" }
+                : { opacity: 0, y: 8, scale: 0.97 }
+          }
+          animate={
+            closing
+              ? reduceMotion
+                ? { opacity: 0 }
+                : presentation === "drawer"
+                  ? { x: "100%" }
+                  : { opacity: 0, y: 8, scale: 0.97 }
+              : presentation === "drawer"
+                ? { x: 0 }
+                : { opacity: 1, y: 0, scale: 1 }
+          }
+          exit={
+            reduceMotion
+              ? { opacity: 0 }
+              : presentation === "drawer"
+                ? { x: "100%" }
+                : { opacity: 0, y: 8, scale: 0.97 }
+          }
+          transition={
+            reduceMotion
+              ? { duration: 0 }
+              : presentation === "drawer"
+                ? { type: "spring", stiffness: 280, damping: 32 }
+                : { type: "spring", stiffness: 360, damping: 30 }
+          }
           className={cn(
             "relative w-full rounded-2xl border border-slate-200 bg-white shadow-xl outline-none",
             presentation === "drawer"
               ? "h-dvh max-w-none rounded-none sm:max-w-3xl sm:rounded-l-2xl"
               : SIZES[size],
-            closing
-              ? presentation === "drawer"
-                ? "drawer-panel-out"
-                : "modal-panel-out"
-              : presentation === "drawer"
-                ? "drawer-panel-in"
-                : "modal-panel-in",
           )}
         >
           <button
@@ -155,9 +190,9 @@ export default function Modal({
             <X className="h-5 w-5" />
           </button>
           {children}
-        </div>
-      </div>
-    </div>,
+        </m.div>
+      </m.div>
+    </m.div>,
     document.body,
   );
 }

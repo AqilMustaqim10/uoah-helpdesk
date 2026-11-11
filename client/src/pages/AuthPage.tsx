@@ -1,5 +1,6 @@
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { ArrowDownRight, Building2 } from "lucide-react";
+import { AnimatePresence, m, useReducedMotion } from "framer-motion";
 import { ApiError } from "../api/client";
 import { authApi } from "../api/auth";
 import type { UnitOption } from "../types";
@@ -9,6 +10,7 @@ import SignupForm from "../components/auth/SignupForm";
 import ForgotForm from "../components/auth/ForgotForm";
 import TwoFactorForm from "../components/auth/TwoFactorForm";
 import TwoFactorSetup from "../components/auth/TwoFactorSetup";
+import { loadGsap } from "../lib/gsapRuntime";
 
 type View = "login" | "signup" | "forgot" | "mfa";
 
@@ -25,11 +27,98 @@ const WORDMARK_STYLES = [
 ];
 
 export default function AuthPage() {
+  const pageRef = useRef<HTMLElement>(null);
+  const reduceMotion = useReducedMotion();
   const [view, setView] = useState<View>("login");
   const [mfaPhase, setMfaPhase] = useState<"verify" | "setup">("verify");
   const [prefillEmail, setPrefillEmail] = useState("");
   const [units, setUnits] = useState<UnitOption[]>([]);
   const [unitsError, setUnitsError] = useState("");
+
+  useEffect(() => {
+    const root = pageRef.current;
+    if (!root || reduceMotion !== false) return;
+
+    let cancelled = false;
+    let revert: (() => void) | undefined;
+    void loadGsap().then(({ gsap }) => {
+      if (cancelled) return;
+      const context = gsap.context(() => {
+        gsap
+          .timeline({ defaults: { ease: "power3.out" } })
+          .fromTo(
+            ".auth-brand-header",
+            { autoAlpha: 0, y: -12 },
+            { autoAlpha: 1, y: 0, duration: 0.6 },
+          )
+          .fromTo(
+            ".auth-brand-kicker",
+            { autoAlpha: 0, y: 12 },
+            { autoAlpha: 1, y: 0, duration: 0.48 },
+            "-=0.25",
+          )
+          .fromTo(
+            ".auth-brand-title",
+            { autoAlpha: 0, y: 18 },
+            { autoAlpha: 1, y: 0, duration: 0.72 },
+            "-=0.2",
+          )
+          .fromTo(
+            ".auth-brand-description",
+            { autoAlpha: 0, y: 12 },
+            { autoAlpha: 1, y: 0, duration: 0.55 },
+            "-=0.32",
+          )
+          .fromTo(
+            ".auth-brand-footer",
+            { autoAlpha: 0, y: 10 },
+            { autoAlpha: 1, y: 0, duration: 0.5 },
+            "-=0.35",
+          );
+      }, root);
+      revert = () => context.revert();
+    });
+
+    return () => {
+      cancelled = true;
+      revert?.();
+    };
+  }, [reduceMotion]);
+
+  useEffect(() => {
+    const root = pageRef.current;
+    if (!root || !units.length || reduceMotion !== false) return;
+
+    let cancelled = false;
+    let revert: (() => void) | undefined;
+    void loadGsap().then(({ gsap }) => {
+      if (cancelled) return;
+      const context = gsap.context(() => {
+        gsap.fromTo(
+          ".auth-unit-card",
+          { autoAlpha: 0, y: 14 },
+          {
+            autoAlpha: 1,
+            y: 0,
+            duration: 0.55,
+            stagger: 0.065,
+            ease: "power3.out",
+            scrollTrigger: {
+              trigger: ".auth-unit-grid",
+              start: "top 92%",
+              once: true,
+            },
+          },
+        );
+      }, root);
+      revert = () => context.revert();
+    });
+
+    return () => {
+      cancelled = true;
+      revert?.();
+    };
+  }, [reduceMotion, units.length]);
 
   useEffect(() => {
     let cancelled = false;
@@ -52,7 +141,7 @@ export default function AuthPage() {
   }, []);
 
   return (
-    <main className="min-h-dvh bg-slate-50 lg:grid lg:grid-cols-2">
+    <main ref={pageRef} className="min-h-dvh bg-slate-50 lg:grid lg:grid-cols-2">
       <section
         aria-label="UDESK business units"
         className="auth-brand-panel relative hidden min-h-dvh overflow-hidden bg-[#080b14] text-[#f8fafc] lg:flex lg:flex-col lg:justify-between lg:px-10 lg:py-9 xl:px-16 xl:py-12"
@@ -66,7 +155,7 @@ export default function AuthPage() {
           className="pointer-events-none absolute inset-0 opacity-[0.08] [background-image:linear-gradient(rgba(255,255,255,0.12)_1px,transparent_1px),linear-gradient(90deg,rgba(255,255,255,0.12)_1px,transparent_1px)] [background-size:72px_72px] [mask-image:linear-gradient(to_bottom,black,transparent_75%)]"
         />
 
-        <header className="relative z-10 flex items-center gap-4">
+        <header className="auth-brand-header relative z-10 flex items-center gap-4">
           <img
             src="/uoah-logo.png"
             alt="UOA Hospitality"
@@ -79,15 +168,15 @@ export default function AuthPage() {
           </div>
         </header>
 
-        <div className="auth-brand-content relative z-10 mx-auto w-full max-w-2xl py-10">
+        <div className="auth-brand-content auth-brand-copy relative z-10 mx-auto w-full max-w-2xl py-10">
           <div className="mb-8 max-w-lg">
-            <p className="mb-3 text-xs font-semibold uppercase tracking-[0.24em] text-indigo-300">
+            <p className="auth-brand-kicker mb-3 text-xs font-semibold uppercase tracking-[0.24em] text-indigo-300">
               One desk. Every team.
             </p>
-            <h1 className="text-3xl font-semibold leading-tight tracking-tight xl:text-4xl">
+            <h1 className="auth-brand-title text-3xl font-semibold leading-tight tracking-tight xl:text-4xl">
               Unified IT Service Desk across all Business Units
             </h1>
-            <p className="mt-3 text-sm leading-6 text-[#cbd5e1]">
+            <p className="auth-brand-description mt-3 text-sm leading-6 text-[#cbd5e1]">
               Connected support and knowledge, built around the teams that
               power UOA Hospitality.
             </p>
@@ -95,12 +184,12 @@ export default function AuthPage() {
 
           <div
             aria-label="Business unit wordmarks"
-            className="grid grid-cols-3 gap-3 xl:gap-4"
+            className="auth-unit-grid grid grid-cols-3 gap-3 xl:gap-4"
           >
             {units.map((unit, index) => (
               <div
                 key={unit.id}
-                className="group flex min-h-24 flex-col justify-between rounded-xl border border-white/[0.09] bg-white/[0.035] p-4 transition duration-300 hover:scale-[1.03] hover:border-indigo-300/30 hover:bg-white/[0.07] hover:shadow-[0_0_28px_rgba(99,102,241,0.12)] xl:min-h-28"
+                className="auth-unit-card group flex min-h-24 flex-col justify-between rounded-xl border border-white/[0.09] bg-white/[0.035] p-4 transition duration-300 hover:scale-[1.03] hover:border-indigo-300/30 hover:bg-white/[0.07] hover:shadow-[0_0_28px_rgba(99,102,241,0.12)] xl:min-h-28"
                 title={`${unit.name} (${unit.code})`}
               >
                 <Building2
@@ -138,7 +227,7 @@ export default function AuthPage() {
           </div>
         </div>
 
-        <footer className="relative z-10 flex items-center justify-between gap-4 border-t border-white/10 pt-5 text-xs text-[#94a3b8]">
+        <footer className="auth-brand-footer relative z-10 flex items-center justify-between gap-4 border-t border-white/10 pt-5 text-xs text-[#94a3b8]">
           <span>Powering IT Operations across UOA Hospitality</span>
           <span className="hidden text-[#64748b] xl:inline">UOA HOSPITALITY</span>
         </footer>
@@ -167,10 +256,19 @@ export default function AuthPage() {
             </div>
           </div>
 
-          <div
+          <AnimatePresence mode="wait" initial={false}>
+          <m.div
             key={view}
             data-auth-view={view}
-            className="auth-form-card auth-form-transition rounded-2xl border border-slate-200/80 bg-white p-6 shadow-[0_18px_60px_-32px_rgba(15,23,42,0.22)] sm:p-8"
+            initial={reduceMotion ? false : { opacity: 0, y: 10, scale: 0.99 }}
+            animate={{ opacity: 1, y: 0, scale: 1 }}
+            exit={reduceMotion ? { opacity: 0 } : { opacity: 0, y: -6, scale: 0.99 }}
+            transition={
+              reduceMotion
+                ? { duration: 0 }
+                : { type: "spring", stiffness: 360, damping: 32 }
+            }
+            className="auth-form-card rounded-2xl border border-slate-200/80 bg-white p-6 shadow-[0_18px_60px_-32px_rgba(15,23,42,0.22)] sm:p-8"
           >
             {view === "login" && (
               <LoginForm
@@ -201,7 +299,8 @@ export default function AuthPage() {
               ) : (
                 <TwoFactorSetup onBack={() => setView("login")} />
               ))}
-          </div>
+          </m.div>
+          </AnimatePresence>
         </div>
       </section>
     </main>

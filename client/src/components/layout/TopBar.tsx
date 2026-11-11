@@ -1,5 +1,6 @@
 // The bar across the top: page title, ticket creation, and the account menu.
 import { useEffect, useRef, useState } from "react";
+import { AnimatePresence, m, useReducedMotion } from "framer-motion";
 import {
   AlertTriangle,
   Bell,
@@ -46,6 +47,7 @@ export default function TopBar({
   onOpenTicket,
   onLogout,
 }: Props) {
+  const reduceMotion = useReducedMotion();
   const [securityOpen, setSecurityOpen] = useState(false);
   const [accountMenuOpen, setAccountMenuOpen] = useState(false);
   const [notificationsOpen, setNotificationsOpen] = useState(false);
@@ -101,7 +103,7 @@ export default function TopBar({
 
   return (
     <>
-      <header className="flex h-16 shrink-0 items-center gap-3 border-b border-border bg-surface px-4 sm:px-6">
+      <header className="sticky top-0 z-20 flex h-16 shrink-0 items-center gap-3 border-b border-border bg-surface px-4 sm:px-6">
         {/* Menu button only appears on phones */}
         <IconButton
           id="mobile-menu-button"
@@ -134,14 +136,18 @@ export default function TopBar({
           </Button>
 
           <div className="relative" ref={notificationsRef}>
-            <button
+            <m.button
               ref={notificationsButtonRef}
               type="button"
+              data-motion-button="true"
               aria-label={`Notifications${unreadCount ? `, ${unreadCount} unread` : ""}`}
               aria-haspopup="dialog"
               aria-expanded={notificationsOpen}
               aria-controls="notifications-menu"
               onClick={() => setNotificationsOpen((open) => !open)}
+              whileHover={reduceMotion ? undefined : { scale: 1.06 }}
+              whileTap={reduceMotion ? undefined : { scale: 0.92 }}
+              transition={{ type: "spring", stiffness: 500, damping: 26 }}
               className="relative inline-flex h-10 w-10 items-center justify-center rounded-full text-muted transition hover:bg-surface-muted hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand"
             >
               <Bell className="h-5 w-5" aria-hidden />
@@ -150,12 +156,21 @@ export default function TopBar({
                   {unreadCount > 99 ? "99+" : unreadCount}
                 </span>
               )}
-            </button>
-            {notificationsOpen && (
-              <div
+            </m.button>
+            <AnimatePresence>
+              {notificationsOpen && (
+              <m.div
                 id="notifications-menu"
                 role="dialog"
                 aria-label="Notifications"
+                initial={reduceMotion ? false : { opacity: 0, y: -8, scale: 0.98 }}
+                animate={{ opacity: 1, y: 0, scale: 1 }}
+                exit={reduceMotion ? { opacity: 0 } : { opacity: 0, y: -5, scale: 0.98 }}
+                transition={
+                  reduceMotion
+                    ? { duration: 0 }
+                    : { type: "spring", stiffness: 380, damping: 30 }
+                }
                 className="absolute right-0 top-full z-50 mt-2 w-[min(24rem,calc(100vw-2rem))] overflow-hidden rounded-xl border border-border bg-surface text-foreground shadow-lg"
               >
                 <div className="flex items-center justify-between border-b border-border px-4 py-3">
@@ -177,7 +192,7 @@ export default function TopBar({
                     Mark all as read
                   </button>
                 </div>
-                <div className="max-h-[min(65dvh,28rem)] overflow-y-auto p-2">
+                <div className="max-h-[min(65dvh,28rem)] overflow-y-auto p-2" data-lenis-prevent>
                   {notifications.length === 0 ? (
                     <p className="px-4 py-8 text-center text-sm text-muted">
                       No notifications yet.
@@ -193,14 +208,18 @@ export default function TopBar({
                               ? Ticket
                               : MessageSquare;
                       return (
-                        <button
+                        <m.button
                           key={notification.id}
                           type="button"
+                          data-motion-button="true"
                           onClick={() => {
                             markAsRead(notification.id);
                             setNotificationsOpen(false);
                             onOpenTicket(notification.ticketId);
                           }}
+                          whileHover={reduceMotion ? undefined : { x: 2 }}
+                          whileTap={reduceMotion ? undefined : { scale: 0.99 }}
+                          transition={{ type: "spring", stiffness: 460, damping: 30 }}
                           className={`flex w-full gap-3 rounded-lg px-3 py-3 text-left transition hover:bg-surface-muted focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand ${
                             notification.isRead
                               ? "bg-surface text-muted"
@@ -239,13 +258,14 @@ export default function TopBar({
                               {timeAgo(notification.createdAt)}
                             </span>
                           </span>
-                        </button>
+                        </m.button>
                       );
                     })
                   )}
                 </div>
-              </div>
-            )}
+              </m.div>
+              )}
+            </AnimatePresence>
           </div>
 
           <div className="relative" ref={accountMenuRef}>

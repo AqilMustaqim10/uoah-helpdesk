@@ -12,7 +12,7 @@ import {
   useState,
   type ReactNode,
 } from "react";
-import { AnimatePresence, m, useReducedMotion } from "framer-motion";
+import { AnimatePresence, LayoutGroup, m, useReducedMotion } from "framer-motion";
 import type { TabKey, TicketQuery, User } from "../../types";
 import { TAB_STORAGE_KEY, defaultTabFor, tabsForRole } from "../../lib/nav";
 import { getStored, setStored } from "../../lib/storage";
@@ -135,6 +135,15 @@ export default function AppShell({ user }: { user: User }) {
   }, [tabs, tab, user.role]);
 
   useEffect(() => {
+    if (!mobileOpen) return;
+    const previousOverflow = document.body.style.overflow;
+    document.body.style.overflow = "hidden";
+    return () => {
+      document.body.style.overflow = previousOverflow;
+    };
+  }, [mobileOpen]);
+
+  useEffect(() => {
     if (selectedId === null && window.location.pathname !== TAB_PATHS[tab]) {
       window.history.replaceState({}, "", TAB_PATHS[tab]);
     }
@@ -204,6 +213,7 @@ export default function AppShell({ user }: { user: User }) {
             user={user}
             version={version}
             onOpen={openTicket}
+            activeTicketId={selectedId}
             onCreate={() => setCreateOpen(true)}
             initialFilters={pendingTicketFilters}
             onInitialFiltersApplied={consumeTicketFilters}
@@ -237,15 +247,23 @@ export default function AppShell({ user }: { user: User }) {
   }
 
   return (
-    <div className="flex h-dvh overflow-hidden bg-slate-50">
+    <LayoutGroup id="app-layout">
+    <div className="flex min-h-dvh bg-slate-50">
       {/* Dark backdrop behind the phone drawer */}
-      {mobileOpen && (
-        <div
-          className="fixed inset-0 z-30 animate-fade-in bg-black/40 backdrop-blur-sm md:hidden"
-          onClick={() => setMobileOpen(false)}
-          aria-hidden
-        />
-      )}
+      <AnimatePresence>
+        {mobileOpen && (
+          <m.div
+            key="mobile-menu-backdrop"
+            initial={reduceMotion ? false : { opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={reduceMotion ? { opacity: 0 } : { opacity: 0 }}
+            transition={{ duration: reduceMotion ? 0 : 0.18 }}
+            className="fixed inset-0 z-30 bg-black/40 backdrop-blur-sm md:hidden"
+            onClick={() => setMobileOpen(false)}
+            aria-hidden
+          />
+        )}
+      </AnimatePresence>
 
       <Sidebar
         tabs={tabs}
@@ -269,14 +287,18 @@ export default function AppShell({ user }: { user: User }) {
           onOpenTicket={openTicket}
           onLogout={logout}
         />
-        <main className="flex-1 overflow-y-auto p-4 sm:p-6">
+        <main className="min-w-0 flex-1 p-4 sm:p-6">
           <AnimatePresence mode="wait" initial={false}>
             <m.div
               key={current.key}
               initial={reduceMotion ? false : { opacity: 0, y: 6 }}
               animate={{ opacity: 1, y: 0 }}
               exit={{ opacity: 0, y: -4 }}
-              transition={{ duration: reduceMotion ? 0 : 0.16, ease: "easeOut" }}
+              transition={
+                reduceMotion
+                  ? { duration: 0 }
+                  : { type: "spring", stiffness: 420, damping: 36 }
+              }
               className="mx-auto max-w-6xl"
             >
               <ErrorBoundary resetKey={current.key}>{page()}</ErrorBoundary>
@@ -285,8 +307,9 @@ export default function AppShell({ user }: { user: User }) {
         </main>
       </div>
 
+      <AnimatePresence>
       {createOpen && (
-        <ErrorBoundary onClose={() => setCreateOpen(false)}>
+        <ErrorBoundary key="create-ticket" onClose={() => setCreateOpen(false)}>
           <CreateTicketModal
             user={user}
             onClose={() => setCreateOpen(false)}
@@ -301,7 +324,7 @@ export default function AppShell({ user }: { user: User }) {
       )}
 
       {selectedId !== null && (
-        <ErrorBoundary onClose={closeTicket}>
+        <ErrorBoundary key={`ticket-${selectedId}`} onClose={closeTicket}>
           <TicketModal
             key={selectedId}
             ticketId={selectedId}
@@ -311,6 +334,8 @@ export default function AppShell({ user }: { user: User }) {
           />
         </ErrorBoundary>
       )}
+      </AnimatePresence>
     </div>
+    </LayoutGroup>
   );
 }

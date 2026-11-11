@@ -46,6 +46,7 @@ interface Props {
   /** Increases whenever something changed elsewhere, so the list must reload. */
   version: number;
   onOpen: (id: number) => void;
+  activeTicketId: number | null;
   onCreate: () => void;
   initialFilters?: Partial<TicketQuery> | null;
   onInitialFiltersApplied?: () => void;
@@ -55,6 +56,7 @@ export default function TicketsPage({
   user,
   version,
   onOpen,
+  activeTicketId,
   onCreate,
   initialFilters,
   onInitialFiltersApplied,
@@ -355,6 +357,7 @@ export default function TicketsPage({
               tickets={data.tickets}
               role={user.role}
               onOpen={onOpen}
+              activeTicketId={activeTicketId}
               selectedIds={selectedIds}
               onToggle={toggleTicket}
               onToggleAll={toggleAllOnPage}

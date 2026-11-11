@@ -1,5 +1,5 @@
 // The list of tickets, with sortable columns and staff selection for bulk actions.
-import { useEffect } from "react";
+import { useEffect, useRef } from "react";
 import { Mail, Paperclip } from "lucide-react";
 import { AnimatePresence, m, useReducedMotion } from "framer-motion";
 import type {
@@ -14,11 +14,13 @@ import { useCountdown } from "../../hooks/useCountdown";
 import { OverdueBadge, PriorityBadge, StatusBadge } from "../ui/Badges";
 import Avatar from "../ui/Avatar";
 import { cn } from "../../lib/cn";
+import { loadGsap } from "../../lib/gsapRuntime";
 
 interface Props {
   tickets: TicketSummary[];
   role: Role;
   onOpen: (id: number) => void;
+  activeTicketId: number | null;
   selectedIds: number[];
   onToggle: (id: number) => void;
   onToggleAll: () => void;
@@ -75,6 +77,7 @@ export default function TicketList({
   tickets,
   role,
   onOpen,
+  activeTicketId,
   selectedIds,
   onToggle,
   onToggleAll,
@@ -83,6 +86,41 @@ export default function TicketList({
   onSort,
 }: Props) {
   const reduceMotion = useReducedMotion();
+  const listRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    const root = listRef.current;
+    if (!root || tickets.length === 0 || reduceMotion !== false) return;
+
+    let cancelled = false;
+    let revert: (() => void) | undefined;
+    void loadGsap().then(({ gsap }) => {
+      if (cancelled) return;
+      const context = gsap.context(() => {
+        gsap.fromTo(
+          root,
+          { autoAlpha: 0, y: 14 },
+          {
+            autoAlpha: 1,
+            y: 0,
+            duration: 0.58,
+            ease: "power3.out",
+            scrollTrigger: {
+              trigger: root,
+              start: "top 92%",
+              once: true,
+            },
+          },
+        );
+      }, root);
+      revert = () => context.revert();
+    });
+
+    return () => {
+      cancelled = true;
+      revert?.();
+    };
+  }, [reduceMotion, tickets.length]);
   const sortable: Array<{ key: TicketSortKey; label: string }> = [
     { key: "title", label: "Ticket" },
     { key: "priority", label: "Priority" },
@@ -91,7 +129,7 @@ export default function TicketList({
   ];
 
   return (
-    <div className="overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm">
+    <div ref={listRef} className="overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm">
       <div className="flex items-center gap-3 border-b border-slate-200 bg-slate-50 px-4 py-2">
         {role !== "USER" && (
           <input
@@ -148,17 +186,23 @@ export default function TicketList({
       <m.ul layout={!reduceMotion} className="divide-y divide-slate-200">
         <AnimatePresence initial={false}>
           {tickets.map((t) => (
+          activeTicketId === t.id ? null : (
           <m.li
             key={t.id}
             layout={!reduceMotion}
+            layoutId={`ticket-card-${t.id}`}
             initial={reduceMotion ? false : { opacity: 0, y: 6 }}
             animate={{ opacity: 1, y: 0 }}
             exit={
               reduceMotion
                 ? { opacity: 0 }
-                : { opacity: 0, height: 0, transition: { duration: 0.14 } }
+                  : { opacity: 0, y: -4, transition: { duration: 0.14 } }
             }
             transition={{ duration: reduceMotion ? 0 : 0.16, ease: "easeOut" }}
+            whileHover={reduceMotion ? undefined : { scale: 1.005 }}
+            whileTap={reduceMotion ? undefined : { scale: 0.995 }}
+            whileFocus={reduceMotion ? undefined : { scale: 1.005 }}
+            style={{ transformOrigin: "center" }}
             className="overflow-hidden"
           >
             <div className="flex items-center gap-3 px-4 py-3 transition-colors hover:bg-slate-50">
@@ -247,6 +291,7 @@ export default function TicketList({
               </a>
             </div>
           </m.li>
+          )
           ))}
         </AnimatePresence>
       </m.ul>

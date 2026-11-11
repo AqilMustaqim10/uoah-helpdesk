@@ -1,5 +1,6 @@
 // The Dashboard tab (IT / ADMIN). Reloads whenever `version` changes (a ticket was changed elsewhere).
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
+import { useReducedMotion } from "framer-motion";
 import { Ticket as TicketIcon } from "lucide-react";
 import { authApi } from "../api/auth";
 import { ApiError } from "../api/client";
@@ -27,6 +28,7 @@ import EmptyState from "../components/ui/EmptyState";
 import FormError from "../components/ui/FormError";
 import Skeleton from "../components/ui/Skeleton";
 import Button from "../components/ui/Button";
+import { loadGsap } from "../lib/gsapRuntime";
 
 interface Props {
   user: User;
@@ -59,12 +61,60 @@ export default function DashboardPage({
   onOpen,
   onShowTickets,
 }: Props) {
+  const dashboardRef = useRef<HTMLDivElement>(null);
+  const reduceMotion = useReducedMotion();
   const [data, setData] = useState<DashboardData | null>(null);
   const [error, setError] = useState("");
   const [units, setUnits] = useState<UnitOption[]>([]);
   const [unitError, setUnitError] = useState("");
   const [filters, setFilters] = useState<DashboardFilters>(EMPTY_FILTERS);
   const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    const root = dashboardRef.current;
+    if (!root || reduceMotion !== false) return;
+
+    let cancelled = false;
+    let revert: (() => void) | undefined;
+    void loadGsap().then(({ gsap }) => {
+      if (cancelled) return;
+      const context = gsap.context(() => {
+        root.querySelectorAll<HTMLElement>(".dashboard-entrance").forEach((item) => {
+          const directChildren = Array.from(item.children);
+          const staggerItems = directChildren.filter((child) =>
+            child.classList.contains("dashboard-stagger-item"),
+          );
+          const targets = item.dataset.stagger
+            ? staggerItems.length > 0
+              ? staggerItems
+              : directChildren
+            : [item];
+          gsap.fromTo(
+            targets,
+            { autoAlpha: 0, y: 18 },
+            {
+              autoAlpha: 1,
+              y: 0,
+              duration: 0.62,
+              stagger: item.dataset.stagger ? 0.075 : 0,
+              ease: "power3.out",
+              scrollTrigger: {
+                trigger: item,
+                start: "top 92%",
+                once: true,
+              },
+            },
+          );
+        });
+      }, root);
+      revert = () => context.revert();
+    });
+
+    return () => {
+      cancelled = true;
+      revert?.();
+    };
+  }, [data, reduceMotion]);
 
   useEffect(() => {
     let cancelled = false;
@@ -333,11 +383,13 @@ export default function DashboardPage({
 
   return (
     <div
+      ref={dashboardRef}
       className={`space-y-4 transition-opacity ${loading ? "opacity-60" : ""}`}
       aria-busy={loading}
     >
-      {filterBar}
+      <div className="dashboard-entrance">{filterBar}</div>
       {error && <FormError message={error} />}
+      <div className="dashboard-entrance">
       <OverdueBanner
         count={kpis.overdue}
         tickets={data.overdueTickets}
@@ -346,11 +398,18 @@ export default function DashboardPage({
           onShowTickets({ ...currentTicketFilters, overdueOnly: true })
         }
       />
-      <KpiCards kpis={kpis} onSelect={showKpi} />
+      </div>
+      <div className="dashboard-entrance" data-stagger>
+        <KpiCards kpis={kpis} onSelect={showKpi} />
+      </div>
 
-      {trend.length > 1 && <TrendChart points={trend} />}
+      {trend.length > 1 && (
+        <div className="dashboard-entrance">
+          <TrendChart points={trend} />
+        </div>
+      )}
 
-      <div className="grid gap-4 lg:grid-cols-2">
+      <div className="dashboard-entrance grid gap-4 lg:grid-cols-2" data-stagger>
         <BreakdownBars
           title="Tickets by status"
           subtitle="All tickets"
@@ -368,6 +427,7 @@ export default function DashboardPage({
       </div>
 
       {user.role === "ADMIN" && unitItems.length > 0 && (
+        <div className="dashboard-entrance">
         <BreakdownBars
           title={
             filters.status
@@ -377,6 +437,7 @@ export default function DashboardPage({
           subtitle={breakdownSubtitle}
           items={unitItems}
         />
+        </div>
       )}
     </div>
   );

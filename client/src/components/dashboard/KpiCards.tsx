@@ -8,6 +8,7 @@ import {
   Ticket,
   type LucideIcon,
 } from "lucide-react";
+import { m } from "framer-motion";
 import { useCountUp } from "../../hooks/useCountUp";
 import type { DashboardStats } from "../../types";
 
@@ -66,19 +67,25 @@ function Card({
   def,
   value,
   onSelect,
+  className,
 }: {
   def: CardDef;
   value: number;
   onSelect: () => void;
+  className?: string;
 }) {
   const shown = useCountUp(value);
   const Icon = def.icon;
   return (
-    <button
+    <m.button
       type="button"
       onClick={onSelect}
       disabled={value === 0}
-      className="rounded-2xl border border-border bg-surface p-4 text-left text-foreground shadow-sm transition enabled:hover:border-brand/40 enabled:hover:shadow-md focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand focus-visible:ring-offset-2 disabled:cursor-default"
+      data-motion-button="true"
+      whileHover={value === 0 ? undefined : { y: -3, scale: 1.015 }}
+      whileTap={value === 0 ? undefined : { scale: 0.98 }}
+      transition={{ type: "spring", stiffness: 420, damping: 26 }}
+      className={`rounded-2xl border border-border bg-surface p-4 text-left text-foreground shadow-sm transition enabled:hover:border-brand/40 enabled:hover:shadow-md focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand focus-visible:ring-offset-2 disabled:cursor-default ${className ?? ""}`}
       aria-label={`View ${value} ${def.label.toLowerCase()} tickets`}
     >
       <div className="flex items-center justify-between">
@@ -94,7 +101,7 @@ function Card({
         {def.suffix ?? ""}
       </p>
       {def.hint && <p className="mt-0.5 text-xs text-muted">{def.hint}</p>}
-    </button>
+    </m.button>
   );
 }
 
@@ -108,12 +115,14 @@ export default function KpiCards({
   return (
     <div className="grid grid-cols-2 gap-3 lg:grid-cols-6">
       {CARDS.map((c) => (
-        <Card
-          key={c.key}
-          def={c}
-          value={kpis[c.key]}
-          onSelect={() => onSelect(c.key)}
-        />
+        <div key={c.key} className="dashboard-stagger-item">
+          <Card
+            def={c}
+            value={kpis[c.key]}
+            onSelect={() => onSelect(c.key)}
+            className="kpi-card"
+          />
+        </div>
       ))}
     </div>
   );
