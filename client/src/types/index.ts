@@ -24,6 +24,23 @@ export interface User {
   two_factor?: boolean;
 }
 
+export type NotificationType =
+  | "TICKET_REPLY"
+  | "ASSIGNED"
+  | "SLA_WARNING"
+  | "NEW_TICKET";
+
+export interface Notification {
+  id: string;
+  userId: number;
+  ticketId: number;
+  title: string;
+  message: string;
+  type: NotificationType;
+  isRead: boolean;
+  createdAt: string;
+}
+
 /** A business unit in dropdowns. */
 export interface UnitOption {
   id: number;

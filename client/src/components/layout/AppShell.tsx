@@ -266,6 +266,7 @@ export default function AppShell({ user }: { user: User }) {
           onOpenMenu={() => setMobileOpen(true)}
           onCloseMenu={() => setMobileOpen(false)}
           onCreateTicket={() => setCreateOpen(true)}
+          onOpenTicket={openTicket}
           onLogout={logout}
         />
         <main className="flex-1 overflow-y-auto p-4 sm:p-6">

@@ -33,6 +33,7 @@ import kbSuggestRoutes from "./routes/kbSuggest";
 import auditRoutes from "./routes/audit";
 import historyRoutes from "./routes/history";
 import kbSearchRoutes from "./routes/kbSearch";
+import notificationRoutes from "./routes/notifications";
 
 const app = express();
 const AUDIT_LOG_CLEANUP_INTERVAL_MS = 24 * 60 * 60 * 1000;
@@ -112,6 +113,7 @@ app.use(
   ticketDeleteRoutes,
 );
 
+app.use("/api/notifications", requireAuth, notificationRoutes);
 app.use("/api/files", requireAuth, itClosedFileGuard, fileRoutes);
 
 app.use("/api/stats", requireAuth, requireRole("ADMIN", "IT"), statsRoutes);
