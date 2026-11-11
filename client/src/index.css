@@ -50,15 +50,43 @@
     }
 
     @keyframes shimmer {
-
-        0%,
-        100% {
-            opacity: 1;
+        from {
+            background-position: 100% 0;
         }
 
-        50% {
-            opacity: 0.5;
+        to {
+            background-position: -100% 0;
         }
+    }
+}
+
+.skeleton-shimmer {
+    background-color: var(--color-slate-100);
+    background-image: linear-gradient(
+        100deg,
+        var(--color-slate-100) 20%,
+        var(--color-slate-200) 48%,
+        var(--color-slate-100) 76%
+    );
+    background-size: 220% 100%;
+    animation: shimmer 1.65s ease-in-out infinite;
+}
+
+.skeleton-chart-line {
+    stroke-dasharray: 14 12;
+    animation: skeleton-chart-draw 2.4s ease-in-out infinite;
+}
+
+@keyframes skeleton-chart-draw {
+    0%,
+    100% {
+        stroke-dashoffset: 52;
+        opacity: 0.45;
+    }
+
+    50% {
+        stroke-dashoffset: 0;
+        opacity: 0.8;
     }
 }
 
@@ -218,6 +246,10 @@ html.theme-transition *::after {
         animation-iteration-count: 1 !important;
         transition-duration: 0.01ms !important;
         scroll-behavior: auto !important;
+    }
+
+    .skeleton-chart-line {
+        animation: none;
     }
 }
 

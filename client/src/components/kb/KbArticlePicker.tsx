@@ -3,10 +3,11 @@
 //  - click the box: the newest articles appear; type to search by title, text or tag
 //  - Arrow keys move, Enter chooses, Esc closes the list (and only the list, not the ticket window)
 import { useEffect, useId, useRef, useState, type KeyboardEvent } from "react";
-import { BookOpen, Loader2, Search } from "lucide-react";
+import { BookOpen, Search } from "lucide-react";
 import { kbApi, type LinkableArticle } from "../../api/kb";
 import { useDebounce } from "../../hooks/useDebounce";
 import { cn } from "../../lib/cn";
+import Skeleton from "../ui/Skeleton";
 
 interface Props {
   ticketId: number;
@@ -120,10 +121,13 @@ export default function KbArticlePicker({
           className="h-10 w-full rounded-lg border border-slate-200 bg-white pl-9 pr-9 text-sm text-slate-900 transition placeholder:text-slate-400 focus:border-brand focus:outline-none focus:ring-2 focus:ring-brand/25 disabled:cursor-not-allowed disabled:opacity-60"
         />
         {loading && (
-          <Loader2
-            className="absolute right-3 top-1/2 h-4 w-4 -translate-y-1/2 animate-spin text-slate-400"
+          <span
+            role="status"
             aria-label="Searching"
-          />
+            className="absolute right-3 top-1/2 -translate-y-1/2"
+          >
+            <Skeleton className="h-4 w-4 rounded-full" />
+          </span>
         )}
       </div>
 

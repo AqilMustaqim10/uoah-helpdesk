@@ -4,6 +4,7 @@
 // the attachments, the conversation, and the history.
 // Every change is still applied at once and audited on the server (nothing waits for a "Save" button).
 import { useEffect, useState, type ReactNode } from "react";
+import { m, useReducedMotion } from "framer-motion";
 import { AlertCircle, Mail, MessageSquare, Trash2 } from "lucide-react";
 import { ApiError } from "../../api/client";
 import { ticketsApi } from "../../api/tickets";
@@ -21,7 +22,7 @@ import { OverdueBadge, PriorityBadge, StatusBadge } from "../ui/Badges";
 import Button from "../ui/Button";
 import Modal from "../ui/Modal";
 import ReasonModal from "../ui/ReasonModal";
-import Skeleton from "../ui/Skeleton";
+import { DrawerSkeleton } from "../ui/Skeleton";
 import Attachments from "./Attachments";
 import Conversation from "./Conversation";
 import HistoryTimeline from "./HistoryTimeline";
@@ -70,6 +71,7 @@ export default function TicketModal({
   onChanged,
 }: Props) {
   const toast = useToast();
+  const reduceMotion = useReducedMotion();
   const draftKey = `ticket-reply-draft:${user.id}:${ticketId}`;
   const [data, setData] = useState<TicketDetailResponse | null>(null);
   const [error, setError] = useState("");
@@ -256,18 +258,24 @@ export default function TicketModal({
             <p className="text-sm font-medium text-slate-900">{error}</p>
           </div>
         ) : !data ? (
-          <div
-            className="space-y-4 p-6"
+          <m.div
+            initial={reduceMotion ? false : { opacity: 0 }}
+            animate={{ opacity: 1 }}
+            transition={{ duration: reduceMotion ? 0 : 0.18 }}
+            className="h-full"
             aria-busy="true"
             aria-label="Loading ticket"
           >
-            <Skeleton className="h-6 w-1/3" />
-            <Skeleton className="h-4 w-2/3" />
-            <Skeleton className="h-40 w-full" />
-          </div>
+            <DrawerSkeleton />
+          </m.div>
         ) : (
           // A fixed frame: the header and footer stay, only the middle scrolls
-          <div className="flex h-full flex-col overflow-hidden">
+          <m.div
+            initial={reduceMotion ? false : { opacity: 0 }}
+            animate={{ opacity: 1 }}
+            transition={{ duration: reduceMotion ? 0 : 0.18 }}
+            className="flex h-full flex-col overflow-hidden"
+          >
             {/* ---------- header ---------- */}
             <header className="flex shrink-0 items-center gap-3 border-b border-slate-200 bg-white px-6 py-4 pr-14">
               <span className="shrink-0 rounded-md bg-brand px-2.5 py-1 font-mono text-sm font-semibold text-onbrand">
@@ -462,7 +470,7 @@ export default function TicketModal({
                 )}
               </div>
             </footer>
-          </div>
+          </m.div>
         )}
       </Modal>
 

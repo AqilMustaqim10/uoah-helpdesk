@@ -3,11 +3,12 @@
 //  - an article opens inline (no extra window); "This solved my problem" closes the form without a ticket
 //  - a failed lookup is ignored: suggestions are a bonus and must never get in the way
 import { useEffect, useRef, useState } from "react";
-import { BookOpen, ChevronDown, Loader2 } from "lucide-react";
+import { BookOpen, ChevronDown } from "lucide-react";
 import { kbApi, type ArticleSuggestion } from "../../api/kb";
 import { useDebounce } from "../../hooks/useDebounce";
 import { cn } from "../../lib/cn";
 import Button from "../ui/Button";
+import Skeleton from "../ui/Skeleton";
 
 interface Props {
   title: string;
@@ -116,10 +117,15 @@ export default function SuggestedArticles({ title, onSolved }: Props) {
               {open && (
                 <div className="animate-fade-in border-t border-slate-200 px-3 py-2">
                   {!body || body.status === "loading" ? (
-                    <Loader2
-                      className="h-4 w-4 animate-spin text-slate-400"
-                      aria-label="Loading"
-                    />
+                    <div
+                      role="status"
+                      aria-label="Loading article"
+                      className="space-y-2 py-1"
+                    >
+                      <Skeleton className="h-3 w-full" />
+                      <Skeleton className="h-3 w-5/6" />
+                      <Skeleton className="h-3 w-2/3" />
+                    </div>
                   ) : body.status === "error" ? (
                     <p className="text-sm text-slate-500">
                       Could not load this article.

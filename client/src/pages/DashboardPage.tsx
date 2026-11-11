@@ -1,6 +1,6 @@
 // The Dashboard tab (IT / ADMIN). Reloads whenever `version` changes (a ticket was changed elsewhere).
 import { useEffect, useRef, useState } from "react";
-import { useReducedMotion } from "framer-motion";
+import { m, useReducedMotion } from "framer-motion";
 import { Ticket as TicketIcon } from "lucide-react";
 import { authApi } from "../api/auth";
 import { ApiError } from "../api/client";
@@ -26,7 +26,7 @@ import OverdueBanner from "../components/dashboard/OverdueBanner";
 import TrendChart from "../components/dashboard/TrendChart";
 import EmptyState from "../components/ui/EmptyState";
 import FormError from "../components/ui/FormError";
-import Skeleton from "../components/ui/Skeleton";
+import { DashboardSkeleton } from "../components/ui/Skeleton";
 import Button from "../components/ui/Button";
 import { loadGsap } from "../lib/gsapRuntime";
 
@@ -272,14 +272,15 @@ export default function DashboardPage({
 
   if (!data) {
     return (
-      <div className="space-y-4" aria-busy="true" aria-label="Loading dashboard">
-        {filterBar}
-        <div className="grid grid-cols-2 gap-3 lg:grid-cols-6">
-          {Array.from({ length: 6 }).map((_, i) => <Skeleton key={i} className="h-24" />)}
-        </div>
-        <Skeleton className="h-64" />
-        <Skeleton className="h-48" />
-      </div>
+      <m.div
+        initial={reduceMotion ? false : { opacity: 0 }}
+        animate={{ opacity: 1 }}
+        transition={{ duration: reduceMotion ? 0 : 0.18 }}
+        aria-busy="true"
+        aria-label="Loading dashboard"
+      >
+        <DashboardSkeleton />
+      </m.div>
     );
   }
 

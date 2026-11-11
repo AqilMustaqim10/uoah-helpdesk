@@ -31,7 +31,7 @@ import EmptyState from "../components/ui/EmptyState";
 import ErrorBoundary from "../components/ui/ErrorBoundary";
 import FormError from "../components/ui/FormError";
 import Pagination from "../components/ui/Pagination";
-import Skeleton from "../components/ui/Skeleton";
+import { LoadingTransition, TicketListSkeleton } from "../components/ui/Skeleton";
 
 const EMPTY: HistoryQuery = {
   q: "",
@@ -277,19 +277,12 @@ export default function HistoryPage({ user, version, onManage }: Props) {
 
       <FormError message={error} />
 
-      {firstLoad ? (
-        <div
-          className="space-y-px overflow-hidden rounded-2xl border border-slate-200 bg-white"
-          aria-busy="true"
-        >
-          {Array.from({ length: 5 }).map((_, i) => (
-            <div key={i} className="space-y-2 px-4 py-4">
-              <Skeleton className="h-4 w-1/2" />
-              <Skeleton className="h-3 w-1/3" />
-            </div>
-          ))}
-        </div>
-      ) : data && data.tickets.length > 0 ? (
+      <LoadingTransition
+        loading={firstLoad}
+        label="Loading ticket history"
+        fallback={<TicketListSkeleton count={5} />}
+      >
+      {data && data.tickets.length > 0 ? (
         <>
           <p className="text-sm text-slate-500">
             {data.total} ticket{data.total === 1 ? "" : "s"}
@@ -379,6 +372,7 @@ export default function HistoryPage({ user, version, onManage }: Props) {
           />
         )
       ) : null}
+      </LoadingTransition>
 
       {openId !== null && (
         <ErrorBoundary onClose={() => setOpenId(null)}>
