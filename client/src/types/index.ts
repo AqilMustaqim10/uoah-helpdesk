@@ -24,6 +24,23 @@ export interface User {
   two_factor?: boolean;
 }
 
+export type NotificationType =
+  | "TICKET_REPLY"
+  | "ASSIGNED"
+  | "SLA_WARNING"
+  | "NEW_TICKET";
+
+export interface Notification {
+  id: string;
+  userId: number;
+  ticketId: number;
+  title: string;
+  message: string;
+  type: NotificationType;
+  isRead: boolean;
+  createdAt: string;
+}
+
 /** A business unit in dropdowns. */
 export interface UnitOption {
   id: number;
@@ -45,6 +62,10 @@ export interface ToastItem {
   id: number;
   kind: ToastKind;
   message: string;
+  action?: {
+    label: string;
+    onClick: () => void;
+  };
 }
 
 // ---------------- Tickets ----------------
@@ -134,6 +155,9 @@ export interface TicketListResponse {
   counts: Record<TicketStatus, number>;
 }
 
+export type TicketSortKey = "title" | "priority" | "status" | "sla" | "created_at";
+export type SortDirection = "asc" | "desc";
+
 /** A person a ticket can be assigned to. */
 export interface Assignee {
   id: number;
@@ -151,7 +175,10 @@ export interface TicketQuery {
   page: number;
   activeOnly?: boolean;
   overdueOnly?: boolean;
+  dueSoonOnly?: boolean;
   createdWithin?: "" | "7" | "30" | "90";
+  sortBy?: TicketSortKey;
+  sortDirection?: SortDirection;
 }
 
 export interface DashboardFilters {

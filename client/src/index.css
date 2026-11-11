@@ -6,11 +6,7 @@
 
 /* ---------- Design tokens ---------- */
 @theme {
-    /* White text that stays white in dark mode (used on brand-colored buttons).
-     Do not use text-white for that: dark mode remaps "white" to a dark color. */
-    --color-onbrand: #ffffff;
-
-    --font-sans: "Segoe UI", system-ui, -apple-system, Roboto, "Helvetica Neue", Arial, sans-serif;
+    --font-sans: "Inter Variable", Inter, system-ui, -apple-system, Roboto, "Helvetica Neue", Arial, sans-serif;
     --font-mono: ui-monospace, "Cascadia Code", Consolas, "Courier New", monospace;
 
     /* Short, subtle animations (150-300 ms) */
@@ -70,11 +66,27 @@
    The app sets --brand from the business unit's brand color after login. */
 @theme inline {
     --color-brand: var(--brand);
+    --color-onbrand: var(--onbrand);
+    --color-surface: var(--surface);
+    --color-surface-muted: var(--surface-muted);
+    --color-foreground: var(--text-primary);
+    --color-muted: var(--text-muted);
+    --color-border: var(--border);
+    --color-on-danger: var(--on-danger);
+    --color-on-warning: var(--on-warning);
 }
 
 :root {
     --brand: #2563eb;
     /* default brand color (blue-600) */
+    --onbrand: #ffffff;
+    --surface: #ffffff;
+    --surface-muted: #f8fafc;
+    --text-primary: #0f172a;
+    --text-muted: #64748b;
+    --border: #e2e8f0;
+    --on-danger: #ffffff;
+    --on-warning: #0f172a;
     color-scheme: light;
 }
 
@@ -84,6 +96,13 @@
    and so on. The same class names (bg-white, text-slate-700...) now give dark colors. */
 .dark {
     color-scheme: dark;
+
+    --surface: #0f172a;
+    --surface-muted: #1e293b;
+    --text-primary: #f8fafc;
+    --text-muted: #94a3b8;
+    --border: #334155;
+    --on-danger: #0f172a;
 
     --color-white: #0f172a;
     --color-slate-50: #020617;

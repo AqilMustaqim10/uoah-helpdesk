@@ -4,6 +4,7 @@ import { StrictMode } from "react";
 import { createRoot } from "react-dom/client";
 import { domMax, LazyMotion, MotionConfig } from "framer-motion";
 import "./index.css";
+import "@fontsource-variable/inter";
 import App from "./App";
 import { ThemeProvider } from "./context/ThemeContext";
 import { ToastProvider } from "./context/ToastContext";

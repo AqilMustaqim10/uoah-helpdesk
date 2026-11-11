@@ -70,6 +70,7 @@ export default function TicketModal({
   onChanged,
 }: Props) {
   const toast = useToast();
+  const draftKey = `ticket-reply-draft:${user.id}:${ticketId}`;
   const [data, setData] = useState<TicketDetailResponse | null>(null);
   const [error, setError] = useState("");
   const [busy, setBusy] = useState(""); // which change is being saved ('' = none)
@@ -78,6 +79,21 @@ export default function TicketModal({
   const [deleteBusy, setDeleteBusy] = useState(false);
   const [deleteError, setDeleteError] = useState("");
   const [articleId, setArticleId] = useState<number | null>(null); // a linked article that is open on top of the ticket
+
+  function confirmDraftClose(): boolean {
+    try {
+      const draft = window.sessionStorage.getItem(draftKey);
+      return !draft?.trim() || window.confirm(
+        "This ticket has an unsent reply draft. Close without sending it?",
+      );
+    } catch {
+      return true;
+    }
+  }
+
+  function requestClose() {
+    if (confirmDraftClose()) onClose();
+  }
 
   // Load the ticket. A ticket that is missing OR out of your scope looks the same: "not found".
   useEffect(() => {
@@ -110,10 +126,14 @@ export default function TicketModal({
   }, [confirmClose]);
 
   /** A change succeeded: show the fresh data, refresh the list, show a toast. */
-  function apply(result: TicketDetailResponse, message: string) {
+  function apply(
+    result: TicketDetailResponse,
+    message: string,
+    action?: { label: string; onClick: () => void },
+  ) {
     setData({ ...result, files: result.files ?? [] });
     onChanged();
-    toast.success(message);
+    toast.success(message, action);
   }
 
   /** Runs one change, shows the result, and reports a problem as a toast. */
@@ -121,11 +141,12 @@ export default function TicketModal({
     key: string,
     action: () => Promise<TicketDetailResponse>,
     message: string,
+    toastAction?: { label: string; onClick: () => void },
   ) {
     if (busy) return;
     setBusy(key);
     try {
-      apply(await action(), message);
+      apply(await action(), message, toastAction);
     } catch (err) {
       toast.error(
         err instanceof ApiError
@@ -143,10 +164,38 @@ export default function TicketModal({
       toast.error("Assign an IT support agent before closing this ticket.");
       return;
     }
+    const previousStatus = data?.ticket.status;
     await run(
       to,
       () => ticketsApi.setStatus(ticketId, to),
       `Status: ${STATUS_META[to].label}`,
+      previousStatus &&
+        TRANSITIONS[to].some((transition) => transition.to === previousStatus)
+        ? {
+            label: "Undo",
+            onClick: () => {
+              void (async () => {
+                try {
+                  const result = await ticketsApi.setStatus(
+                    ticketId,
+                    previousStatus,
+                  );
+                  setData({ ...result, files: result.files ?? [] });
+                  onChanged();
+                  toast.success(
+                    `Status restored: ${STATUS_META[previousStatus].label}`,
+                  );
+                } catch (err) {
+                  toast.error(
+                    err instanceof ApiError
+                      ? err.message
+                      : "Could not undo the status change.",
+                  );
+                }
+              })();
+            },
+          }
+        : undefined,
     );
   }
 
@@ -197,7 +246,8 @@ export default function TicketModal({
       <Modal
         label={`Ticket ${ticketRef(ticketId)}`}
         onClose={onClose}
-        size="wide"
+        beforeClose={confirmDraftClose}
+        presentation="drawer"
       >
         {error ? (
           <div className="flex flex-col items-center px-6 py-16 text-center">
@@ -216,7 +266,7 @@ export default function TicketModal({
           </div>
         ) : (
           // A fixed frame: the header and footer stay, only the middle scrolls
-          <div className="flex max-h-[calc(100dvh-2rem)] flex-col overflow-hidden rounded-2xl sm:max-h-[calc(100dvh-3rem)]">
+          <div className="flex h-full flex-col overflow-hidden">
             {/* ---------- header ---------- */}
             <header className="flex shrink-0 items-center gap-3 border-b border-slate-200 bg-white px-6 py-4 pr-14">
               <span className="shrink-0 rounded-md bg-brand px-2.5 py-1 font-mono text-sm font-semibold text-onbrand">
@@ -329,6 +379,7 @@ export default function TicketModal({
               >
                 <Conversation
                   ticketId={ticketId}
+                  userId={user.id}
                   comments={data.comments}
                   files={data.files}
                   staff={staff}
@@ -359,7 +410,7 @@ export default function TicketModal({
 
             {/* ---------- footer ---------- */}
             <footer className="flex shrink-0 flex-wrap items-center gap-2 border-t border-slate-200 bg-white px-6 py-3">
-              <Button variant="secondary" onClick={onClose}>
+              <Button variant="secondary" onClick={requestClose}>
                 Close
               </Button>
 

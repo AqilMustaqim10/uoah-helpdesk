@@ -4,6 +4,7 @@ import { Loader2 } from "lucide-react";
 import { useAuth } from "./hooks/useAuth";
 import AuthPage from "./pages/AuthPage";
 import AppShell from "./components/layout/AppShell";
+import { NotificationProvider } from "./context/NotificationContext";
 
 export default function App() {
   const { user, loading } = useAuth();
@@ -20,5 +21,11 @@ export default function App() {
   }
 
   // key={user.id}: when a different person signs in, the shell starts fresh
-  return user ? <AppShell key={user.id} user={user} /> : <AuthPage />;
+  return user ? (
+    <NotificationProvider key={user.id} user={user}>
+      <AppShell user={user} />
+    </NotificationProvider>
+  ) : (
+    <AuthPage />
+  );
 }

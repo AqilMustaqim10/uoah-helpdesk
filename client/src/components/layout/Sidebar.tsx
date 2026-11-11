@@ -2,6 +2,7 @@
 // The header shows ONLY the unit logo (no text).
 import { PanelLeftClose, PanelLeftOpen } from "lucide-react";
 import { m, useReducedMotion } from "framer-motion";
+import { useEffect, useState } from "react";
 import type { Branding, TabKey } from "../../types";
 import type { TabDef } from "../../lib/nav";
 import { cn } from "../../lib/cn";
@@ -15,6 +16,7 @@ interface Props {
   collapsed: boolean;
   onToggleCollapsed: () => void;
   mobileOpen: boolean;
+  onCloseMobile: () => void;
 }
 
 export default function Sidebar({
@@ -25,11 +27,36 @@ export default function Sidebar({
   collapsed,
   onToggleCollapsed,
   mobileOpen,
+  onCloseMobile,
 }: Props) {
   const reduceMotion = useReducedMotion();
+  const [isMobile, setIsMobile] = useState(() =>
+    window.matchMedia("(max-width: 767px)").matches,
+  );
+
+  useEffect(() => {
+    const media = window.matchMedia("(max-width: 767px)");
+    const onChange = () => setIsMobile(media.matches);
+    media.addEventListener("change", onChange);
+    return () => media.removeEventListener("change", onChange);
+  }, []);
+
+  useEffect(() => {
+    if (!mobileOpen) return;
+    function onKeyDown(event: KeyboardEvent) {
+      if (event.key === "Escape") {
+        onCloseMobile();
+        document.getElementById("mobile-menu-button")?.focus();
+      }
+    }
+    document.addEventListener("keydown", onKeyDown);
+    return () => document.removeEventListener("keydown", onKeyDown);
+  }, [mobileOpen, onCloseMobile]);
 
   return (
     <aside
+      id="mobile-sidebar"
+      inert={isMobile && !mobileOpen}
       className={cn(
         "fixed inset-y-0 left-0 z-40 flex w-64 flex-col border-r border-slate-200 bg-white transition-all duration-200",
         "md:static md:z-auto md:translate-x-0",

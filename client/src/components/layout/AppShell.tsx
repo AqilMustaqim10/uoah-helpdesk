@@ -8,6 +8,7 @@ import {
   useCallback,
   useEffect,
   useMemo,
+  useRef,
   useState,
   type ReactNode,
 } from "react";
@@ -29,18 +30,46 @@ import TopBar from "./TopBar";
 import HistoryPage from "../../pages/HistoryPage";
 
 const COLLAPSED_KEY = "sidebarCollapsed";
+const TAB_PATHS: Record<TabKey, string> = {
+  dashboard: "/dashboard",
+  tickets: "/tickets",
+  history: "/history",
+  kb: "/kb",
+  users: "/users",
+  settings: "/settings",
+};
+
+function routeFromLocation(
+  tabs: Array<{ key: TabKey }>,
+  fallback: TabKey,
+): { tab: TabKey; ticketId: number | null } {
+  const path = window.location.pathname.replace(/\/+$/, "") || "/";
+  const ticket = /^\/tickets\/(?:TKT-)?(\d+)$/i.exec(path);
+  if (ticket && tabs.some((item) => item.key === "tickets")) {
+    const id = Number(ticket[1]);
+    if (Number.isSafeInteger(id) && id > 0) {
+      return { tab: "tickets", ticketId: id };
+    }
+  }
+  const match = Object.entries(TAB_PATHS).find(([, route]) => route === path);
+  if (match && tabs.some((item) => item.key === match[0])) {
+    return { tab: match[0] as TabKey, ticketId: null };
+  }
+  return { tab: fallback, ticketId: null };
+}
 
 export default function AppShell({ user }: { user: User }) {
   const { logout } = useAuth();
   const reduceMotion = useReducedMotion();
 
   const tabs = useMemo(() => tabsForRole(user.role), [user.role]);
+  const savedTab = getStored(TAB_STORAGE_KEY);
+  const fallbackTab =
+    tabs.find((t) => t.key === savedTab)?.key ?? defaultTabFor(user.role);
 
-  // Start on the saved tab, but ONLY if this role is allowed to see it
+  // The URL takes precedence over the saved tab, making shared ticket links work.
   const [tab, setTab] = useState<TabKey>(() => {
-    const saved = getStored(TAB_STORAGE_KEY);
-    const match = tabs.find((t) => t.key === saved);
-    return match ? match.key : defaultTabFor(user.role);
+    return routeFromLocation(tabs, fallbackTab).tab;
   });
   const [collapsed, setCollapsed] = useState(
     () => getStored(COLLAPSED_KEY) === "1",
@@ -51,7 +80,10 @@ export default function AppShell({ user }: { user: User }) {
 
   // Ticket windows + "reload the data" counter (the list and the dashboard both listen to it)
   const [createOpen, setCreateOpen] = useState(false);
-  const [selectedId, setSelectedId] = useState<number | null>(null);
+  const [selectedId, setSelectedId] = useState<number | null>(
+    () => routeFromLocation(tabs, fallbackTab).ticketId,
+  );
+  const confirmedDrawerClose = useRef(false);
   const [version, setVersion] = useState(0);
   const refresh = useCallback(() => setVersion((v) => v + 1), []);
   const consumeTicketFilters = useCallback(
@@ -61,13 +93,86 @@ export default function AppShell({ user }: { user: User }) {
   const showTickets = useCallback((filters: Partial<TicketQuery>) => {
     setPendingTicketFilters(filters);
     setTab("tickets");
+    setSelectedId(null);
+    if (window.location.pathname !== TAB_PATHS.tickets) {
+      window.history.pushState({}, "", TAB_PATHS.tickets);
+    }
     setMobileOpen(false);
   }, []);
+
+  const openTicket = useCallback((id: number) => {
+    const path = `${TAB_PATHS.tickets}/TKT-${id}`;
+    if (window.location.pathname !== path) {
+      window.history.pushState(
+        { ticketParent: window.location.pathname },
+        "",
+        path,
+      );
+    }
+    setTab("tickets");
+    setSelectedId(id);
+    setMobileOpen(false);
+  }, []);
+
+  const closeTicket = useCallback(() => {
+    if (selectedId === null) return;
+    if (
+      typeof window.history.state?.ticketParent === "string" &&
+      window.history.state.ticketParent.startsWith("/")
+    ) {
+      confirmedDrawerClose.current = true;
+      window.history.back();
+      return;
+    }
+    window.history.replaceState({}, "", TAB_PATHS.tickets);
+    setTab("tickets");
+    setSelectedId(null);
+  }, [selectedId]);
 
   // Safety net: if the current tab is not allowed for this role, go to the default one
   useEffect(() => {
     if (!tabs.some((t) => t.key === tab)) setTab(defaultTabFor(user.role));
   }, [tabs, tab, user.role]);
+
+  useEffect(() => {
+    if (selectedId === null && window.location.pathname !== TAB_PATHS[tab]) {
+      window.history.replaceState({}, "", TAB_PATHS[tab]);
+    }
+  }, [selectedId, tab]);
+
+  useEffect(() => {
+    function syncRoute() {
+      const route = routeFromLocation(tabs, fallbackTab);
+      const alreadyConfirmed = confirmedDrawerClose.current;
+      confirmedDrawerClose.current = false;
+      if (
+        !alreadyConfirmed &&
+        selectedId !== null &&
+        route.ticketId !== selectedId
+      ) {
+        try {
+          const draft = window.sessionStorage.getItem(
+            `ticket-reply-draft:${user.id}:${selectedId}`,
+          );
+          if (
+            draft?.trim() &&
+            !window.confirm(
+              "This ticket has an unsent reply draft. Close without sending it?",
+            )
+          ) {
+            window.history.forward();
+            return;
+          }
+        } catch {
+          // A route change must remain possible when session storage is disabled.
+        }
+      }
+      setTab(route.tab);
+      setSelectedId(route.ticketId);
+    }
+    window.addEventListener("popstate", syncRoute);
+    return () => window.removeEventListener("popstate", syncRoute);
+  }, [tabs, fallbackTab, selectedId, user.id]);
 
   useEffect(() => {
     setStored(TAB_STORAGE_KEY, tab);
@@ -81,6 +186,10 @@ export default function AppShell({ user }: { user: User }) {
 
   function selectTab(key: TabKey) {
     setTab(key);
+    setSelectedId(null);
+    if (window.location.pathname !== TAB_PATHS[key]) {
+      window.history.pushState({}, "", TAB_PATHS[key]);
+    }
     setMobileOpen(false); // close the phone drawer after choosing
   }
 
@@ -94,7 +203,7 @@ export default function AppShell({ user }: { user: User }) {
           <TicketsPage
             user={user}
             version={version}
-            onOpen={setSelectedId}
+            onOpen={openTicket}
             onCreate={() => setCreateOpen(true)}
             initialFilters={pendingTicketFilters}
             onInitialFiltersApplied={consumeTicketFilters}
@@ -106,7 +215,7 @@ export default function AppShell({ user }: { user: User }) {
           <HistoryPage
             user={user}
             version={version}
-            onManage={user.role === "ADMIN" ? setSelectedId : undefined}
+            onManage={user.role === "ADMIN" ? openTicket : undefined}
           />
         );
       case "dashboard":
@@ -114,7 +223,7 @@ export default function AppShell({ user }: { user: User }) {
           <DashboardPage
             user={user}
             version={version}
-            onOpen={setSelectedId}
+            onOpen={openTicket}
             onShowTickets={showTickets}
           />
         );
@@ -146,14 +255,18 @@ export default function AppShell({ user }: { user: User }) {
         collapsed={collapsed}
         onToggleCollapsed={toggleCollapsed}
         mobileOpen={mobileOpen}
+        onCloseMobile={() => setMobileOpen(false)}
       />
 
       <div className="flex min-w-0 flex-1 flex-col">
         <TopBar
           title={current.label}
           user={user}
+          mobileOpen={mobileOpen}
           onOpenMenu={() => setMobileOpen(true)}
+          onCloseMenu={() => setMobileOpen(false)}
           onCreateTicket={() => setCreateOpen(true)}
+          onOpenTicket={openTicket}
           onLogout={logout}
         />
         <main className="flex-1 overflow-y-auto p-4 sm:p-6">
@@ -179,21 +292,21 @@ export default function AppShell({ user }: { user: User }) {
             onClose={() => setCreateOpen(false)}
             onCreated={(id) => {
               setCreateOpen(false);
-              setTab("tickets"); // show the new ticket in the list...
+              setTab("tickets");
               refresh();
-              setSelectedId(id); // ...and open it
+              openTicket(id);
             }}
           />
         </ErrorBoundary>
       )}
 
       {selectedId !== null && (
-        <ErrorBoundary onClose={() => setSelectedId(null)}>
+        <ErrorBoundary onClose={closeTicket}>
           <TicketModal
             key={selectedId}
             ticketId={selectedId}
             user={user}
-            onClose={() => setSelectedId(null)}
+            onClose={closeTicket}
             onChanged={refresh}
           />
         </ErrorBoundary>

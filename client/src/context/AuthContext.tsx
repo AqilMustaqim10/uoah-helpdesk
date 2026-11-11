@@ -13,6 +13,7 @@ import {
 import { authApi } from "../api/auth";
 import { setUnauthorizedHandler } from "../api/client";
 import { useToast } from "../hooks/useToast";
+import { onBrandForeground } from "../lib/color";
 import type { User } from "../types";
 
 /** 'ok' = signed in. Otherwise the password was right and the second step is 'verify' (enter a code) or 'setup'. */
@@ -71,8 +72,13 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const brandColor = user?.branding?.brandColor;
   useEffect(() => {
     const root = document.documentElement;
-    if (brandColor) root.style.setProperty("--brand", brandColor);
-    else root.style.removeProperty("--brand"); // back to the default blue
+    if (brandColor) {
+      root.style.setProperty("--brand", brandColor);
+      root.style.setProperty("--onbrand", onBrandForeground(brandColor));
+    } else {
+      root.style.removeProperty("--brand");
+      root.style.removeProperty("--onbrand");
+    }
   }, [brandColor]);
 
   const login = useCallback(

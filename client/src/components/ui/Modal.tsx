@@ -19,7 +19,9 @@ interface Props {
   /** Read aloud by screen readers. */
   label: string;
   onClose: () => void;
+  beforeClose?: () => boolean;
   size?: "md" | "lg" | "wide" | "xl";
+  presentation?: "modal" | "drawer";
   children: ReactNode;
 }
 
@@ -35,7 +37,9 @@ const FOCUSABLE =
 export default function Modal({
   label,
   onClose,
+  beforeClose,
   size = "md",
+  presentation = "modal",
   children,
 }: Props) {
   const [closing, setClosing] = useState(false);
@@ -45,13 +49,18 @@ export default function Modal({
 
   // Always call the newest onClose without restarting effects
   const onCloseRef = useRef(onClose);
+  const beforeCloseRef = useRef(beforeClose);
   useEffect(() => {
     onCloseRef.current = onClose;
   }, [onClose]);
+  useEffect(() => {
+    beforeCloseRef.current = beforeClose;
+  }, [beforeClose]);
 
   /** Plays the fade-out, then tells the parent to remove the window. */
   const requestClose = useCallback(() => {
     if (closingRef.current) return;
+    if (beforeCloseRef.current && !beforeCloseRef.current()) return;
     closingRef.current = true;
     setClosing(true);
     timerRef.current = window.setTimeout(() => onCloseRef.current(), 150);
@@ -96,7 +105,8 @@ export default function Modal({
   return createPortal(
     <div
       className={cn(
-        "fixed inset-0 z-50 overflow-y-auto bg-black/40 backdrop-blur-sm",
+        "fixed inset-0 z-50 bg-black/40 backdrop-blur-sm",
+        presentation === "drawer" ? "overflow-hidden" : "overflow-y-auto",
         closing ? "modal-backdrop-out" : "modal-backdrop-in",
       )}
       onMouseDown={(e) => {
@@ -105,7 +115,12 @@ export default function Modal({
     >
       {/* min-h-full + items-center keeps small windows centered and tall ones scrollable */}
       <div
-        className="flex min-h-full items-center justify-center p-4 sm:p-6"
+        className={cn(
+          "flex min-h-full",
+          presentation === "drawer"
+            ? "items-stretch justify-end"
+            : "items-center justify-center p-4 sm:p-6",
+        )}
         onMouseDown={(e) => {
           if (e.target === e.currentTarget) requestClose();
         }}
@@ -119,8 +134,16 @@ export default function Modal({
           onKeyDown={onKeyDown}
           className={cn(
             "relative w-full rounded-2xl border border-slate-200 bg-white shadow-xl outline-none",
-            SIZES[size],
-            closing ? "modal-panel-out" : "modal-panel-in",
+            presentation === "drawer"
+              ? "h-dvh max-w-none rounded-none sm:max-w-3xl sm:rounded-l-2xl"
+              : SIZES[size],
+            closing
+              ? presentation === "drawer"
+                ? "drawer-panel-out"
+                : "modal-panel-out"
+              : presentation === "drawer"
+                ? "drawer-panel-in"
+                : "modal-panel-in",
           )}
         >
           <button

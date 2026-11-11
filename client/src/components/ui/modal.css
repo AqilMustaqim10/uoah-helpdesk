@@ -59,3 +59,31 @@
 .modal-panel-out {
     animation: modal-panel-out 0.15s ease-in both;
 }
+
+@keyframes drawer-panel-in {
+    from {
+        transform: translateX(100%);
+    }
+
+    to {
+        transform: translateX(0);
+    }
+}
+
+@keyframes drawer-panel-out {
+    from {
+        transform: translateX(0);
+    }
+
+    to {
+        transform: translateX(100%);
+    }
+}
+
+.drawer-panel-in {
+    animation: drawer-panel-in 0.2s ease-out both;
+}
+
+.drawer-panel-out {
+    animation: drawer-panel-out 0.15s ease-in both;
+}

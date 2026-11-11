@@ -78,6 +78,7 @@ async function emailAbout(
   includeLogo = false,
 ): Promise<void> {
   const ref = ticketRef(t.id);
+  const ticketUrl = `${config.appUrl}/tickets/${ref}`;
   const canReply = !!config.pop3.host;
   const footer = canReply
     ? `You can reply to this email to add to the ticket. Please keep ${ref} in the subject.`
@@ -86,7 +87,7 @@ async function emailAbout(
   const text = [
     ...paragraphs,
     "",
-    `Open the helpdesk: ${config.appUrl}`,
+    `Open your ticket: ${ticketUrl}`,
     "",
     footer,
   ].join("\n");
@@ -99,7 +100,7 @@ async function emailAbout(
     html: renderHtml({
       heading: lead,
       paragraphs,
-      link: { url: config.appUrl, label: "Open the helpdesk" },
+      link: { url: ticketUrl, label: `Open ${ref}` },
       footer,
       logo: includeLogo,
     }),

@@ -19,26 +19,30 @@ export const STATUS_ORDER: TicketStatus[] = [
 
 export const STATUS_META: Record<
   TicketStatus,
-  { label: string; chip: string; icon: LucideIcon }
+  { label: string; chip: string; step: string; icon: LucideIcon }
 > = {
   OPEN: {
     label: "Open",
-    chip: "bg-emerald-50 text-emerald-700 ring-emerald-200",
+    chip: "bg-indigo-50 text-indigo-700 ring-indigo-200",
+    step: "bg-indigo-100 text-indigo-900",
     icon: CircleDot,
   },
   IN_PROGRESS: {
     label: "In progress",
     chip: "bg-amber-50 text-amber-700 ring-amber-200",
+    step: "bg-amber-100 text-amber-900",
     icon: Clock,
   },
   RESOLVED: {
     label: "Resolved",
     chip: "bg-emerald-50 text-emerald-700 ring-emerald-200",
+    step: "bg-emerald-100 text-emerald-900",
     icon: CheckCircle2,
   },
   CLOSED: {
     label: "Closed",
     chip: "bg-slate-100 text-slate-600 ring-slate-200",
+    step: "bg-slate-200 text-slate-700",
     icon: Lock,
   },
 };
@@ -54,7 +58,7 @@ export const SLA_TARGET_HOURS: Record<Priority, number> = {
 
 export const PRIORITY_META: Record<Priority, { label: string; chip: string }> =
   {
-    LOW: { label: "Low", chip: "bg-slate-100 text-slate-500 ring-slate-200" },
+    LOW: { label: "Low", chip: "bg-slate-100 text-slate-700 ring-slate-200" },
     MEDIUM: {
       label: "Medium",
       chip: "bg-slate-100 text-slate-700 ring-slate-300",

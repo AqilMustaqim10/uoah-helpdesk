@@ -5,7 +5,11 @@ A web-based helpdesk for UOA Hospitality. Employees can submit and follow suppor
 ## Features
 
 - Ticket creation, assignment, priorities, statuses, replies, internal notes, and file attachments
-- Priority-based SLA tracking with overdue alerts and dashboard compliance metrics
+- Shareable ticket URLs (for example, `/tickets/TKT-12`) with browser Back/Forward support and direct links in ticket emails
+- Role-based top-bar notifications for ticket activity, assignments, and SLA warnings, with per-user read state
+- Ticket triage drawer with per-ticket reply drafts saved for the browser session
+- Priority-based SLA countdowns, overdue alerts, and dashboard compliance metrics
+- Staff quick views, sortable ticket columns, and bulk assignment/status actions
 - IT dashboards, ticket history, audit logs, and PDF reports
 - Searchable knowledge base with unit-specific and shared articles
 - User, business-unit, department, and branding administration
@@ -20,6 +24,8 @@ A web-based helpdesk for UOA Hospitality. Employees can submit and follow suppor
 | `USER` | Create tickets and view or reply to their own tickets and available knowledge-base articles |
 | `IT` | Manage tickets for their business unit, use the dashboard and history, and manage permitted users and knowledge-base content |
 | `ADMIN` | Manage users, departments, business units, audit logs, and system-wide tickets and settings |
+
+The notification bell is role-scoped: `USER` accounts see activity on their own tickets; `IT` accounts see assignments, unassigned tickets, requester replies on assigned tickets, and approaching SLAs in their unit; `ADMIN` accounts see high/urgent ticket creation and breached SLAs. Read state is saved per user in the current browser.
 
 ## Technology
 

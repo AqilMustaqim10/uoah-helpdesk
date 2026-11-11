@@ -11,15 +11,15 @@ import TwoFactorSetup from "../components/auth/TwoFactorSetup";
 type View = "login" | "signup" | "forgot" | "mfa";
 
 const AUTH_BACKGROUND_IMAGES = [
-  "/bg-img/VE.JPG",
-  "/bg-img/UOA.jpg",
-  "/bg-img/Potager.jpg",
-  "/bg-img/KLW.jpg",
-  "/bg-img/KLBS.jpg",
-  "/bg-img/Entier.jpg",
-  "/bg-img/CCEC.jpg",
-  "/bg-img/Botanica.jpg",
-  "/bg-img/Astana.png",
+  "/bg-img/VE.webp",
+  "/bg-img/UOA.webp",
+  "/bg-img/Potager.webp",
+  "/bg-img/KLW.webp",
+  "/bg-img/KLBS.webp",
+  "/bg-img/Entier.webp",
+  "/bg-img/CCEC.webp",
+  "/bg-img/Botanica.webp",
+  "/bg-img/Astana.webp",
 ] as const;
 
 export default function AuthPage() {
@@ -44,6 +44,8 @@ export default function AuthPage() {
             key={image}
             src={image}
             alt=""
+            loading={index === 0 ? "eager" : "lazy"}
+            fetchPriority={index === 0 ? "high" : "auto"}
             className="auth-background-image absolute inset-0 h-full w-full object-cover"
             style={{
               animationDelay: `${index * backgroundImageInterval}s`,

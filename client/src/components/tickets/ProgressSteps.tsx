@@ -45,8 +45,7 @@ export default function ProgressSteps({ status }: { status: TicketStatus }) {
             <span
               className={cn(
                 "relative z-10 flex h-6 w-6 items-center justify-center rounded-full text-xs font-semibold transition-colors duration-300",
-                done && "bg-emerald-500 text-onbrand",
-                active && "bg-brand text-onbrand",
+                (done || active) && STATUS_META[s].step,
                 !done && !active && "bg-slate-100 text-slate-400",
               )}
             >

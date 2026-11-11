@@ -25,13 +25,13 @@ const CARDS: CardDef[] = [
     key: "total",
     label: "Total tickets",
     icon: Ticket,
-    tone: "bg-slate-100 text-slate-600",
+    tone: "bg-surface-muted text-muted",
   },
   {
     key: "open",
     label: "Open",
     icon: CircleDot,
-    tone: "bg-emerald-50 text-emerald-700",
+    tone: "bg-indigo-50 text-indigo-700",
   },
   {
     key: "in_progress",
@@ -57,7 +57,7 @@ const CARDS: CardDef[] = [
     label: "SLA met",
     hint: "Active tickets on track",
     icon: Gauge,
-    tone: "bg-sky-50 text-sky-700",
+    tone: "bg-indigo-50 text-indigo-700",
     suffix: "%",
   },
 ];
@@ -78,22 +78,22 @@ function Card({
       type="button"
       onClick={onSelect}
       disabled={value === 0}
-      className="rounded-2xl border border-slate-200 bg-white p-4 text-left shadow-sm transition enabled:hover:border-brand/40 enabled:hover:shadow-md focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand focus-visible:ring-offset-2 disabled:cursor-default"
+      className="rounded-2xl border border-border bg-surface p-4 text-left text-foreground shadow-sm transition enabled:hover:border-brand/40 enabled:hover:shadow-md focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand focus-visible:ring-offset-2 disabled:cursor-default"
       aria-label={`View ${value} ${def.label.toLowerCase()} tickets`}
     >
       <div className="flex items-center justify-between">
-        <p className="text-sm text-slate-500">{def.label}</p>
+        <p className="text-sm text-muted">{def.label}</p>
         <span
           className={`flex h-8 w-8 items-center justify-center rounded-lg ${def.tone}`}
         >
           <Icon className="h-4 w-4" aria-hidden />
         </span>
       </div>
-      <p className="mt-2 text-3xl font-semibold tabular-nums text-slate-900">
+      <p className="mt-2 text-3xl font-semibold tabular-nums text-foreground">
         {shown}
         {def.suffix ?? ""}
       </p>
-      {def.hint && <p className="mt-0.5 text-xs text-slate-400">{def.hint}</p>}
+      {def.hint && <p className="mt-0.5 text-xs text-muted">{def.hint}</p>}
     </button>
   );
 }
