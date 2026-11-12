@@ -17,9 +17,10 @@ router.get(
     const user = req.user!;
     const notifications = [];
 
-    if (user.role === "USER") {
-      const result = await query(
-        `SELECT 'audit-' || a.id AS id, a.ticket_id AS "ticketId",
+    try {
+      if (user.role === "USER") {
+        const result = await query(
+          `SELECT 'audit-' || a.id AS id, a.ticket_id AS "ticketId",
                 t.title,
                 CASE a.action
                   WHEN 'TICKET_STATUS_CHANGED' THEN
@@ -46,12 +47,12 @@ router.get(
             )
           ORDER BY a.created_at DESC
           LIMIT 50`,
-        [user.id],
-      );
-      notifications.push(...result.rows);
-    } else if (user.role === "IT") {
-      const result = await query(
-        `SELECT 'audit-' || a.id AS id, a.ticket_id AS "ticketId",
+          [user.id],
+        );
+        notifications.push(...result.rows);
+      } else if (user.role === "IT") {
+        const result = await query(
+          `SELECT 'audit-' || a.id AS id, a.ticket_id AS "ticketId",
                 t.title,
                 CASE a.action
                   WHEN 'TICKET_ASSIGNED' THEN 'This ticket was assigned to you.'
@@ -82,12 +83,12 @@ router.get(
             )
           ORDER BY a.created_at DESC
           LIMIT 50`,
-        [user.id, user.business_unit_id],
-      );
-      notifications.push(...result.rows);
-    } else if (user.role === "ADMIN") {
-      const result = await query(
-        `SELECT 'audit-' || a.id AS id, a.ticket_id AS "ticketId",
+          [user.id, user.business_unit_id],
+        );
+        notifications.push(...result.rows);
+      } else if (user.role === "ADMIN") {
+        const result = await query(
+          `SELECT 'audit-' || a.id AS id, a.ticket_id AS "ticketId",
                 t.title, 'A high-priority ticket was created.' AS message,
                 'NEW_TICKET' AS type, a.created_at AS "createdAt"
            FROM audit_log a
@@ -97,13 +98,13 @@ router.get(
             AND a.details->>'priority' IN ('HIGH', 'URGENT')
           ORDER BY a.created_at DESC
           LIMIT 50`,
-      );
-      notifications.push(...result.rows);
-    }
+        );
+        notifications.push(...result.rows);
+      }
 
-    if (user.role === "IT" || user.role === "ADMIN") {
-      const slaResult = await query(
-        `SELECT 'sla-' || t.id || '-' || extract(epoch FROM ${SLA_DEADLINE_SQL})::bigint AS id,
+      if (user.role === "IT" || user.role === "ADMIN") {
+        const slaResult = await query(
+          `SELECT 'sla-' || t.id || '-' || extract(epoch FROM ${SLA_DEADLINE_SQL})::bigint AS id,
                 t.id AS "ticketId", t.title,
                 CASE WHEN ${SLA_DEADLINE_SQL} <= now()
                   THEN 'The SLA deadline has passed.'
@@ -122,23 +123,31 @@ router.get(
             )
           ORDER BY ${SLA_DEADLINE_SQL} ASC
           LIMIT 50`,
-        user.role === "IT" ? [user.business_unit_id, user.id] : [],
-      );
-      notifications.push(...slaResult.rows);
-    }
+          user.role === "IT" ? [user.business_unit_id, user.id] : [],
+        );
+        notifications.push(...slaResult.rows);
+      }
 
-    notifications.sort(
-      (a, b) =>
-        new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime(),
-    );
-    res.json({
-      notifications: notifications.slice(0, 50).map((notification) => ({
-        ...notification,
+      notifications.sort(
+        (a, b) =>
+          new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime(),
+      );
+      res.json({
+        notifications: notifications.slice(0, 50).map((notification) => ({
+          ...notification,
+          userId: user.id,
+          isRead: false,
+          createdAt: new Date(notification.createdAt).toISOString(),
+        })),
+      });
+    } catch (error) {
+      console.error("Failed to load notifications", {
         userId: user.id,
-        isRead: false,
-        createdAt: new Date(notification.createdAt).toISOString(),
-      })),
-    });
+        role: user.role,
+        error,
+      });
+      res.json({ notifications: [] });
+    }
   }),
 );
 

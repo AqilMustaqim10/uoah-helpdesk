@@ -9,7 +9,6 @@ import {
   type ReactNode,
 } from "react";
 import { notificationsApi } from "../api/notifications";
-import { useToast } from "../hooks/useToast";
 import { getStored, setStored } from "../lib/storage";
 import type { Notification, User } from "../types";
 
@@ -42,7 +41,6 @@ export function NotificationProvider({
   user: User;
   children: ReactNode;
 }) {
-  const toast = useToast();
   const [notifications, setNotifications] = useState<Notification[]>([]);
   const [readIds, setReadIds] = useState(() => readStoredIds(user.id));
   const readIdsRef = useRef(readIds);
@@ -63,14 +61,10 @@ export function NotificationProvider({
           );
           loadErrorShown.current = false;
         }
-      } catch (error) {
-        if (active && !loadErrorShown.current) {
+      } catch {
+        if (active) {
+          setNotifications([]);
           loadErrorShown.current = true;
-          toast.error(
-            error instanceof Error
-              ? `Notifications could not be loaded: ${error.message}`
-              : "Notifications could not be loaded.",
-          );
         }
       }
     }
@@ -81,7 +75,7 @@ export function NotificationProvider({
       active = false;
       window.clearInterval(timer);
     };
-  }, [toast]);
+  }, []);
 
   const markAsRead = useCallback(
     (id: string) => {
