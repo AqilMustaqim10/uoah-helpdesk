@@ -48,10 +48,10 @@ export default function DeleteDepartmentModal({
     >
       <form onSubmit={submit} className="space-y-4 p-6" noValidate>
         <div className="pr-10">
-          <h2 className="text-lg font-semibold text-slate-900">
+          <h2 className="text-lg font-semibold text-slate-900 dark:text-slate-100">
             Delete "{department.name}"?
           </h2>
-          <p className="mt-1 text-sm text-slate-600">
+          <p className="mt-1 text-sm text-slate-600 dark:text-slate-300">
             {needsMove
               ? `${people} this department. They will be moved to the department you choose.`
               : "Nobody has this department, so nothing else changes."}{" "}
@@ -89,7 +89,7 @@ export default function DeleteDepartmentModal({
           <button
             type="submit"
             disabled={busy || (needsMove && others.length === 0)}
-            className="inline-flex h-10 items-center justify-center gap-2 rounded-lg bg-rose-600 px-4 text-sm font-medium text-onbrand shadow-sm transition hover:brightness-110 active:scale-[0.98] disabled:cursor-not-allowed disabled:opacity-60"
+            className="inline-flex h-10 items-center justify-center gap-2 rounded-lg bg-rose-600 dark:bg-rose-400 px-4 text-sm font-medium text-onbrand shadow-sm transition hover:brightness-110 active:scale-[0.98] disabled:cursor-not-allowed disabled:opacity-60"
           >
             {busy ? (
               <Loader2 className="h-4 w-4 animate-spin" aria-hidden />

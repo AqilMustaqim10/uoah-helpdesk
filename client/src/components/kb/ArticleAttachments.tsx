@@ -65,10 +65,10 @@ export default function ArticleAttachments({
 
   return (
     <section aria-label="Attachments" className="space-y-3">
-      <h3 className="text-sm font-semibold text-slate-900">
+      <h3 className="text-sm font-semibold text-slate-900 dark:text-slate-100">
         Attachments{" "}
         {files.length > 0 && (
-          <span className="font-normal text-slate-400">({files.length})</span>
+          <span className="font-normal text-slate-400 dark:text-slate-500">({files.length})</span>
         )}
       </h3>
       <AttachmentGrid

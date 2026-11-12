@@ -130,12 +130,12 @@ export default function BrandingEditor({ unit, onSaved }: Props) {
   return (
     <div className="grid gap-6 lg:grid-cols-[minmax(0,1fr)_320px]">
       {/* Controls */}
-      <div className="space-y-5 rounded-2xl border border-slate-200 bg-white p-5 shadow-sm">
+      <div className="space-y-5 rounded-2xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 p-5 shadow-sm">
         <div>
-          <h3 className="text-base font-semibold text-slate-900">
+          <h3 className="text-base font-semibold text-slate-900 dark:text-slate-100">
             {unit.name}
           </h3>
-          <p className="text-sm text-slate-500">
+          <p className="text-sm text-slate-500 dark:text-slate-400">
             These settings apply to everyone in {unit.code}.
           </p>
         </div>
@@ -144,9 +144,9 @@ export default function BrandingEditor({ unit, onSaved }: Props) {
 
         {/* Logo */}
         <div>
-          <p className="mb-1.5 text-sm font-medium text-slate-700">Logo</p>
+          <p className="mb-1.5 text-sm font-medium text-slate-700 dark:text-slate-200">Logo</p>
           <div className="flex flex-wrap items-center gap-3">
-            <div className="h-20 w-40 rounded-lg border border-slate-200 bg-white p-2">
+            <div className="h-20 w-40 rounded-lg border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 p-2">
               <BrandMark branding={preview} />
             </div>
             <div className="space-y-2">
@@ -184,7 +184,7 @@ export default function BrandingEditor({ unit, onSaved }: Props) {
               )}
             </div>
           </div>
-          <p className="mt-1.5 text-xs text-slate-500">
+          <p className="mt-1.5 text-xs text-slate-500 dark:text-slate-400">
             PNG, JPG or WebP, up to 1 MB. PDF reports can only use PNG or JPG
             logos. Without a usable logo, the sidebar and the PDF show a colored
             badge with the unit code.
@@ -196,7 +196,7 @@ export default function BrandingEditor({ unit, onSaved }: Props) {
           <label htmlFor="brand-color-hex" className="sr-only">
             Brand color
           </label>
-          <p className="mb-1.5 text-sm font-medium text-slate-700">
+          <p className="mb-1.5 text-sm font-medium text-slate-700 dark:text-slate-200">
             Brand color
           </p>
           <div className="flex items-start gap-3">
@@ -205,7 +205,7 @@ export default function BrandingEditor({ unit, onSaved }: Props) {
               aria-label="Pick a brand color"
               value={validColor ? color.toLowerCase() : "#2563eb"}
               onChange={(e) => setColor(e.target.value.toUpperCase())}
-              className="h-10 w-12 shrink-0 cursor-pointer rounded-lg border border-slate-200 bg-white p-1"
+              className="h-10 w-12 shrink-0 cursor-pointer rounded-lg border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 p-1"
             />
             <div className="flex-1">
               <Input
@@ -249,12 +249,12 @@ export default function BrandingEditor({ unit, onSaved }: Props) {
       {/* Preview: the brand color is applied only inside this box */}
       <div
         style={{ "--brand": preview.brandColor } as CSSProperties}
-        className="h-fit space-y-4 rounded-2xl border border-slate-200 bg-slate-50 p-5"
+        className="h-fit space-y-4 rounded-2xl border border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-slate-950 p-5"
       >
-        <p className="text-xs font-medium uppercase tracking-wide text-slate-500">
+        <p className="text-xs font-medium uppercase tracking-wide text-slate-500 dark:text-slate-400">
           Preview
         </p>
-        <div className="h-20 w-full rounded-xl border border-slate-200 bg-white p-3">
+        <div className="h-20 w-full rounded-xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 p-3">
           <BrandMark branding={preview} />
         </div>
         <div className="flex h-10 items-center gap-3 rounded-lg bg-brand px-3 text-sm font-medium text-onbrand shadow-sm">

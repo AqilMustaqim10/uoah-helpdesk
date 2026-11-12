@@ -36,7 +36,7 @@ export default function Input({
       <label
         htmlFor={inputId}
         className={cn(
-          "mb-1 block text-sm font-medium text-slate-700",
+          "mb-1 block text-sm font-medium text-slate-700 dark:text-slate-200",
           labelClassName,
         )}
       >
@@ -49,9 +49,9 @@ export default function Input({
           aria-invalid={error ? true : undefined}
           aria-describedby={error || hint ? messageId : undefined}
           className={cn(
-            "h-10 w-full rounded-lg border bg-white px-3 text-sm text-slate-900 transition",
-            "placeholder:text-slate-400 focus:border-brand focus:outline-none focus:ring-2 focus:ring-brand/25",
-            error ? "border-rose-400" : "border-slate-200",
+            "h-10 w-full rounded-lg border bg-white dark:bg-slate-900 px-3 text-sm text-slate-900 dark:text-slate-100 transition",
+            "placeholder:text-slate-400 dark:placeholder:text-slate-500 focus:border-brand focus:outline-none focus:ring-2 focus:ring-brand/25",
+            error ? "border-rose-400 dark:border-rose-600" : "border-slate-200 dark:border-slate-800",
             isPassword && "pr-10",
             inputClassName,
           )}
@@ -62,7 +62,7 @@ export default function Input({
             type="button"
             onClick={() => setVisible((v) => !v)}
             aria-label={visible ? "Hide password" : "Show password"}
-            className="absolute inset-y-0 right-0 flex w-10 items-center justify-center text-slate-400 hover:text-slate-600"
+            className="absolute inset-y-0 right-0 flex w-10 items-center justify-center text-slate-400 dark:text-slate-500 hover:text-slate-600 dark:hover:text-slate-300"
           >
             {visible ? (
               <EyeOff className="h-4 w-4" />
@@ -73,11 +73,11 @@ export default function Input({
         )}
       </div>
       {error ? (
-        <p id={messageId} className="mt-1 text-xs text-rose-600">
+        <p id={messageId} className="mt-1 text-xs text-rose-600 dark:text-rose-400">
           {error}
         </p>
       ) : hint ? (
-        <p id={messageId} className="mt-1 text-xs text-slate-500">
+        <p id={messageId} className="mt-1 text-xs text-slate-500 dark:text-slate-400">
           {hint}
         </p>
       ) : null}

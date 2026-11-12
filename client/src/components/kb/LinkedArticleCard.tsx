@@ -25,8 +25,8 @@ export default function LinkedArticleCard({
 }: Props) {
   if (title === null) {
     return (
-      <p className="flex items-center gap-2 rounded-lg border border-dashed border-slate-300 px-3 py-2 text-xs text-slate-500">
-        <BookOpen className="h-4 w-4 shrink-0 text-slate-400" aria-hidden />A
+      <p className="flex items-center gap-2 rounded-lg border border-dashed border-slate-300 dark:border-slate-700 px-3 py-2 text-xs text-slate-500 dark:text-slate-400">
+        <BookOpen className="h-4 w-4 shrink-0 text-slate-400 dark:text-slate-500" aria-hidden />A
         knowledge base article was linked here, but it is no longer available.
       </p>
     );
@@ -43,11 +43,11 @@ export default function LinkedArticleCard({
             ? "Linked article: will be sent with your reply"
             : "Knowledge base article"}
         </span>
-        <span className="mt-0.5 block break-words text-sm font-semibold text-slate-900">
+        <span className="mt-0.5 block break-words text-sm font-semibold text-slate-900 dark:text-slate-100">
           {title}
         </span>
         {excerpt && (
-          <span className="mt-0.5 line-clamp-2 break-words text-xs text-slate-500">
+          <span className="mt-0.5 line-clamp-2 break-words text-xs text-slate-500 dark:text-slate-400">
             {excerpt}
           </span>
         )}
@@ -63,14 +63,14 @@ export default function LinkedArticleCard({
   // Reply box: a card with a remove button (not clickable)
   if (onRemove) {
     return (
-      <div className="flex animate-fade-in items-start gap-3 rounded-xl border border-brand/30 bg-white p-3">
+      <div className="flex animate-fade-in items-start gap-3 rounded-xl border border-brand/30 bg-white dark:bg-slate-900 p-3">
         {body}
         <button
           type="button"
           onClick={onRemove}
           aria-label={`Remove the linked article "${title}"`}
           title="Remove the link"
-          className="shrink-0 rounded-md p-1.5 text-slate-400 transition hover:bg-slate-100 hover:text-slate-600"
+          className="shrink-0 rounded-md p-1.5 text-slate-400 dark:text-slate-500 transition hover:bg-slate-100 dark:hover:bg-slate-800 hover:text-slate-600 dark:hover:text-slate-300"
         >
           <X className="h-4 w-4" />
         </button>
@@ -84,11 +84,11 @@ export default function LinkedArticleCard({
       type="button"
       onClick={() => onOpen?.(articleId)}
       aria-label={`Open the knowledge base article "${title}"`}
-      className="group flex w-full items-start gap-3 rounded-xl border border-slate-200 bg-white p-3 text-left transition hover:border-brand/40 hover:shadow-sm"
+      className="group flex w-full items-start gap-3 rounded-xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 p-3 text-left transition hover:border-brand/40 hover:shadow-sm"
     >
       {body}
       <ChevronRight
-        className="mt-2 h-4 w-4 shrink-0 text-slate-300 transition group-hover:translate-x-0.5 group-hover:text-brand"
+        className="mt-2 h-4 w-4 shrink-0 text-slate-300 dark:text-slate-600 transition group-hover:translate-x-0.5 group-hover:text-brand"
         aria-hidden
       />
     </button>

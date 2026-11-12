@@ -133,10 +133,10 @@ export default function CreateTicketModal({ user, onClose, onCreated }: Props) {
     <Modal label="Create ticket" onClose={onClose} size="lg">
       <form onSubmit={submit} className="space-y-4 p-6" noValidate>
         <div className="pr-10">
-          <h2 className="text-lg font-semibold text-slate-900">
+          <h2 className="text-lg font-semibold text-slate-900 dark:text-slate-100">
             Create ticket
           </h2>
-          <p className="text-sm text-slate-500">
+          <p className="text-sm text-slate-500 dark:text-slate-400">
             Tell us what is wrong and the IT team will pick it up.
           </p>
         </div>
@@ -220,9 +220,9 @@ export default function CreateTicketModal({ user, onClose, onCreated }: Props) {
         )}
 
         <div className="space-y-2">
-          <p className="text-sm font-medium text-slate-700">
+          <p className="text-sm font-medium text-slate-700 dark:text-slate-200">
             Attachments{" "}
-            <span className="font-normal text-slate-400">(optional)</span>
+            <span className="font-normal text-slate-400 dark:text-slate-500">(optional)</span>
           </p>
           <PendingFileList
             files={pending}

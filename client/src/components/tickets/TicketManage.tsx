@@ -42,14 +42,14 @@ interface Props {
 }
 
 const FIELD_CLASS =
-  "h-9 w-full rounded-lg border border-slate-200 bg-white px-2.5 text-sm text-slate-700 transition " +
+  "h-9 w-full rounded-lg border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 px-2.5 text-sm text-slate-700 dark:text-slate-200 transition " +
   "focus:border-brand focus:outline-none focus:ring-2 focus:ring-brand/25 disabled:cursor-not-allowed disabled:opacity-60";
 
 /** A small block with a label on top. */
 function Field({ label, children }: { label: string; children: ReactNode }) {
   return (
     <div className="min-w-0">
-      <dt className="mb-1 text-[11px] font-medium uppercase tracking-wide text-slate-500">
+      <dt className="mb-1 text-[11px] font-medium uppercase tracking-wide text-slate-500 dark:text-slate-400">
         {label}
       </dt>
       <dd>{children}</dd>
@@ -120,7 +120,7 @@ export default function TicketManage({
     >
       <ProgressSteps status={ticket.status} />
 
-      <dl className="mt-5 grid gap-4 border-t border-slate-200 pt-4 sm:grid-cols-4">
+      <dl className="mt-5 grid gap-4 border-t border-slate-200 dark:border-slate-800 pt-4 sm:grid-cols-4">
         <Field label="Priority">
           {canEdit ? (
             <select
@@ -152,10 +152,10 @@ export default function TicketManage({
         </Field>
 
         <Field label="SLA target">
-          <p className="text-sm text-slate-800">
+          <p className="text-sm text-slate-800 dark:text-slate-200">
             {SLA_TARGET_HOURS[ticket.priority]} hours
           </p>
-          <p className="mt-1 text-[11px] text-slate-500">
+          <p className="mt-1 text-[11px] text-slate-500 dark:text-slate-400">
             Priority-based service target
           </p>
         </Field>
@@ -188,7 +188,7 @@ export default function TicketManage({
               ))}
             </select>
           ) : (
-            <p className="text-sm text-slate-800">
+            <p className="text-sm text-slate-800 dark:text-slate-200">
               {ticket.assignee_name ?? "Unassigned"}
             </p>
           )}
@@ -233,13 +233,13 @@ export default function TicketManage({
                 )}
               </div>
               {!ticket.due_at && (
-                <p className="text-xs text-slate-500">
+                <p className="text-xs text-slate-500 dark:text-slate-400">
                   No manual date: the deadline follows the priority.
                 </p>
               )}
             </div>
           ) : (
-            <p className="text-sm text-slate-800">
+            <p className="text-sm text-slate-800 dark:text-slate-200">
               {ticket.due_at ? formatDateTime(ticket.due_at) : "Not set"}
             </p>
           )}
@@ -248,8 +248,8 @@ export default function TicketManage({
 
       {/* The other status moves (the main one is the button in the footer) */}
       {canEdit && secondary.length > 0 && (
-        <div className="mt-4 flex flex-wrap items-center gap-2 border-t border-slate-200 pt-4">
-          <span className="text-xs text-slate-500">Other moves:</span>
+        <div className="mt-4 flex flex-wrap items-center gap-2 border-t border-slate-200 dark:border-slate-800 pt-4">
+          <span className="text-xs text-slate-500 dark:text-slate-400">Other moves:</span>
           {secondary.map((m) => (
             <Button
               key={m.to}
@@ -266,7 +266,7 @@ export default function TicketManage({
       )}
 
       {ticket.is_overdue && (
-        <p className="mt-3 text-xs font-medium text-rose-600">
+        <p className="mt-3 text-xs font-medium text-rose-600 dark:text-rose-400">
           This ticket is overdue.
         </p>
       )}

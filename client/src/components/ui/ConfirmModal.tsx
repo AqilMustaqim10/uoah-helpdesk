@@ -26,8 +26,8 @@ export default function ConfirmModal({
     <Modal label={title} onClose={onClose} size="md">
       <div className="space-y-5 p-6">
         <div className="pr-10">
-          <h2 className="text-lg font-semibold text-slate-900">{title}</h2>
-          <p className="mt-1 text-sm text-slate-600">{message}</p>
+          <h2 className="text-lg font-semibold text-slate-900 dark:text-slate-100">{title}</h2>
+          <p className="mt-1 text-sm text-slate-600 dark:text-slate-300">{message}</p>
         </div>
         <div className="flex justify-end gap-2">
           <Button variant="secondary" onClick={onClose} disabled={busy}>
@@ -36,7 +36,7 @@ export default function ConfirmModal({
           <Button
             loading={busy}
             onClick={onConfirm}
-            className={danger ? "bg-rose-600 hover:bg-rose-600" : undefined}
+            className={danger ? "bg-rose-600 dark:bg-rose-400 hover:bg-rose-600 dark:hover:bg-rose-400" : undefined}
           >
             {confirmLabel}
           </Button>

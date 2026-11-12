@@ -27,7 +27,7 @@ interface Props<T extends GridFile> {
 function ImageThumb({ file, hrefBase }: { file: GridFile; hrefBase: string }) {
   const [failed, setFailed] = useState(false);
   return failed ? (
-    <div className="flex h-20 w-20 items-center justify-center rounded-lg border border-slate-200 bg-slate-100 text-slate-400">
+    <div className="flex h-20 w-20 items-center justify-center rounded-lg border border-slate-200 dark:border-slate-800 bg-slate-100 dark:bg-slate-800 text-slate-400 dark:text-slate-500">
       <ImageOff className="h-6 w-6" aria-hidden />
     </div>
   ) : (
@@ -36,7 +36,7 @@ function ImageThumb({ file, hrefBase }: { file: GridFile; hrefBase: string }) {
       alt={file.original_name}
       loading="lazy"
       onError={() => setFailed(true)}
-      className="h-20 w-20 rounded-lg border border-slate-200 object-cover"
+      className="h-20 w-20 rounded-lg border border-slate-200 dark:border-slate-800 object-cover"
     />
   );
 }
@@ -95,8 +95,8 @@ export default function AttachmentGrid<T extends GridFile>({
               "absolute right-1 top-1 flex h-6 w-6 items-center justify-center rounded-full shadow transition",
               "opacity-100 md:opacity-0 md:group-hover:opacity-100 focus-visible:opacity-100",
               confirming
-                ? "bg-rose-600 text-onbrand opacity-100"
-                : "bg-white text-slate-600 hover:text-rose-600",
+                ? "bg-rose-600 dark:bg-rose-400 text-onbrand opacity-100"
+                : "bg-white dark:bg-slate-900 text-slate-600 dark:text-slate-300 hover:text-rose-600 dark:hover:text-rose-400",
             )}
           >
             {busy ? (
@@ -124,7 +124,7 @@ export default function AttachmentGrid<T extends GridFile>({
                 href={`${hrefBase}/${f.id}`}
                 target="_blank"
                 rel="noopener noreferrer"
-                className="flex h-20 w-44 items-center gap-2 rounded-lg border border-slate-200 bg-white px-3 pr-8 transition hover:bg-slate-50"
+                className="flex h-20 w-44 items-center gap-2 rounded-lg border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 px-3 pr-8 transition hover:bg-slate-50 dark:hover:bg-slate-950"
                 title={f.original_name}
               >
                 <FileText
@@ -132,10 +132,10 @@ export default function AttachmentGrid<T extends GridFile>({
                   aria-hidden
                 />
                 <span className="min-w-0">
-                  <span className="block truncate text-sm text-slate-700">
+                  <span className="block truncate text-sm text-slate-700 dark:text-slate-200">
                     {f.original_name}
                   </span>
-                  <span className="block text-xs text-slate-400">
+                  <span className="block text-xs text-slate-400 dark:text-slate-500">
                     PDF, {formatBytes(f.size_bytes)}
                   </span>
                 </span>

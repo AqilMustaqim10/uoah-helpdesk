@@ -40,7 +40,7 @@ const EMPTY_QUERY: UserQuery = {
 };
 
 const SELECT_CLASS =
-  "h-9 rounded-lg border border-slate-200 bg-white px-2.5 text-sm text-slate-700 transition " +
+  "h-9 rounded-lg border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 px-2.5 text-sm text-slate-700 dark:text-slate-200 transition " +
   "focus:border-brand focus:outline-none focus:ring-2 focus:ring-brand/25";
 
 const ROLE_LABEL: Record<Role, string> = {
@@ -253,7 +253,7 @@ export default function UsersPage({ user: me }: { user: User }) {
       <div className="space-y-3">
         <div className="relative">
           <Search
-            className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-400"
+            className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-400 dark:text-slate-500"
             aria-hidden
           />
           <input
@@ -263,7 +263,7 @@ export default function UsersPage({ user: me }: { user: User }) {
             maxLength={100}
             placeholder="Search by name or email"
             aria-label="Search users"
-            className="h-10 w-full rounded-lg border border-slate-200 bg-white pl-9 pr-3 text-sm text-slate-900 transition placeholder:text-slate-400 focus:border-brand focus:outline-none focus:ring-2 focus:ring-brand/25"
+            className="h-10 w-full rounded-lg border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 pl-9 pr-3 text-sm text-slate-900 dark:text-slate-100 transition placeholder:text-slate-400 dark:placeholder:text-slate-500 focus:border-brand focus:outline-none focus:ring-2 focus:ring-brand/25"
           />
         </div>
         {isAdmin ? (
@@ -309,7 +309,7 @@ export default function UsersPage({ user: me }: { user: User }) {
             </select>
           </div>
         ) : (
-          <p className="text-sm text-slate-500">
+          <p className="text-sm text-slate-500 dark:text-slate-400">
             Showing the user accounts of{" "}
             {me.branding?.name ?? "your business unit"}.
           </p>
@@ -327,7 +327,7 @@ export default function UsersPage({ user: me }: { user: User }) {
         />
       ) : firstLoad ? (
         <div
-          className="space-y-px overflow-hidden rounded-2xl border border-slate-200 bg-white"
+          className="space-y-px overflow-hidden rounded-2xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900"
           aria-busy="true"
         >
           {Array.from({ length: 5 }).map((_, i) => (
@@ -340,7 +340,7 @@ export default function UsersPage({ user: me }: { user: User }) {
       ) : data && data.users.length > 0 ? (
         <>
           <div className="flex items-center justify-between">
-            <p className="text-sm text-slate-500">
+            <p className="text-sm text-slate-500 dark:text-slate-400">
               {data.total} {data.total === 1 ? "person" : "people"}
             </p>
             <Button
@@ -353,7 +353,7 @@ export default function UsersPage({ user: me }: { user: User }) {
           </div>
           <ul
             className={cn(
-              "divide-y divide-slate-200 overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm transition-opacity",
+              "divide-y divide-slate-200 dark:divide-slate-800 overflow-hidden rounded-2xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 shadow-sm transition-opacity",
               loading && "opacity-60",
             )}
           >

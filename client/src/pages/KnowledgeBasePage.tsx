@@ -118,7 +118,7 @@ export default function KnowledgeBasePage({ user }: { user: User }) {
       ) : data && data.articles.length > 0 ? (
         <>
           <div className="flex items-center justify-between">
-            <p className="text-sm text-slate-500">
+            <p className="text-sm text-slate-500 dark:text-slate-400">
               {data.total} article{data.total === 1 ? "" : "s"}
             </p>
             {staff && (

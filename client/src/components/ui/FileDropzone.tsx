@@ -59,11 +59,11 @@ export default function FileDropzone({
       }}
       onDrop={onDrop}
       className={cn(
-        "flex cursor-pointer items-center justify-center gap-2 rounded-xl border border-dashed text-slate-500 transition-colors",
+        "flex cursor-pointer items-center justify-center gap-2 rounded-xl border border-dashed text-slate-500 dark:text-slate-400 transition-colors",
         compact ? "px-3 py-2 text-xs" : "flex-col px-4 py-6 text-sm",
         over
           ? "border-brand bg-brand/5 text-brand"
-          : "border-slate-300 hover:border-slate-400 hover:bg-slate-50",
+          : "border-slate-300 dark:border-slate-700 hover:border-slate-400 dark:hover:border-slate-600 hover:bg-slate-50 dark:hover:bg-slate-950",
         blocked && "cursor-not-allowed opacity-60",
       )}
     >
@@ -90,7 +90,7 @@ export default function FileDropzone({
       )}
       <span>{busy ? "Uploading…" : label}</span>
       {!compact && !busy && (
-        <span className="text-xs text-slate-400">
+        <span className="text-xs text-slate-400 dark:text-slate-500">
           JPG, PNG, GIF, WebP or PDF, up to 10 MB each
         </span>
       )}

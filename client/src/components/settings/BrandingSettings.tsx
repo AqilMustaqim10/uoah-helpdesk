@@ -60,10 +60,10 @@ export default function BrandingSettings({ user }: { user: User }) {
   return (
     <div className="space-y-4">
       <div>
-        <h2 className="text-base font-semibold text-slate-900">
+        <h2 className="text-base font-semibold text-slate-900 dark:text-slate-100">
           Business unit branding
         </h2>
-        <p className="text-sm text-slate-500">
+        <p className="text-sm text-slate-500 dark:text-slate-400">
           Choose a unit, then set its logo, color and display text.
         </p>
       </div>
@@ -86,7 +86,7 @@ export default function BrandingSettings({ user }: { user: User }) {
                 "inline-flex h-8 shrink-0 items-center rounded-full px-3 text-sm font-medium transition-colors active:scale-[0.97]",
                 active
                   ? "bg-brand text-onbrand shadow-sm"
-                  : "border border-slate-200 bg-white text-slate-600 hover:bg-slate-50",
+                  : "border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 text-slate-600 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-950",
               )}
             >
               {u.code}

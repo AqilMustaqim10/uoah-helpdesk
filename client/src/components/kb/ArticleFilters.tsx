@@ -15,7 +15,7 @@ interface Props {
 }
 
 const SELECT_CLASS =
-  "h-9 rounded-lg border border-slate-200 bg-white px-2.5 text-sm text-slate-700 transition " +
+  "h-9 rounded-lg border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 px-2.5 text-sm text-slate-700 dark:text-slate-200 transition " +
   "focus:border-brand focus:outline-none focus:ring-2 focus:ring-brand/25";
 
 export default function ArticleFilters({
@@ -45,7 +45,7 @@ export default function ArticleFilters({
     <div className="space-y-3">
       <div className="relative">
         <Search
-          className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-400"
+          className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-400 dark:text-slate-500"
           aria-hidden
         />
         <input
@@ -55,7 +55,7 @@ export default function ArticleFilters({
           maxLength={100}
           placeholder="Search articles by title, text or tag"
           aria-label="Search articles"
-          className="h-10 w-full rounded-lg border border-slate-200 bg-white pl-9 pr-3 text-sm text-slate-900 transition placeholder:text-slate-400 focus:border-brand focus:outline-none focus:ring-2 focus:ring-brand/25"
+          className="h-10 w-full rounded-lg border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 pl-9 pr-3 text-sm text-slate-900 dark:text-slate-100 transition placeholder:text-slate-400 dark:placeholder:text-slate-500 focus:border-brand focus:outline-none focus:ring-2 focus:ring-brand/25"
         />
       </div>
 
@@ -79,7 +79,7 @@ export default function ArticleFilters({
                       "inline-flex h-8 shrink-0 items-center rounded-full px-3 text-sm font-medium transition-colors active:scale-[0.97]",
                       active
                         ? "bg-brand text-onbrand shadow-sm"
-                        : "border border-slate-200 bg-white text-slate-600 hover:bg-slate-50",
+                        : "border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 text-slate-600 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-950",
                     )}
                   >
                     {c.label}

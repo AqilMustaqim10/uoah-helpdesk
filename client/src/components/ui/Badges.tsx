@@ -25,7 +25,7 @@ export function PriorityBadge({ priority }: { priority: Priority }) {
 
 export function OverdueBadge() {
   return (
-    <span className={cn(BASE, "bg-rose-50 text-rose-700 ring-rose-200")}>
+    <span className={cn(BASE, "bg-rose-50 dark:bg-rose-950 text-rose-700 dark:text-rose-300 ring-rose-200 dark:ring-rose-800")}>
       <AlarmClock className="h-3 w-3" aria-hidden />
       Overdue
     </span>

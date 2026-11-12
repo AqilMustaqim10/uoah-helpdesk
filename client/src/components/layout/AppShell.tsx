@@ -24,6 +24,8 @@ import UsersPage from "../../pages/UsersPage";
 import CreateTicketModal from "../tickets/CreateTicketModal";
 import TicketModal from "../tickets/TicketModal";
 import ErrorBoundary from "../ui/ErrorBoundary";
+import CommandPalette from "../command/CommandPalette";
+import SmoothScroll from "./SmoothScroll";
 import Sidebar from "./Sidebar";
 import TopBar from "./TopBar";
 import HistoryPage from "../../pages/HistoryPage";
@@ -48,6 +50,9 @@ export default function AppShell({ user }: { user: User }) {
   const [mobileOpen, setMobileOpen] = useState(false);
   const [pendingTicketFilters, setPendingTicketFilters] =
     useState<Partial<TicketQuery> | null>(null);
+  // Bumped whenever filters are pushed to the Tickets tab, so it restarts with them even if it is already open
+  const [ticketsKey, setTicketsKey] = useState(0);
+  const [paletteOpen, setPaletteOpen] = useState(false);
 
   // Ticket windows + "reload the data" counter (the list and the dashboard both listen to it)
   const [createOpen, setCreateOpen] = useState(false);
@@ -60,8 +65,21 @@ export default function AppShell({ user }: { user: User }) {
   );
   const showTickets = useCallback((filters: Partial<TicketQuery>) => {
     setPendingTicketFilters(filters);
+    setTicketsKey((k) => k + 1);
     setTab("tickets");
     setMobileOpen(false);
+  }, []);
+
+  // Cmd/Ctrl + K opens (or closes) the command palette from anywhere
+  useEffect(() => {
+    function onKey(e: KeyboardEvent) {
+      if ((e.metaKey || e.ctrlKey) && e.key.toLowerCase() === "k") {
+        e.preventDefault();
+        setPaletteOpen((open) => !open);
+      }
+    }
+    window.addEventListener("keydown", onKey);
+    return () => window.removeEventListener("keydown", onKey);
   }, []);
 
   // Safety net: if the current tab is not allowed for this role, go to the default one
@@ -92,6 +110,7 @@ export default function AppShell({ user }: { user: User }) {
       case "tickets":
         return (
           <TicketsPage
+            key={ticketsKey}
             user={user}
             version={version}
             onOpen={setSelectedId}
@@ -128,15 +147,22 @@ export default function AppShell({ user }: { user: User }) {
   }
 
   return (
-    <div className="flex h-dvh overflow-hidden bg-slate-50">
+    <div className="flex h-dvh overflow-hidden bg-slate-50 dark:bg-[#090d16]">
       {/* Dark backdrop behind the phone drawer */}
-      {mobileOpen && (
-        <div
-          className="fixed inset-0 z-30 animate-fade-in bg-black/40 backdrop-blur-sm md:hidden"
-          onClick={() => setMobileOpen(false)}
-          aria-hidden
-        />
-      )}
+      <AnimatePresence>
+        {mobileOpen && (
+          <m.div
+            key="menu-backdrop"
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            transition={{ duration: 0.18 }}
+            className="fixed inset-0 z-30 bg-black/40 backdrop-blur-sm md:hidden"
+            onClick={() => setMobileOpen(false)}
+            aria-hidden
+          />
+        )}
+      </AnimatePresence>
 
       <Sidebar
         tabs={tabs}
@@ -154,22 +180,23 @@ export default function AppShell({ user }: { user: User }) {
           user={user}
           onOpenMenu={() => setMobileOpen(true)}
           onCreateTicket={() => setCreateOpen(true)}
+          onOpenPalette={() => setPaletteOpen(true)}
           onLogout={logout}
         />
-        <main className="flex-1 overflow-y-auto p-4 sm:p-6">
+        <SmoothScroll className="p-4 sm:p-6" resetKey={current.key}>
           <AnimatePresence mode="wait" initial={false}>
             <m.div
               key={current.key}
-              initial={reduceMotion ? false : { opacity: 0, y: 6 }}
-              animate={{ opacity: 1, y: 0 }}
-              exit={{ opacity: 0, y: -4 }}
-              transition={{ duration: reduceMotion ? 0 : 0.16, ease: "easeOut" }}
+              initial={reduceMotion ? false : { opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
+              transition={{ duration: reduceMotion ? 0 : 0.14, ease: "easeOut" }}
               className="mx-auto max-w-6xl"
             >
               <ErrorBoundary resetKey={current.key}>{page()}</ErrorBoundary>
             </m.div>
           </AnimatePresence>
-        </main>
+        </SmoothScroll>
       </div>
 
       {createOpen && (
@@ -198,6 +225,18 @@ export default function AppShell({ user }: { user: User }) {
           />
         </ErrorBoundary>
       )}
+
+      <CommandPalette
+        open={paletteOpen}
+        onClose={() => setPaletteOpen(false)}
+        user={user}
+        tabs={tabs}
+        onNavigate={selectTab}
+        onOpenTicket={setSelectedId}
+        onCreateTicket={() => setCreateOpen(true)}
+        onShowTickets={showTickets}
+        onLogout={logout}
+      />
     </div>
   );
 }

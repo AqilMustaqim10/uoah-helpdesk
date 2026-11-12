@@ -1,5 +1,6 @@
 // A card with horizontal bars (for example "Tickets by status"). The bars grow from zero when they appear.
 import { useEffect, useState } from "react";
+import { BentoCard } from "../ui/Bento";
 
 export interface BarItem {
   label: string;
@@ -16,9 +17,16 @@ interface Props {
   title: string;
   subtitle?: string;
   items: BarItem[];
+  /** Grid placement, e.g. "col-span-2 lg:col-span-3". */
+  className?: string;
 }
 
-export default function BreakdownBars({ title, subtitle, items }: Props) {
+export default function BreakdownBars({
+  title,
+  subtitle,
+  items,
+  className,
+}: Props) {
   // Starts false so the bars begin at width 0, then flips so the CSS transition animates them to full size
   const [shown, setShown] = useState(false);
   useEffect(() => {
@@ -30,12 +38,9 @@ export default function BreakdownBars({ title, subtitle, items }: Props) {
   const max = Math.max(1, ...items.map((i) => i.value));
 
   return (
-    <section
-      className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm"
-      aria-label={title}
-    >
-      <h3 className="text-sm font-semibold text-slate-900">{title}</h3>
-      {subtitle && <p className="text-xs text-slate-500">{subtitle}</p>}
+    <BentoCard className={className} label={title}>
+      <h3 className="text-sm font-semibold text-slate-900 dark:text-slate-100">{title}</h3>
+      {subtitle && <p className="text-xs text-slate-500 dark:text-slate-400">{subtitle}</p>}
 
       <ul className="mt-4 space-y-3">
         {items.map((i) => (
@@ -45,20 +50,20 @@ export default function BreakdownBars({ title, subtitle, items }: Props) {
               onClick={i.onClick}
               disabled={!i.onClick || i.value === 0}
               aria-label={`View ${i.value} tickets: ${i.label}`}
-              className="w-full rounded-md text-left enabled:hover:bg-slate-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand focus-visible:ring-offset-2 disabled:cursor-default"
+              className="w-full rounded-md text-left enabled:hover:bg-slate-50 dark:enabled:hover:bg-slate-950 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand focus-visible:ring-offset-2 disabled:cursor-default"
             >
               <div className="mb-1 flex items-baseline justify-between text-sm">
-                <span className="text-slate-600">{i.label}</span>
-                <span className="tabular-nums text-slate-900">
+                <span className="text-slate-600 dark:text-slate-300">{i.label}</span>
+                <span className="tabular-nums text-slate-900 dark:text-slate-100">
                   {i.value}
                   {total > 0 && (
-                    <span className="ml-1 text-xs text-slate-400">
+                    <span className="ml-1 text-xs text-slate-400 dark:text-slate-500">
                       {Math.round((i.value / total) * 100)}%
                     </span>
                   )}
                 </span>
               </div>
-              <div className="h-2 overflow-hidden rounded-full bg-slate-100">
+              <div className="h-2 overflow-hidden rounded-full bg-slate-100 dark:bg-slate-800">
                 <div
                   className={`h-full rounded-full transition-[width] duration-700 ease-out ${i.bar}`}
                   style={{ width: shown ? `${(i.value / max) * 100}%` : "0%" }}
@@ -68,6 +73,6 @@ export default function BreakdownBars({ title, subtitle, items }: Props) {
           </li>
         ))}
       </ul>
-    </section>
+    </BentoCard>
   );
 }

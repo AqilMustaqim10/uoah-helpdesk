@@ -11,6 +11,7 @@ import { useToast } from "../../hooks/useToast";
 import { formatDateTime, ticketRef, timeAgo } from "../../lib/format";
 import { STATUS_META, TRANSITIONS } from "../../lib/ticketMeta";
 import { cn } from "../../lib/cn";
+import { ticketSurfaceId } from "../../lib/motion";
 import type {
   TicketDetailResponse,
   TicketFile,
@@ -19,9 +20,9 @@ import type {
 } from "../../types";
 import { OverdueBadge, PriorityBadge, StatusBadge } from "../ui/Badges";
 import Button from "../ui/Button";
-import Modal from "../ui/Modal";
+import Drawer from "../ui/Drawer";
 import ReasonModal from "../ui/ReasonModal";
-import Skeleton from "../ui/Skeleton";
+import { DrawerSkeleton } from "../ui/skeletons";
 import Attachments from "./Attachments";
 import Conversation from "./Conversation";
 import HistoryTimeline from "./HistoryTimeline";
@@ -41,11 +42,11 @@ interface Props {
 /** One small fact in the strip under the description (label above, value below). */
 function Fact({ label, children }: { label: string; children: ReactNode }) {
   return (
-    <div className="min-w-0">
-      <dt className="text-[11px] font-medium uppercase tracking-wide text-slate-500">
+    <div className="min-w-0 rounded-xl border border-slate-200 bg-white p-3 transition-colors hover:border-slate-400 dark:border-slate-800 dark:bg-slate-900 dark:hover:border-slate-600">
+      <dt className="text-[11px] font-medium uppercase tracking-wide text-slate-500 dark:text-slate-400">
         {label}
       </dt>
-      <dd className="mt-1 text-sm text-slate-900">{children}</dd>
+      <dd className="mt-1 text-sm text-slate-900 dark:text-slate-100">{children}</dd>
     </div>
   );
 }
@@ -194,37 +195,30 @@ export default function TicketModal({
 
   return (
     <>
-      <Modal
+      <Drawer
         label={`Ticket ${ticketRef(ticketId)}`}
         onClose={onClose}
-        size="wide"
+        morphId={ticketSurfaceId(ticketId)}
+        size="xl"
       >
         {error ? (
           <div className="flex flex-col items-center px-6 py-16 text-center">
-            <AlertCircle className="mb-3 h-8 w-8 text-slate-400" aria-hidden />
-            <p className="text-sm font-medium text-slate-900">{error}</p>
+            <AlertCircle className="mb-3 h-8 w-8 text-slate-400 dark:text-slate-500" aria-hidden />
+            <p className="text-sm font-medium text-slate-900 dark:text-slate-100">{error}</p>
           </div>
         ) : !data ? (
-          <div
-            className="space-y-4 p-6"
-            aria-busy="true"
-            aria-label="Loading ticket"
-          >
-            <Skeleton className="h-6 w-1/3" />
-            <Skeleton className="h-4 w-2/3" />
-            <Skeleton className="h-40 w-full" />
-          </div>
+          <DrawerSkeleton />
         ) : (
           // A fixed frame: the header and footer stay, only the middle scrolls
-          <div className="flex max-h-[calc(100dvh-2rem)] flex-col overflow-hidden rounded-2xl sm:max-h-[calc(100dvh-3rem)]">
+          <div className="flex min-h-0 flex-1 flex-col">
             {/* ---------- header ---------- */}
-            <header className="flex shrink-0 items-center gap-3 border-b border-slate-200 bg-white px-6 py-4 pr-14">
+            <header className="flex shrink-0 items-center gap-3 border-b border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 px-6 py-4 pr-14">
               <span className="shrink-0 rounded-md bg-brand px-2.5 py-1 font-mono text-sm font-semibold text-onbrand">
                 {ticketRef(data.ticket.id)}
               </span>
               <div className="min-w-0">
                 <div className="flex flex-wrap items-center gap-2">
-                  <h2 className="text-base font-semibold text-slate-900">
+                  <h2 className="text-base font-semibold text-slate-900 dark:text-slate-100">
                     Ticket details
                   </h2>
                   <UnitChip
@@ -232,14 +226,14 @@ export default function TicketModal({
                     name={data.ticket.unit_name}
                   />
                 </div>
-                <p className="truncate text-xs text-slate-500">
+                <p className="truncate text-xs text-slate-500 dark:text-slate-400">
                   {data.ticket.requester_department ?? data.ticket.unit_name}
                 </p>
               </div>
             </header>
 
             {/* ---------- body (scrolls) ---------- */}
-            <div className="min-h-0 flex-1 space-y-4 overflow-y-auto bg-slate-50 px-6 py-5">
+            <div className="min-h-0 flex-1 space-y-4 overflow-y-auto bg-slate-50 dark:bg-slate-950 px-6 py-5">
               {/* Status chips and the title */}
               <div>
                 <div className="mb-2 flex flex-wrap items-center gap-2">
@@ -249,39 +243,39 @@ export default function TicketModal({
                   <PriorityBadge priority={data.ticket.priority} />
                   {data.ticket.is_overdue && <OverdueBadge />}
                   {data.ticket.source === "EMAIL" && (
-                    <span className="inline-flex items-center gap-1 rounded-full bg-slate-100 px-2 py-0.5 text-xs font-medium text-slate-600 ring-1 ring-inset ring-slate-200">
+                    <span className="inline-flex items-center gap-1 rounded-full bg-slate-100 dark:bg-slate-800 px-2 py-0.5 text-xs font-medium text-slate-600 dark:text-slate-300 ring-1 ring-inset ring-slate-200 dark:ring-slate-800">
                       <Mail className="h-3 w-3" aria-hidden /> Email
                     </span>
                   )}
                 </div>
-                <h3 className="break-words text-lg font-semibold text-slate-900">
+                <h3 className="break-words text-lg font-semibold text-slate-900 dark:text-slate-100">
                   {data.ticket.title}
                 </h3>
               </div>
 
               {/* The description (plain text: React escapes it) */}
-              <p className="whitespace-pre-wrap break-words rounded-xl border border-slate-200 bg-white px-4 py-3 text-sm text-slate-700">
+              <p className="whitespace-pre-wrap break-words rounded-xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 px-4 py-3 text-sm text-slate-700 dark:text-slate-200">
                 {data.ticket.description}
               </p>
 
               {/* Key facts */}
-              <dl className="grid grid-cols-2 gap-x-4 gap-y-4 rounded-xl border border-slate-200 bg-slate-100/60 p-4 md:grid-cols-4">
+              <dl className="grid grid-cols-2 gap-3 md:grid-cols-4">
                 <Fact label="Created by">
                   <p className="truncate font-semibold">
                     {data.ticket.requester_name}
                   </p>
                   <p
-                    className="truncate text-xs text-slate-500"
+                    className="truncate text-xs text-slate-500 dark:text-slate-400"
                     title={data.ticket.requester_email}
                   >
                     {data.ticket.requester_email}
                   </p>
                 </Fact>
                 <Fact label="Submitted on">
-                  <p className="font-semibold">
+                  <p className="font-mono text-xs font-semibold tabular-nums">
                     {formatDateTime(data.ticket.created_at)}
                   </p>
-                  <p className="text-xs text-slate-500">
+                  <p className="font-mono text-xs tabular-nums text-slate-500 dark:text-slate-400">
                     Updated {timeAgo(data.ticket.updated_at)}
                   </p>
                 </Fact>
@@ -290,7 +284,7 @@ export default function TicketModal({
                     code={data.ticket.unit_code}
                     name={data.ticket.unit_name}
                   />
-                  <p className="mt-1 truncate text-xs text-slate-500">
+                  <p className="mt-1 truncate text-xs text-slate-500 dark:text-slate-400">
                     {data.ticket.unit_name}
                   </p>
                 </Fact>
@@ -300,7 +294,7 @@ export default function TicketModal({
                       {data.ticket.requester_department}
                     </span>
                   ) : (
-                    <span className="text-slate-400">Not set</span>
+                    <span className="text-slate-400 dark:text-slate-500">Not set</span>
                   )}
                 </Fact>
               </dl>
@@ -353,14 +347,14 @@ export default function TicketModal({
 
               {/* The audit history (IT / ADMIN only; collapsed until opened) */}
               {data.history && (
-                <div className="rounded-xl border border-slate-200 bg-white px-4 py-3">
+                <div className="rounded-xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 px-4 py-3">
                   <HistoryTimeline history={data.history} />
                 </div>
               )}
             </div>
 
             {/* ---------- footer ---------- */}
-            <footer className="flex shrink-0 flex-wrap items-center gap-2 border-t border-slate-200 bg-white px-6 py-3">
+            <footer className="flex shrink-0 flex-wrap items-center gap-2 border-t border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 px-6 py-3">
               <Button variant="secondary" onClick={onClose}>
                 Close
               </Button>
@@ -373,7 +367,7 @@ export default function TicketModal({
                     setDeleteError("");
                     setDeleteOpen(true);
                   }}
-                  className="inline-flex h-10 items-center gap-2 rounded-lg border border-rose-200 bg-rose-50 px-4 text-sm font-medium text-rose-700 transition hover:bg-rose-100"
+                  className="inline-flex h-10 items-center gap-2 rounded-lg border border-rose-200 dark:border-rose-800 bg-rose-50 dark:bg-rose-950 px-4 text-sm font-medium text-rose-700 dark:text-rose-300 transition hover:bg-rose-100 dark:hover:bg-rose-900"
                 >
                   <Trash2 className="h-4 w-4" aria-hidden />
                   Delete Ticket
@@ -382,7 +376,7 @@ export default function TicketModal({
 
               <div className="ml-auto flex items-center gap-2">
                 {closed && (
-                  <span className="text-xs text-slate-500">
+                  <span className="text-xs text-slate-500 dark:text-slate-400">
                     This ticket is closed and read-only.
                   </span>
                 )}
@@ -393,7 +387,7 @@ export default function TicketModal({
                     className={cn(
                       primary.to === "CLOSED" &&
                         confirmClose &&
-                        "bg-rose-600 hover:bg-rose-600",
+                        "bg-rose-600 dark:bg-rose-400 hover:bg-rose-600 dark:hover:bg-rose-400",
                     )}
                     onClick={() => {
                       // Closing needs a second click, because a closed ticket can never be changed again
@@ -414,7 +408,7 @@ export default function TicketModal({
             </footer>
           </div>
         )}
-      </Modal>
+      </Drawer>
 
       {deleteOpen && (
         <ReasonModal

@@ -2,6 +2,7 @@
 // Drawn with plain SVG (no chart library). Hover or touch a day to see its numbers.
 // Colors come from the theme, so it follows the unit's brand color and dark mode.
 import { useEffect, useMemo, useRef, useState, type PointerEvent } from "react";
+import { BentoCard } from "../ui/Bento";
 import type { TrendPoint } from "../../api/dashboard";
 
 const HEIGHT = 240;
@@ -15,7 +16,13 @@ function labelOf(day: string): string {
   });
 }
 
-export default function TrendChart({ points }: { points: TrendPoint[] }) {
+export default function TrendChart({
+  points,
+  className,
+}: {
+  points: TrendPoint[];
+  className?: string;
+}) {
   const wrapRef = useRef<HTMLDivElement>(null);
   const [width, setWidth] = useState(640);
   const [hover, setHover] = useState<number | null>(null);
@@ -90,34 +97,31 @@ export default function TrendChart({ points }: { points: TrendPoint[] }) {
   const active = hover !== null ? points[hover] : null;
 
   return (
-    <section
-      className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm"
-      aria-label="Tickets created and resolved"
-    >
+    <BentoCard className={className} label="Tickets created and resolved">
       <div className="flex flex-wrap items-start justify-between gap-3">
         <div>
-          <h3 className="text-sm font-semibold text-slate-900">
+          <h3 className="text-sm font-semibold text-slate-900 dark:text-slate-100">
             Created vs resolved
           </h3>
-          <p className="text-xs text-slate-500">
+          <p className="text-xs text-slate-500 dark:text-slate-400">
             Tickets per day, last {points.length} days
           </p>
         </div>
         <div className="flex gap-4 text-sm">
-          <span className="inline-flex items-center gap-1.5 text-slate-600">
+          <span className="inline-flex items-center gap-1.5 text-slate-600 dark:text-slate-300">
             <span className="h-2.5 w-2.5 rounded-full bg-brand" aria-hidden />
             Created{" "}
-            <span className="font-semibold tabular-nums text-slate-900">
+            <span className="font-semibold tabular-nums text-slate-900 dark:text-slate-100">
               {totalCreated}
             </span>
           </span>
-          <span className="inline-flex items-center gap-1.5 text-slate-600">
+          <span className="inline-flex items-center gap-1.5 text-slate-600 dark:text-slate-300">
             <span
               className="h-2.5 w-2.5 rounded-full bg-emerald-500"
               aria-hidden
             />
             Resolved{" "}
-            <span className="font-semibold tabular-nums text-slate-900">
+            <span className="font-semibold tabular-nums text-slate-900 dark:text-slate-100">
               {totalResolved}
             </span>
           </span>
@@ -126,7 +130,7 @@ export default function TrendChart({ points }: { points: TrendPoint[] }) {
 
       <div ref={wrapRef} className="relative mt-4">
         {empty ? (
-          <p className="flex h-40 items-center justify-center rounded-xl bg-slate-50 text-sm text-slate-500">
+          <p className="flex h-40 items-center justify-center rounded-xl bg-slate-50 dark:bg-slate-950 text-sm text-slate-500 dark:text-slate-400">
             No tickets were created or resolved in the last {points.length}{" "}
             days.
           </p>
@@ -150,7 +154,7 @@ export default function TrendChart({ points }: { points: TrendPoint[] }) {
                     x2={width - PAD.right}
                     y1={model.y(t)}
                     y2={model.y(t)}
-                    className="stroke-slate-200"
+                    className="stroke-slate-200 dark:stroke-slate-700"
                     strokeWidth={1}
                   />
                   <text
@@ -158,7 +162,7 @@ export default function TrendChart({ points }: { points: TrendPoint[] }) {
                     y={model.y(t) + 4}
                     textAnchor="end"
                     fontSize={11}
-                    className="fill-slate-400"
+                    className="fill-slate-400 dark:fill-slate-500"
                   >
                     {t}
                   </text>
@@ -173,7 +177,7 @@ export default function TrendChart({ points }: { points: TrendPoint[] }) {
                   y={HEIGHT - 8}
                   textAnchor="middle"
                   fontSize={11}
-                  className="fill-slate-400"
+                  className="fill-slate-400 dark:fill-slate-500"
                 >
                   {labelOf(points[i].day)}
                 </text>
@@ -207,7 +211,7 @@ export default function TrendChart({ points }: { points: TrendPoint[] }) {
                     x2={model.x(hover)}
                     y1={PAD.top}
                     y2={HEIGHT - PAD.bottom}
-                    className="stroke-slate-300"
+                    className="stroke-slate-300 dark:stroke-slate-600"
                     strokeWidth={1}
                     strokeDasharray="3 3"
                   />
@@ -229,23 +233,23 @@ export default function TrendChart({ points }: { points: TrendPoint[] }) {
 
             {active && hover !== null && (
               <div
-                className="pointer-events-none absolute top-0 w-36 -translate-x-1/2 rounded-lg border border-slate-200 bg-white px-3 py-2 text-xs shadow-lg"
+                className="pointer-events-none absolute top-0 w-36 -translate-x-1/2 rounded-lg border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 px-3 py-2 text-xs shadow-lg"
                 style={{
                   left: Math.min(width - 72, Math.max(72, model.x(hover))),
                 }}
               >
-                <p className="font-medium text-slate-900">
+                <p className="font-medium text-slate-900 dark:text-slate-100">
                   {labelOf(active.day)}
                 </p>
-                <p className="mt-0.5 flex justify-between text-slate-600">
+                <p className="mt-0.5 flex justify-between text-slate-600 dark:text-slate-300">
                   Created{" "}
-                  <span className="font-semibold tabular-nums text-slate-900">
+                  <span className="font-semibold tabular-nums text-slate-900 dark:text-slate-100">
                     {active.created}
                   </span>
                 </p>
-                <p className="flex justify-between text-slate-600">
+                <p className="flex justify-between text-slate-600 dark:text-slate-300">
                   Resolved{" "}
-                  <span className="font-semibold tabular-nums text-slate-900">
+                  <span className="font-semibold tabular-nums text-slate-900 dark:text-slate-100">
                     {active.resolved}
                   </span>
                 </p>
@@ -275,6 +279,6 @@ export default function TrendChart({ points }: { points: TrendPoint[] }) {
           </>
         )}
       </div>
-    </section>
+    </BentoCard>
   );
 }

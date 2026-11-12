@@ -5,6 +5,7 @@ import { m, useReducedMotion } from "framer-motion";
 import type { Branding, TabKey } from "../../types";
 import type { TabDef } from "../../lib/nav";
 import { cn } from "../../lib/cn";
+import { SPRING_TACTILE } from "../../lib/motion";
 import BrandMark from "./BrandMark";
 
 interface Props {
@@ -31,7 +32,7 @@ export default function Sidebar({
   return (
     <aside
       className={cn(
-        "fixed inset-y-0 left-0 z-40 flex w-64 flex-col border-r border-slate-200 bg-white transition-all duration-200",
+        "fixed inset-y-0 left-0 z-40 flex w-64 flex-col border-r border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 transition-all duration-200",
         "md:static md:z-auto md:translate-x-0",
         mobileOpen ? "translate-x-0 shadow-xl" : "-translate-x-full",
         collapsed ? "md:w-[72px]" : "md:w-64",
@@ -40,7 +41,7 @@ export default function Sidebar({
       {/* Header box: the logo fills it */}
       <div
         className={cn(
-          "flex shrink-0 items-center border-b border-slate-200 p-3",
+          "flex shrink-0 items-center border-b border-slate-200 dark:border-slate-800 p-3",
           collapsed ? "h-20 md:h-16 md:justify-center" : "h-20",
         )}
       >
@@ -60,15 +61,18 @@ export default function Sidebar({
           const Icon = t.icon;
           const isActive = t.key === active;
           return (
-            <button
+            <m.button
               key={t.key}
               type="button"
               onClick={() => onSelect(t.key)}
+              whileHover={{ x: isActive ? 0 : 2 }}
+              whileTap={{ scale: 0.97 }}
+              transition={SPRING_TACTILE}
               aria-current={isActive ? "page" : undefined}
               title={collapsed ? t.label : undefined}
               className={cn(
                 "relative isolate flex h-10 w-full items-center gap-3 rounded-lg px-3 text-sm font-medium transition-colors",
-                isActive ? "text-onbrand" : "text-slate-600 hover:bg-slate-100",
+                isActive ? "text-onbrand" : "text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800",
                 collapsed && "md:justify-center md:px-0",
               )}
             >
@@ -88,19 +92,21 @@ export default function Sidebar({
               >
                 {t.label}
               </span>
-            </button>
+            </m.button>
           );
         })}
       </nav>
 
       {/* Collapse button (desktop only) */}
-      <div className="hidden shrink-0 border-t border-slate-200 p-3 md:block">
-        <button
+      <div className="hidden shrink-0 border-t border-slate-200 dark:border-slate-800 p-3 md:block">
+        <m.button
           type="button"
           onClick={onToggleCollapsed}
+          whileTap={{ scale: 0.97 }}
+          transition={SPRING_TACTILE}
           aria-label={collapsed ? "Expand sidebar" : "Collapse sidebar"}
           className={cn(
-            "flex h-10 w-full items-center gap-3 rounded-lg px-3 text-sm text-slate-500 transition-colors hover:bg-slate-100",
+            "flex h-10 w-full items-center gap-3 rounded-lg px-3 text-sm text-slate-500 dark:text-slate-400 transition-colors hover:bg-slate-100 dark:hover:bg-slate-800",
             collapsed && "justify-center px-0",
           )}
         >
@@ -110,7 +116,7 @@ export default function Sidebar({
             <PanelLeftClose className="h-5 w-5" />
           )}
           {!collapsed && <span>Collapse</span>}
-        </button>
+        </m.button>
       </div>
     </aside>
   );

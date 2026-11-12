@@ -16,7 +16,7 @@ import EmptyState from "../components/ui/EmptyState";
 import Button from "../components/ui/Button";
 import ErrorBoundary from "../components/ui/ErrorBoundary";
 import Pagination from "../components/ui/Pagination";
-import Skeleton from "../components/ui/Skeleton";
+import { TicketTableSkeleton } from "../components/ui/skeletons";
 import FormError from "../components/ui/FormError";
 import ExportPdfModal from "../components/tickets/ExportPdfModal";
 import TicketFilters from "../components/tickets/TicketFilters";
@@ -132,36 +132,26 @@ export default function TicketsPage({
 
   return (
     <div className="space-y-4">
-      <TicketFilters
-        key={filterKey}
-        query={query}
-        counts={data?.counts}
-        role={user.role}
-        units={units}
-        onChange={change}
-      />
+      <div data-reveal="">
+        <TicketFilters
+          key={filterKey}
+          query={query}
+          counts={data?.counts}
+          role={user.role}
+          units={units}
+          onChange={change}
+        />
+      </div>
 
       <FormError message={error} />
 
       {firstLoad ? (
-        <div
-          className="space-y-px overflow-hidden rounded-2xl border border-slate-200 bg-white"
-          aria-busy="true"
-          role="status"
-          aria-label="Loading tickets"
-        >
-          {Array.from({ length: 5 }).map((_, i) => (
-            <div key={i} className="space-y-2 px-4 py-4">
-              <Skeleton className="h-4 w-1/2" />
-              <Skeleton className="h-3 w-1/3" />
-            </div>
-          ))}
-        </div>
+        <TicketTableSkeleton rows={6} showUnit={user.role === "ADMIN"} />
       ) : data && data.tickets.length > 0 ? (
         <>
           {/* Ticket count on the left, export button (IT/ADMIN) on the right */}
           <div className="flex items-center justify-between">
-            <p className="text-sm text-slate-500">
+            <p className="font-mono text-sm tabular-nums text-slate-500 dark:text-slate-400">
               {data.total} ticket{data.total === 1 ? "" : "s"}
             </p>
             {staff && (

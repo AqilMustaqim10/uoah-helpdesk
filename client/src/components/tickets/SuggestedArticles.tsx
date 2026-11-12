@@ -72,9 +72,9 @@ export default function SuggestedArticles({ title, onSolved }: Props) {
   return (
     <section
       aria-label="Suggested articles"
-      className="animate-fade-in rounded-xl border border-slate-200 bg-slate-50 p-3"
+      className="animate-fade-in rounded-xl border border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-slate-950 p-3"
     >
-      <p className="mb-2 flex items-center gap-2 text-sm font-medium text-slate-700">
+      <p className="mb-2 flex items-center gap-2 text-sm font-medium text-slate-700 dark:text-slate-200">
         <BookOpen className="h-4 w-4 shrink-0" aria-hidden />
         These articles might already answer your question
       </p>
@@ -86,7 +86,7 @@ export default function SuggestedArticles({ title, onSolved }: Props) {
           return (
             <li
               key={a.id}
-              className="rounded-lg border border-slate-200 bg-white"
+              className="rounded-lg border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900"
             >
               <button
                 type="button"
@@ -95,18 +95,18 @@ export default function SuggestedArticles({ title, onSolved }: Props) {
                 className="flex w-full items-start gap-2 px-3 py-2 text-left"
               >
                 <span className="min-w-0 flex-1">
-                  <span className="block truncate text-sm font-medium text-slate-900">
+                  <span className="block truncate text-sm font-medium text-slate-900 dark:text-slate-100">
                     {a.title}
                   </span>
                   {!open && (
-                    <span className="block truncate text-xs text-slate-500">
+                    <span className="block truncate text-xs text-slate-500 dark:text-slate-400">
                       {a.excerpt}
                     </span>
                   )}
                 </span>
                 <ChevronDown
                   className={cn(
-                    "mt-0.5 h-4 w-4 shrink-0 text-slate-400 transition-transform",
+                    "mt-0.5 h-4 w-4 shrink-0 text-slate-400 dark:text-slate-500 transition-transform",
                     open && "rotate-180",
                   )}
                   aria-hidden
@@ -114,19 +114,19 @@ export default function SuggestedArticles({ title, onSolved }: Props) {
               </button>
 
               {open && (
-                <div className="animate-fade-in border-t border-slate-200 px-3 py-2">
+                <div className="animate-fade-in border-t border-slate-200 dark:border-slate-800 px-3 py-2">
                   {!body || body.status === "loading" ? (
                     <Loader2
-                      className="h-4 w-4 animate-spin text-slate-400"
+                      className="h-4 w-4 animate-spin text-slate-400 dark:text-slate-500"
                       aria-label="Loading"
                     />
                   ) : body.status === "error" ? (
-                    <p className="text-sm text-slate-500">
+                    <p className="text-sm text-slate-500 dark:text-slate-400">
                       Could not load this article.
                     </p>
                   ) : (
                     // Plain text: React escapes it, so nobody can inject HTML
-                    <p className="max-h-48 overflow-y-auto whitespace-pre-wrap break-words text-sm text-slate-700">
+                    <p className="max-h-48 overflow-y-auto whitespace-pre-wrap break-words text-sm text-slate-700 dark:text-slate-200">
                       {body.text}
                     </p>
                   )}

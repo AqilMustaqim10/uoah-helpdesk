@@ -110,8 +110,8 @@ export default function ArticleModal({
         />
       ) : error ? (
         <div className="flex flex-col items-center px-6 py-16 text-center">
-          <AlertCircle className="mb-3 h-8 w-8 text-slate-400" aria-hidden />
-          <p className="text-sm font-medium text-slate-900">{error}</p>
+          <AlertCircle className="mb-3 h-8 w-8 text-slate-400 dark:text-slate-500" aria-hidden />
+          <p className="text-sm font-medium text-slate-900 dark:text-slate-100">{error}</p>
         </div>
       ) : !data ? (
         <div
@@ -125,25 +125,25 @@ export default function ArticleModal({
         </div>
       ) : (
         <div className="animate-fade-in">
-          <header className="border-b border-slate-200 px-6 py-5 pr-14">
+          <header className="border-b border-slate-200 dark:border-slate-800 px-6 py-5 pr-14">
             <div className="flex flex-wrap items-center gap-2">
               {user.role !== "USER" && (
                 <ArticleStatusBadge status={data.article.status} />
               )}
               {data.article.unit_code ? (
-                <span className="rounded-full bg-slate-100 px-2 py-0.5 font-mono text-xs text-slate-600">
+                <span className="rounded-full bg-slate-100 dark:bg-slate-800 px-2 py-0.5 font-mono text-xs text-slate-600 dark:text-slate-300">
                   {data.article.unit_code}
                 </span>
               ) : (
-                <span className="inline-flex items-center gap-1 rounded-full bg-slate-100 px-2 py-0.5 text-xs text-slate-600">
+                <span className="inline-flex items-center gap-1 rounded-full bg-slate-100 dark:bg-slate-800 px-2 py-0.5 text-xs text-slate-600 dark:text-slate-300">
                   <Globe2 className="h-3 w-3" aria-hidden /> All units
                 </span>
               )}
             </div>
-            <h2 className="mt-2 break-words text-lg font-semibold text-slate-900">
+            <h2 className="mt-2 break-words text-lg font-semibold text-slate-900 dark:text-slate-100">
               {data.article.title}
             </h2>
-            <p className="mt-1 text-xs text-slate-400">
+            <p className="mt-1 text-xs text-slate-400 dark:text-slate-500">
               By {data.article.author_name}. Last updated by{" "}
               {data.article.editor_name} on{" "}
               {formatDateTime(data.article.updated_at)}.
@@ -167,7 +167,7 @@ export default function ArticleModal({
                   <button
                     type="button"
                     onClick={() => setDeleteOpen(true)}
-                    className="inline-flex h-9 items-center gap-2 rounded-lg border border-rose-200 bg-rose-50 px-3 text-sm font-medium text-rose-700 transition hover:bg-rose-100"
+                    className="inline-flex h-9 items-center gap-2 rounded-lg border border-rose-200 dark:border-rose-800 bg-rose-50 dark:bg-rose-950 px-3 text-sm font-medium text-rose-700 dark:text-rose-300 transition hover:bg-rose-100 dark:hover:bg-rose-900"
                   >
                     <Trash2 className="h-4 w-4" aria-hidden />
                     Delete
@@ -179,7 +179,7 @@ export default function ArticleModal({
 
           <div className="space-y-6 p-6">
             {/* Plain text: React escapes it, so nobody can inject HTML */}
-            <p className="whitespace-pre-wrap break-words text-sm leading-6 text-slate-700">
+            <p className="whitespace-pre-wrap break-words text-sm leading-6 text-slate-700 dark:text-slate-200">
               {data.article.body}
             </p>
 
@@ -188,7 +188,7 @@ export default function ArticleModal({
                 {data.article.tags.map((t) => (
                   <span
                     key={t}
-                    className="rounded-md bg-slate-100 px-2 py-0.5 text-xs text-slate-600"
+                    className="rounded-md bg-slate-100 dark:bg-slate-800 px-2 py-0.5 text-xs text-slate-600 dark:text-slate-300"
                   >
                     {t}
                   </span>

@@ -26,7 +26,7 @@ export default function ProgressSteps({ status }: { status: TicketStatus }) {
                 aria-hidden
                 className={cn(
                   "absolute left-0 right-1/2 top-3 h-0.5 -translate-y-1/2 transition-colors duration-300",
-                  i <= current ? "bg-emerald-500" : "bg-slate-200",
+                  i <= current ? "bg-emerald-500" : "bg-slate-200 dark:bg-slate-700",
                 )}
               />
             )}
@@ -36,7 +36,7 @@ export default function ProgressSteps({ status }: { status: TicketStatus }) {
                 aria-hidden
                 className={cn(
                   "absolute left-1/2 right-0 top-3 h-0.5 -translate-y-1/2 transition-colors duration-300",
-                  i < current ? "bg-emerald-500" : "bg-slate-200",
+                  i < current ? "bg-emerald-500" : "bg-slate-200 dark:bg-slate-700",
                 )}
               />
             )}
@@ -48,7 +48,7 @@ export default function ProgressSteps({ status }: { status: TicketStatus }) {
                 "relative z-10 flex h-6 w-6 items-center justify-center rounded-full text-xs font-semibold transition-colors duration-300 animate-scale-in",
                 done && "bg-emerald-500 text-onbrand",
                 active && "bg-brand text-onbrand",
-                !done && !active && "bg-slate-100 text-slate-400",
+                !done && !active && "bg-slate-100 dark:bg-slate-800 text-slate-400 dark:text-slate-500",
               )}
             >
               {done ? <Check className="h-3.5 w-3.5" aria-hidden /> : i + 1}
@@ -57,7 +57,7 @@ export default function ProgressSteps({ status }: { status: TicketStatus }) {
             <span
               className={cn(
                 "mt-1.5 text-xs",
-                active ? "font-semibold text-slate-900" : "text-slate-500",
+                active ? "font-semibold text-slate-900 dark:text-slate-100" : "text-slate-500 dark:text-slate-400",
               )}
             >
               {STATUS_META[s].label}

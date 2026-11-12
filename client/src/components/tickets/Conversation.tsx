@@ -117,7 +117,7 @@ export default function Conversation({
   return (
     <section aria-label="Conversation">
       {comments.length === 0 ? (
-        <p className="rounded-xl border border-dashed border-slate-200 px-4 py-6 text-center text-sm text-slate-500">
+        <p className="rounded-xl border border-dashed border-slate-200 dark:border-slate-800 px-4 py-6 text-center text-sm text-slate-500 dark:text-slate-400">
           No replies yet.
         </p>
       ) : (
@@ -131,33 +131,33 @@ export default function Conversation({
                   className={cn(
                     "min-w-0 flex-1 rounded-xl border px-3 py-2",
                     c.is_internal
-                      ? "border-amber-200 bg-amber-50"
-                      : "border-slate-200 bg-white",
+                      ? "border-amber-200 dark:border-amber-800 bg-amber-50 dark:bg-amber-950"
+                      : "border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900",
                   )}
                 >
                   <div className="flex flex-wrap items-center gap-x-2 gap-y-1 text-xs">
-                    <span className="text-sm font-medium text-slate-900">
+                    <span className="text-sm font-medium text-slate-900 dark:text-slate-100">
                       {c.author_name}
                     </span>
                     {c.author_role !== "USER" && (
                       <RoleBadge role={c.author_role} />
                     )}
                     {c.is_internal && (
-                      <span className="inline-flex items-center gap-1 font-medium text-amber-700">
+                      <span className="inline-flex items-center gap-1 font-medium text-amber-700 dark:text-amber-300">
                         <Lock className="h-3 w-3" aria-hidden /> Internal note
                       </span>
                     )}
                     {c.source === "EMAIL" && (
-                      <span className="text-slate-400">via email</span>
+                      <span className="text-slate-400 dark:text-slate-500">via email</span>
                     )}
                     <span
-                      className="text-slate-400"
+                      className="text-slate-400 dark:text-slate-500"
                       title={formatDateTime(c.created_at)}
                     >
                       {timeAgo(c.created_at)}
                     </span>
                   </div>
-                  <p className="mt-1 whitespace-pre-wrap break-words text-sm text-slate-700">
+                  <p className="mt-1 whitespace-pre-wrap break-words text-sm text-slate-700 dark:text-slate-200">
                     {c.body}
                   </p>
 
@@ -192,7 +192,7 @@ export default function Conversation({
       {/* Writing area */}
       <div className="mt-4">
         {readOnly ? (
-          <p className="flex items-center gap-2 rounded-xl bg-slate-100 px-4 py-3 text-sm text-slate-600">
+          <p className="flex items-center gap-2 rounded-xl bg-slate-100 dark:bg-slate-800 px-4 py-3 text-sm text-slate-600 dark:text-slate-300">
             <Lock className="h-4 w-4 shrink-0" aria-hidden />
             This ticket is closed and read-only.
           </p>
@@ -200,7 +200,7 @@ export default function Conversation({
           <div className="space-y-2">
             {staff && (
               <div
-                className="inline-flex rounded-lg border border-slate-200 p-0.5"
+                className="inline-flex rounded-lg border border-slate-200 dark:border-slate-800 p-0.5"
                 role="group"
                 aria-label="Type of message"
               >
@@ -213,7 +213,7 @@ export default function Conversation({
                     "rounded-md px-3 py-1 text-xs font-medium transition-colors",
                     !isNote
                       ? "bg-brand text-onbrand"
-                      : "text-slate-600 hover:bg-slate-100",
+                      : "text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800",
                   )}
                 >
                   Reply
@@ -230,7 +230,7 @@ export default function Conversation({
                     "rounded-md px-3 py-1 text-xs font-medium transition-colors",
                     isNote
                       ? "bg-amber-500 text-onbrand"
-                      : "text-slate-600 hover:bg-slate-100",
+                      : "text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800",
                   )}
                 >
                   Internal note
@@ -246,7 +246,7 @@ export default function Conversation({
                 <p className="text-xs font-semibold text-violet-900 dark:text-violet-100">
                   AI suggestion preview
                 </p>
-                <p className="whitespace-pre-wrap text-sm text-slate-700">
+                <p className="whitespace-pre-wrap text-sm text-slate-700 dark:text-slate-200">
                   {suggestion}
                 </p>
                 <Button
@@ -289,7 +289,7 @@ export default function Conversation({
                   ? "Only IT staff can see this note."
                   : "Write a reply… (you can paste a screenshot)"
               }
-              className={isNote ? "border-amber-300 bg-amber-50" : undefined}
+              className={isNote ? "border-amber-300 dark:border-amber-700 bg-amber-50 dark:bg-amber-950" : undefined}
             />
 
             {/* Link a knowledge base article (IT / ADMIN only) */}
@@ -303,9 +303,9 @@ export default function Conversation({
                 />
               ) : (
                 <div className="space-y-1">
-                  <p className="text-xs font-medium text-slate-600">
+                  <p className="text-xs font-medium text-slate-600 dark:text-slate-300">
                     Link a knowledge base article{" "}
-                    <span className="font-normal text-slate-400">
+                    <span className="font-normal text-slate-400 dark:text-slate-500">
                       (optional)
                     </span>
                   </p>
@@ -331,7 +331,7 @@ export default function Conversation({
             />
 
             <div className="flex items-center justify-between gap-3">
-              <p className="text-xs text-slate-400">Ctrl + Enter to send</p>
+              <p className="text-xs text-slate-400 dark:text-slate-500">Ctrl + Enter to send</p>
               <div className="flex flex-wrap justify-end gap-2">
                 {staff && !isNote && (
                   <Button

@@ -80,7 +80,7 @@ export default function Attachments({
   const switcher =
     own.length > 0 ? (
       <div
-        className="inline-flex rounded-lg border border-slate-200 p-0.5"
+        className="inline-flex rounded-lg border border-slate-200 dark:border-slate-800 p-0.5"
         role="group"
         aria-label="How to show the files"
       >
@@ -101,7 +101,7 @@ export default function Attachments({
               "inline-flex h-7 w-7 items-center justify-center rounded-md transition-colors",
               view === key
                 ? "bg-brand/10 text-brand"
-                : "text-slate-500 hover:bg-slate-100",
+                : "text-slate-500 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800",
             )}
           >
             <Icon className="h-4 w-4" aria-hidden />

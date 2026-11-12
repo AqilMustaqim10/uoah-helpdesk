@@ -159,8 +159,8 @@ export default function DepartmentsSettings() {
   return (
     <div className="space-y-4">
       <div>
-        <h2 className="text-base font-semibold text-slate-900">Departments</h2>
-        <p className="text-sm text-slate-500">
+        <h2 className="text-base font-semibold text-slate-900 dark:text-slate-100">Departments</h2>
+        <p className="text-sm text-slate-500 dark:text-slate-400">
           People choose one when they register, and administrators or IT choose
           one when they add a person. Renaming updates everyone who has it. A
           hidden department is no longer offered, but people who have it keep
@@ -200,7 +200,7 @@ export default function DepartmentsSettings() {
         <FormError message={loadError} />
       ) : !rows ? (
         <div
-          className="space-y-px overflow-hidden rounded-2xl border border-slate-200 bg-white"
+          className="space-y-px overflow-hidden rounded-2xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900"
           aria-busy="true"
         >
           {Array.from({ length: 4 }).map((_, i) => (
@@ -216,7 +216,7 @@ export default function DepartmentsSettings() {
           description="Add the first one above."
         />
       ) : (
-        <ul className="divide-y divide-slate-200 overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm">
+        <ul className="divide-y divide-slate-200 dark:divide-slate-800 overflow-hidden rounded-2xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 shadow-sm">
           {rows.map((d) => {
             const editing = editingId === d.id;
             const busy = busyId === d.id;
@@ -243,7 +243,7 @@ export default function DepartmentsSettings() {
                         maxLength={60}
                         autoFocus
                         aria-label={`New name for ${d.name}`}
-                        className="h-9 min-w-0 flex-1 rounded-lg border border-slate-200 bg-white px-2.5 text-sm text-slate-900 focus:border-brand focus:outline-none focus:ring-2 focus:ring-brand/25"
+                        className="h-9 min-w-0 flex-1 rounded-lg border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 px-2.5 text-sm text-slate-900 dark:text-slate-100 focus:border-brand focus:outline-none focus:ring-2 focus:ring-brand/25"
                       />
                       <IconButton
                         label="Save the new name"
@@ -265,12 +265,12 @@ export default function DepartmentsSettings() {
                       <p
                         className={cn(
                           "truncate text-sm font-medium",
-                          d.is_active ? "text-slate-900" : "text-slate-400",
+                          d.is_active ? "text-slate-900 dark:text-slate-100" : "text-slate-400 dark:text-slate-500",
                         )}
                       >
                         {d.name}
                       </p>
-                      <p className="text-xs text-slate-500">
+                      <p className="text-xs text-slate-500 dark:text-slate-400">
                         {d.users} {d.users === 1 ? "person" : "people"}
                       </p>
                     </>
@@ -278,7 +278,7 @@ export default function DepartmentsSettings() {
                 </div>
 
                 {!d.is_active && !editing && (
-                  <span className="rounded-full bg-slate-100 px-2 py-0.5 text-xs font-medium text-slate-600 ring-1 ring-inset ring-slate-200">
+                  <span className="rounded-full bg-slate-100 dark:bg-slate-800 px-2 py-0.5 text-xs font-medium text-slate-600 dark:text-slate-300 ring-1 ring-inset ring-slate-200 dark:ring-slate-800">
                     Hidden
                   </span>
                 )}
@@ -315,7 +315,7 @@ export default function DepartmentsSettings() {
                         setDeleteError("");
                         setDeleting(d);
                       }}
-                      className="inline-flex h-9 w-9 shrink-0 items-center justify-center rounded-lg text-rose-600 transition hover:bg-rose-50 active:scale-95 disabled:cursor-not-allowed disabled:opacity-60"
+                      className="inline-flex h-9 w-9 shrink-0 items-center justify-center rounded-lg text-rose-600 dark:text-rose-400 transition hover:bg-rose-50 dark:hover:bg-rose-950 active:scale-95 disabled:cursor-not-allowed disabled:opacity-60"
                     >
                       <Trash2 className="h-4 w-4" />
                     </button>

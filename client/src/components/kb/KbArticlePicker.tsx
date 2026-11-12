@@ -93,7 +93,7 @@ export default function KbArticlePicker({
     <div ref={wrapRef}>
       <div className="relative">
         <Search
-          className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-400"
+          className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-400 dark:text-slate-500"
           aria-hidden
         />
         <input
@@ -117,11 +117,11 @@ export default function KbArticlePicker({
             setOpen(true);
           }}
           onKeyDown={onKeyDown}
-          className="h-10 w-full rounded-lg border border-slate-200 bg-white pl-9 pr-9 text-sm text-slate-900 transition placeholder:text-slate-400 focus:border-brand focus:outline-none focus:ring-2 focus:ring-brand/25 disabled:cursor-not-allowed disabled:opacity-60"
+          className="h-10 w-full rounded-lg border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 pl-9 pr-9 text-sm text-slate-900 dark:text-slate-100 transition placeholder:text-slate-400 dark:placeholder:text-slate-500 focus:border-brand focus:outline-none focus:ring-2 focus:ring-brand/25 disabled:cursor-not-allowed disabled:opacity-60"
         />
         {loading && (
           <Loader2
-            className="absolute right-3 top-1/2 h-4 w-4 -translate-y-1/2 animate-spin text-slate-400"
+            className="absolute right-3 top-1/2 h-4 w-4 -translate-y-1/2 animate-spin text-slate-400 dark:text-slate-500"
             aria-label="Searching"
           />
         )}
@@ -133,14 +133,14 @@ export default function KbArticlePicker({
           id={listId}
           role="listbox"
           aria-label="Knowledge base articles"
-          className="mt-1 max-h-64 animate-fade-in overflow-y-auto rounded-xl border border-slate-200 bg-white shadow-sm"
+          className="mt-1 max-h-64 animate-fade-in overflow-y-auto rounded-xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 shadow-sm"
         >
           {failed ? (
-            <p className="px-3 py-3 text-sm text-slate-500">
+            <p className="px-3 py-3 text-sm text-slate-500 dark:text-slate-400">
               Could not search right now. Please try again.
             </p>
           ) : items.length === 0 ? (
-            <p className="px-3 py-3 text-sm text-slate-500">
+            <p className="px-3 py-3 text-sm text-slate-500 dark:text-slate-400">
               {loading
                 ? "Searching…"
                 : debounced
@@ -157,8 +157,8 @@ export default function KbArticlePicker({
                 onMouseEnter={() => setActive(i)}
                 onClick={() => choose(a)}
                 className={cn(
-                  "cursor-pointer border-b border-slate-100 px-3 py-2 last:border-b-0",
-                  i === active && "bg-slate-100",
+                  "cursor-pointer border-b border-slate-100 dark:border-slate-800 px-3 py-2 last:border-b-0",
+                  i === active && "bg-slate-100 dark:bg-slate-800",
                 )}
               >
                 <div className="flex items-center gap-2">
@@ -166,14 +166,14 @@ export default function KbArticlePicker({
                     className="h-4 w-4 shrink-0 text-brand"
                     aria-hidden
                   />
-                  <span className="min-w-0 flex-1 truncate text-sm font-medium text-slate-900">
+                  <span className="min-w-0 flex-1 truncate text-sm font-medium text-slate-900 dark:text-slate-100">
                     {a.title}
                   </span>
-                  <span className="shrink-0 rounded bg-slate-100 px-1.5 py-0.5 font-mono text-[11px] text-slate-500">
+                  <span className="shrink-0 rounded bg-slate-100 dark:bg-slate-800 px-1.5 py-0.5 font-mono text-[11px] text-slate-500 dark:text-slate-400">
                     {a.unit_code ?? "All units"}
                   </span>
                 </div>
-                <p className="mt-0.5 truncate pl-6 text-xs text-slate-500">
+                <p className="mt-0.5 truncate pl-6 text-xs text-slate-500 dark:text-slate-400">
                   {a.excerpt}
                 </p>
               </div>

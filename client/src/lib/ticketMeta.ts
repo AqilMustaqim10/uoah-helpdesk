@@ -23,22 +23,22 @@ export const STATUS_META: Record<
 > = {
   OPEN: {
     label: "Open",
-    chip: "bg-emerald-50 text-emerald-700 ring-emerald-200",
+    chip: "bg-emerald-50 dark:bg-emerald-950 text-emerald-700 dark:text-emerald-300 ring-emerald-200 dark:ring-emerald-800",
     icon: CircleDot,
   },
   IN_PROGRESS: {
     label: "In progress",
-    chip: "bg-amber-50 text-amber-700 ring-amber-200",
+    chip: "bg-amber-50 dark:bg-amber-950 text-amber-700 dark:text-amber-300 ring-amber-200 dark:ring-amber-800",
     icon: Clock,
   },
   RESOLVED: {
     label: "Resolved",
-    chip: "bg-emerald-50 text-emerald-700 ring-emerald-200",
+    chip: "bg-emerald-50 dark:bg-emerald-950 text-emerald-700 dark:text-emerald-300 ring-emerald-200 dark:ring-emerald-800",
     icon: CheckCircle2,
   },
   CLOSED: {
     label: "Closed",
-    chip: "bg-slate-100 text-slate-600 ring-slate-200",
+    chip: "bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300 ring-slate-200 dark:ring-slate-800",
     icon: Lock,
   },
 };
@@ -54,16 +54,16 @@ export const SLA_TARGET_HOURS: Record<Priority, number> = {
 
 export const PRIORITY_META: Record<Priority, { label: string; chip: string }> =
   {
-    LOW: { label: "Low", chip: "bg-slate-100 text-slate-500 ring-slate-200" },
+    LOW: { label: "Low", chip: "bg-slate-100 dark:bg-slate-800 text-slate-500 dark:text-slate-400 ring-slate-200 dark:ring-slate-800" },
     MEDIUM: {
       label: "Medium",
-      chip: "bg-slate-100 text-slate-700 ring-slate-300",
+      chip: "bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-200 ring-slate-300 dark:ring-slate-700",
     },
     HIGH: {
       label: "High",
-      chip: "bg-indigo-50 text-indigo-700 ring-indigo-200",
+      chip: "bg-indigo-50 dark:bg-indigo-950 text-indigo-700 dark:text-indigo-300 ring-indigo-200 dark:ring-indigo-800",
     },
-    URGENT: { label: "Urgent", chip: "bg-rose-50 text-rose-700 ring-rose-200" },
+    URGENT: { label: "Urgent", chip: "bg-rose-50 dark:bg-rose-950 text-rose-700 dark:text-rose-300 ring-rose-200 dark:ring-rose-800" },
   };
 
 /** Buttons shown for each current status. */

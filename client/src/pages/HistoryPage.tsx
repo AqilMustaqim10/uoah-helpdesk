@@ -44,8 +44,8 @@ const EMPTY: HistoryQuery = {
 };
 
 const FIELD =
-  "h-9 rounded-lg border border-slate-200 bg-white px-2.5 text-sm text-slate-700 transition " +
-  "placeholder:text-slate-400 focus:border-brand focus:outline-none focus:ring-2 focus:ring-brand/25";
+  "h-9 rounded-lg border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 px-2.5 text-sm text-slate-700 dark:text-slate-200 transition " +
+  "placeholder:text-slate-400 dark:placeholder:text-slate-500 focus:border-brand focus:outline-none focus:ring-2 focus:ring-brand/25";
 
 interface Props {
   user: User;
@@ -147,10 +147,10 @@ export default function HistoryPage({ user, version, onManage }: Props) {
   return (
     <div className="space-y-4">
       <div>
-        <h2 className="text-base font-semibold text-slate-900">
+        <h2 className="text-base font-semibold text-slate-900 dark:text-slate-100">
           Ticket history
         </h2>
-        <p className="text-sm text-slate-500">
+        <p className="text-sm text-slate-500 dark:text-slate-400">
           Resolved and closed tickets from every business unit.{" "}
           {isAdmin ? (
             "Open a ticket to read it, or to manage it."
@@ -166,7 +166,7 @@ export default function HistoryPage({ user, version, onManage }: Props) {
       <div className="space-y-3">
         <div className="relative">
           <Search
-            className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-400"
+            className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-400 dark:text-slate-500"
             aria-hidden
           />
           <input
@@ -176,7 +176,7 @@ export default function HistoryPage({ user, version, onManage }: Props) {
             maxLength={100}
             placeholder="Search by number (TKT-12), title, text or requester email"
             aria-label="Search the history"
-            className="h-10 w-full rounded-lg border border-slate-200 bg-white pl-9 pr-3 text-sm text-slate-900 transition placeholder:text-slate-400 focus:border-brand focus:outline-none focus:ring-2 focus:ring-brand/25"
+            className="h-10 w-full rounded-lg border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 pl-9 pr-3 text-sm text-slate-900 dark:text-slate-100 transition placeholder:text-slate-400 dark:placeholder:text-slate-500 focus:border-brand focus:outline-none focus:ring-2 focus:ring-brand/25"
           />
         </div>
 
@@ -198,7 +198,7 @@ export default function HistoryPage({ user, version, onManage }: Props) {
                     "inline-flex h-8 shrink-0 items-center gap-1.5 rounded-full px-3 text-sm font-medium transition-colors",
                     active
                       ? "bg-brand text-onbrand shadow-sm"
-                      : "border border-slate-200 bg-white text-slate-600 hover:bg-slate-50",
+                      : "border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 text-slate-600 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-950",
                   )}
                 >
                   {c.label}
@@ -206,7 +206,7 @@ export default function HistoryPage({ user, version, onManage }: Props) {
                     <span
                       className={cn(
                         "text-xs",
-                        active ? "opacity-90" : "text-slate-400",
+                        active ? "opacity-90" : "text-slate-400 dark:text-slate-500",
                       )}
                     >
                       {c.count}
@@ -246,7 +246,7 @@ export default function HistoryPage({ user, version, onManage }: Props) {
                 </option>
               ))}
             </select>
-            <label className="flex items-center gap-1.5 text-sm text-slate-500">
+            <label className="flex items-center gap-1.5 text-sm text-slate-500 dark:text-slate-400">
               From
               <input
                 type="date"
@@ -256,7 +256,7 @@ export default function HistoryPage({ user, version, onManage }: Props) {
                 onChange={(e) => change({ from: e.target.value })}
               />
             </label>
-            <label className="flex items-center gap-1.5 text-sm text-slate-500">
+            <label className="flex items-center gap-1.5 text-sm text-slate-500 dark:text-slate-400">
               To
               <input
                 type="date"
@@ -279,7 +279,7 @@ export default function HistoryPage({ user, version, onManage }: Props) {
 
       {firstLoad ? (
         <div
-          className="space-y-px overflow-hidden rounded-2xl border border-slate-200 bg-white"
+          className="space-y-px overflow-hidden rounded-2xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900"
           aria-busy="true"
         >
           {Array.from({ length: 5 }).map((_, i) => (
@@ -291,12 +291,12 @@ export default function HistoryPage({ user, version, onManage }: Props) {
         </div>
       ) : data && data.tickets.length > 0 ? (
         <>
-          <p className="text-sm text-slate-500">
+          <p className="text-sm text-slate-500 dark:text-slate-400">
             {data.total} ticket{data.total === 1 ? "" : "s"}
           </p>
           <ul
             className={cn(
-              "divide-y divide-slate-200 overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm transition-opacity",
+              "divide-y divide-slate-200 dark:divide-slate-800 overflow-hidden rounded-2xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 shadow-sm transition-opacity",
               loading && "opacity-60",
             )}
           >
@@ -305,18 +305,18 @@ export default function HistoryPage({ user, version, onManage }: Props) {
                 <button
                   type="button"
                   onClick={() => setOpenId(t.id)}
-                  className="flex w-full flex-col gap-2 px-4 py-3 text-left transition-colors hover:bg-slate-50 sm:flex-row sm:items-center sm:gap-4"
+                  className="flex w-full flex-col gap-2 px-4 py-3 text-left transition-colors hover:bg-slate-50 dark:hover:bg-slate-950 sm:flex-row sm:items-center sm:gap-4"
                 >
                   <div className="min-w-0 flex-1">
                     <div className="flex items-baseline gap-2">
-                      <span className="shrink-0 font-mono text-xs font-medium text-slate-500">
+                      <span className="shrink-0 font-mono text-xs font-medium text-slate-500 dark:text-slate-400">
                         {ticketRef(t.id)}
                       </span>
-                      <span className="truncate text-sm font-medium text-slate-900">
+                      <span className="truncate text-sm font-medium text-slate-900 dark:text-slate-100">
                         {t.title}
                       </span>
                     </div>
-                    <div className="mt-1 flex flex-wrap items-center gap-x-3 gap-y-1 text-xs text-slate-500">
+                    <div className="mt-1 flex flex-wrap items-center gap-x-3 gap-y-1 text-xs text-slate-500 dark:text-slate-400">
                       <span className="font-mono" title={t.unit_name}>
                         {t.unit_code}
                       </span>

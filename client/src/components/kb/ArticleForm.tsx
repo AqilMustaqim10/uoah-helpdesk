@@ -111,10 +111,10 @@ export default function ArticleForm({
   return (
     <form onSubmit={submit} className="space-y-4 p-6" noValidate>
       <div className="pr-10">
-        <h2 className="text-lg font-semibold text-slate-900">
+        <h2 className="text-lg font-semibold text-slate-900 dark:text-slate-100">
           {initial ? "Edit article" : "New article"}
         </h2>
-        <p className="text-sm text-slate-500">
+        <p className="text-sm text-slate-500 dark:text-slate-400">
           Plain text. You can attach pictures and PDFs after saving.
         </p>
       </div>

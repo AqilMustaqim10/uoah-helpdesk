@@ -21,7 +21,7 @@ export default function Pagination({ page, pageSize, total, onPage }: Props) {
       className="flex items-center justify-between gap-3 pt-4"
       aria-label="Pagination"
     >
-      <p className="text-sm text-slate-500">
+      <p className="text-sm text-slate-500 dark:text-slate-400">
         {from}-{to} of {total}
       </p>
       <div className="flex items-center gap-2">
@@ -34,7 +34,7 @@ export default function Pagination({ page, pageSize, total, onPage }: Props) {
         >
           Previous
         </Button>
-        <span className="text-sm text-slate-500">
+        <span className="text-sm text-slate-500 dark:text-slate-400">
           {page} / {pages}
         </span>
         <Button

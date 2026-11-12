@@ -98,8 +98,8 @@ export default function CreateUserModal({
     <Modal label="Add user" onClose={onClose} size="lg">
       <form onSubmit={submit} className="space-y-4 p-6" noValidate>
         <div className="pr-10">
-          <h2 className="text-lg font-semibold text-slate-900">Add user</h2>
-          <p className="text-sm text-slate-500">
+          <h2 className="text-lg font-semibold text-slate-900 dark:text-slate-100">Add user</h2>
+          <p className="text-sm text-slate-500 dark:text-slate-400">
             The person receives an email with steps to choose their own
             password. Nobody else ever sees it.
           </p>
@@ -165,10 +165,10 @@ export default function CreateUserModal({
           ) : (
             // IT: shown but fixed
             <div>
-              <p className="mb-1.5 text-sm font-medium text-slate-700">
+              <p className="mb-1.5 text-sm font-medium text-slate-700 dark:text-slate-200">
                 Business unit
               </p>
-              <p className="flex h-10 items-center rounded-lg border border-slate-200 bg-slate-50 px-3 text-sm text-slate-600">
+              <p className="flex h-10 items-center rounded-lg border border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-slate-950 px-3 text-sm text-slate-600 dark:text-slate-300">
                 {actor.branding?.name ?? "Your business unit"}
               </p>
             </div>
@@ -187,29 +187,29 @@ export default function CreateUserModal({
               <option value="ADMIN">Administrator</option>
             </Select>
             {role !== "USER" && (
-              <p className="text-xs text-slate-500">
+              <p className="text-xs text-slate-500 dark:text-slate-400">
                 This person will set up an authenticator app (two-factor) the
                 first time they sign in.
               </p>
             )}
             {role === "ADMIN" && (
-              <label className="flex items-start gap-2 text-sm text-slate-700">
+              <label className="flex items-start gap-2 text-sm text-slate-700 dark:text-slate-200">
                 <input
                   type="checkbox"
                   checked={confirmAdmin}
                   onChange={(e) => setConfirmAdmin(e.target.checked)}
-                  className="mt-0.5 h-4 w-4 rounded border-slate-300"
+                  className="mt-0.5 h-4 w-4 rounded border-slate-300 dark:border-slate-700"
                 />
                 I understand that administrators see every ticket in every unit
                 and manage all users.
               </label>
             )}
             {errors.confirm && (
-              <p className="text-xs text-rose-600">{errors.confirm}</p>
+              <p className="text-xs text-rose-600 dark:text-rose-400">{errors.confirm}</p>
             )}
           </div>
         ) : (
-          <p className="text-xs text-slate-500">
+          <p className="text-xs text-slate-500 dark:text-slate-400">
             The account is a normal user account in your business unit.
           </p>
         )}

@@ -50,18 +50,18 @@ export default function ReportLogoPreview({ bu }: { bu: string }) {
   }, [bu]);
 
   return (
-    <div className="rounded-xl border border-slate-200 p-3">
-      <p className="text-xs font-medium uppercase tracking-wide text-slate-500">
+    <div className="rounded-xl border border-slate-200 dark:border-slate-800 p-3">
+      <p className="text-xs font-medium uppercase tracking-wide text-slate-500 dark:text-slate-400">
         Logo on the PDF
       </p>
       <div className="mt-2 flex items-center gap-3">
         {/* Paper is white, so this box is ALWAYS white (dark mode must not change how the logo looks) */}
         <div
-          className="flex h-16 w-40 shrink-0 items-center justify-center overflow-hidden rounded-lg border border-slate-200 p-1"
+          className="flex h-16 w-40 shrink-0 items-center justify-center overflow-hidden rounded-lg border border-slate-200 dark:border-slate-800 p-1"
           style={{ background: "#ffffff" }}
         >
           {error ? (
-            <ImageOff className="h-6 w-6 text-slate-400" aria-hidden />
+            <ImageOff className="h-6 w-6 text-slate-400 dark:text-slate-500" aria-hidden />
           ) : !preview ? (
             <Skeleton className="h-full w-full" />
           ) : preview.imageDataUrl ? (
@@ -82,20 +82,20 @@ export default function ReportLogoPreview({ bu }: { bu: string }) {
 
         <div className="min-w-0 text-sm" aria-live="polite">
           {error ? (
-            <p className="text-xs text-rose-600">{error}</p>
+            <p className="text-xs text-rose-600 dark:text-rose-400">{error}</p>
           ) : preview ? (
             <>
-              <p className="truncate font-medium text-slate-900">
+              <p className="truncate font-medium text-slate-900 dark:text-slate-100">
                 {preview.unit}
               </p>
-              <p className="text-xs text-slate-500">
+              <p className="text-xs text-slate-500 dark:text-slate-400">
                 {preview.problem
                   ? NOTES[preview.problem]
                   : "This logo appears at the top right of the PDF."}
               </p>
             </>
           ) : (
-            <p className="text-xs text-slate-500">Loading the logo…</p>
+            <p className="text-xs text-slate-500 dark:text-slate-400">Loading the logo…</p>
           )}
         </div>
       </div>

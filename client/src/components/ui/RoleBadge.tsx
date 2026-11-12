@@ -3,9 +3,9 @@ import type { Role } from "../../types";
 import { cn } from "../../lib/cn";
 
 const STYLES: Record<Role, string> = {
-  ADMIN: "bg-indigo-50 text-indigo-700 ring-indigo-200",
-  IT: "bg-emerald-50 text-emerald-700 ring-emerald-200",
-  USER: "bg-slate-100 text-slate-600 ring-slate-200",
+  ADMIN: "bg-indigo-50 dark:bg-indigo-950 text-indigo-700 dark:text-indigo-300 ring-indigo-200 dark:ring-indigo-800",
+  IT: "bg-emerald-50 dark:bg-emerald-950 text-emerald-700 dark:text-emerald-300 ring-emerald-200 dark:ring-emerald-800",
+  USER: "bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300 ring-slate-200 dark:ring-slate-800",
 };
 
 export default function RoleBadge({ role }: { role: Role }) {

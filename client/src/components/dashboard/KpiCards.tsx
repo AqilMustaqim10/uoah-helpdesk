@@ -1,4 +1,6 @@
-// The row of number cards at the top of the dashboard. Numbers count up when they appear.
+// The number tiles of the dashboard bento. Numbers count up when they appear.
+// DashboardPage decides where each tile sits on the grid (and which ones are large).
+import { useEffect, useState } from "react";
 import {
   CheckCircle2,
   CircleDot,
@@ -10,111 +12,126 @@ import {
 } from "lucide-react";
 import { useCountUp } from "../../hooks/useCountUp";
 import type { DashboardStats } from "../../types";
+import { cn } from "../../lib/cn";
+import { BentoCard } from "../ui/Bento";
 
-interface CardDef {
-  key: keyof DashboardStats["kpis"];
+export type KpiKey = keyof DashboardStats["kpis"];
+
+interface KpiDef {
   label: string;
   hint?: string;
   icon: LucideIcon;
-  tone: string; // colors of the small icon bubble
+  /** Colors of the small icon bubble, light and dark. */
+  tone: string;
   suffix?: string;
 }
 
-const CARDS: CardDef[] = [
-  {
-    key: "total",
+const DEFS: Partial<Record<KpiKey, KpiDef>> = {
+  total: {
     label: "Total tickets",
+    hint: "Everything in view",
     icon: Ticket,
-    tone: "bg-slate-100 text-slate-600",
+    tone: "bg-slate-100 text-slate-600 dark:bg-slate-800 dark:text-slate-300",
   },
-  {
-    key: "open",
+  open: {
     label: "Open",
     icon: CircleDot,
-    tone: "bg-emerald-50 text-emerald-700",
+    tone: "bg-emerald-50 text-emerald-700 dark:bg-emerald-950 dark:text-emerald-300",
   },
-  {
-    key: "in_progress",
+  in_progress: {
     label: "In progress",
     icon: Clock,
-    tone: "bg-amber-50 text-amber-700",
+    tone: "bg-amber-50 text-amber-700 dark:bg-amber-950 dark:text-amber-300",
   },
-  {
-    key: "resolved",
+  resolved: {
     label: "Resolved",
     icon: CheckCircle2,
-    tone: "bg-emerald-50 text-emerald-700",
+    tone: "bg-emerald-50 text-emerald-700 dark:bg-emerald-950 dark:text-emerald-300",
   },
-  {
-    key: "urgent",
+  urgent: {
     label: "Urgent",
     hint: "Still open or in progress",
     icon: Flame,
-    tone: "bg-rose-50 text-rose-700",
+    tone: "bg-rose-50 text-rose-700 dark:bg-rose-950 dark:text-rose-300",
   },
-  {
-    key: "sla",
+  sla: {
     label: "SLA met",
     hint: "Active tickets on track",
     icon: Gauge,
-    tone: "bg-sky-50 text-sky-700",
+    tone: "bg-sky-50 text-sky-700 dark:bg-sky-950 dark:text-sky-300",
     suffix: "%",
   },
-];
+};
 
-function Card({
-  def,
-  value,
-  onSelect,
-}: {
-  def: CardDef;
+interface Props {
+  kpiKey: KpiKey;
   value: number;
   onSelect: () => void;
-}) {
+  /** Grid placement, e.g. "col-span-2". */
+  className?: string;
+  /** A bigger tile with a bigger number. */
+  large?: boolean;
+}
+
+export function KpiCard({ kpiKey, value, onSelect, className, large }: Props) {
+  const def = DEFS[kpiKey];
   const shown = useCountUp(value);
+  // The SLA bar starts empty and fills once the tile is on screen
+  const [filled, setFilled] = useState(false);
+  useEffect(() => {
+    const frame = requestAnimationFrame(() => setFilled(true));
+    return () => cancelAnimationFrame(frame);
+  }, []);
+  if (!def) return null;
   const Icon = def.icon;
+  const isSla = kpiKey === "sla";
+
   return (
-    <button
-      type="button"
+    <BentoCard
+      className={className}
       onClick={onSelect}
       disabled={value === 0}
-      className="rounded-2xl border border-slate-200 bg-white p-4 text-left shadow-sm transition enabled:hover:border-brand/40 enabled:hover:shadow-md focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand focus-visible:ring-offset-2 disabled:cursor-default"
       aria-label={`View ${value} ${def.label.toLowerCase()} tickets`}
+      innerClassName="flex flex-col"
     >
-      <div className="flex items-center justify-between">
-        <p className="text-sm text-slate-500">{def.label}</p>
+      <div className="flex items-center justify-between gap-2">
+        <p className="text-sm text-slate-500 dark:text-slate-400">{def.label}</p>
         <span
-          className={`flex h-8 w-8 items-center justify-center rounded-lg ${def.tone}`}
+          className={cn(
+            "flex h-8 w-8 shrink-0 items-center justify-center rounded-lg",
+            def.tone,
+          )}
         >
           <Icon className="h-4 w-4" aria-hidden />
         </span>
       </div>
-      <p className="mt-2 text-3xl font-semibold tabular-nums text-slate-900">
+      <p
+        className={cn(
+          "mt-2 font-semibold tabular-nums text-slate-900 dark:text-slate-100",
+          // the SLA figure is a metric like a timestamp: monospaced
+          isSla && "font-mono",
+          large ? "text-4xl" : "text-3xl",
+        )}
+      >
         {shown}
         {def.suffix ?? ""}
       </p>
-      {def.hint && <p className="mt-0.5 text-xs text-slate-400">{def.hint}</p>}
-    </button>
-  );
-}
-
-export default function KpiCards({
-  kpis,
-  onSelect,
-}: {
-  kpis: DashboardStats["kpis"];
-  onSelect: (key: keyof DashboardStats["kpis"]) => void;
-}) {
-  return (
-    <div className="grid grid-cols-2 gap-3 lg:grid-cols-6">
-      {CARDS.map((c) => (
-        <Card
-          key={c.key}
-          def={c}
-          value={kpis[c.key]}
-          onSelect={() => onSelect(c.key)}
-        />
-      ))}
-    </div>
+      {isSla && (
+        <div
+          className="mt-3 h-1.5 overflow-hidden rounded-full bg-slate-100 dark:bg-slate-800"
+          aria-hidden
+        >
+          <div
+            className="h-full rounded-full bg-brand transition-[width] duration-700 ease-out"
+            style={{ width: filled ? `${Math.min(100, value)}%` : "0%" }}
+          />
+        </div>
+      )}
+      {def.hint && (
+        <p className="mt-auto pt-1.5 text-xs text-slate-400 dark:text-slate-500">
+          {def.hint}
+        </p>
+      )}
+    </BentoCard>
   );
 }

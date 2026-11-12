@@ -151,12 +151,12 @@ export default function SignupForm({
     return (
       <form onSubmit={submitCode} className="space-y-4" noValidate>
         <div className="space-y-1">
-          <h2 className="text-xl font-semibold tracking-tight text-slate-900">
+          <h2 className="text-xl font-semibold tracking-tight text-slate-900 dark:text-slate-100">
             Check your email
           </h2>
-          <p className="text-sm text-slate-500">
+          <p className="text-sm text-slate-500 dark:text-slate-400">
             We sent a 6-digit code to{" "}
-            <span className="font-medium text-slate-700">{email.trim()}</span>.
+            <span className="font-medium text-slate-700 dark:text-slate-200">{email.trim()}</span>.
             It expires in 10 minutes.
           </p>
         </div>
@@ -175,7 +175,7 @@ export default function SignupForm({
               setStep("details");
               setFormError("");
             }}
-            className="inline-flex items-center gap-1 text-slate-500 hover:text-slate-700"
+            className="inline-flex items-center gap-1 text-slate-500 dark:text-slate-400 hover:text-slate-700 dark:hover:text-slate-200"
           >
             <ArrowLeft className="h-4 w-4" /> Change details
           </button>
@@ -183,7 +183,7 @@ export default function SignupForm({
             type="button"
             onClick={resend}
             disabled={cooldown > 0 || busy}
-            className="font-medium text-indigo-600 hover:underline disabled:cursor-not-allowed disabled:text-slate-400 disabled:no-underline"
+            className="font-medium text-indigo-600 dark:text-indigo-400 hover:underline disabled:cursor-not-allowed disabled:text-slate-400 dark:disabled:text-slate-500 disabled:no-underline"
           >
             {cooldown > 0 ? `Resend code in ${cooldown}s` : "Resend code"}
           </button>
@@ -196,10 +196,10 @@ export default function SignupForm({
   return (
     <form onSubmit={submitDetails} className="space-y-3" noValidate>
       <div className="space-y-1">
-        <h2 className="text-xl font-semibold tracking-tight text-slate-900">
+        <h2 className="text-xl font-semibold tracking-tight text-slate-900 dark:text-slate-100">
           Create your account
         </h2>
-        <p className="text-sm text-slate-500">
+        <p className="text-sm text-slate-500 dark:text-slate-400">
           Use your company email address.
         </p>
       </div>
@@ -289,12 +289,12 @@ export default function SignupForm({
         Send me a code
       </Button>
 
-      <p className="text-center text-sm text-slate-500">
+      <p className="text-center text-sm text-slate-500 dark:text-slate-400">
         Already have an account?{" "}
         <button
           type="button"
           onClick={onBackToLogin}
-          className="font-medium text-indigo-600 hover:underline"
+          className="font-medium text-indigo-600 dark:text-indigo-400 hover:underline"
         >
           Sign in
         </button>

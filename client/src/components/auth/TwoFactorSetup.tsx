@@ -107,10 +107,10 @@ export default function TwoFactorSetup({ onBack }: { onBack: () => void }) {
     return (
       <div className="space-y-4">
         <div>
-          <h2 className="text-lg font-semibold text-slate-900">
+          <h2 className="text-lg font-semibold text-slate-900 dark:text-slate-100">
             Two-factor authentication is on
           </h2>
-          <p className="text-sm text-slate-500">
+          <p className="text-sm text-slate-500 dark:text-slate-400">
             One last thing: your recovery codes.
           </p>
         </div>
@@ -130,27 +130,27 @@ export default function TwoFactorSetup({ onBack }: { onBack: () => void }) {
   return (
     <div className="space-y-4">
       <div>
-        <h2 className="text-lg font-semibold text-slate-900">
+        <h2 className="text-lg font-semibold text-slate-900 dark:text-slate-100">
           Set up two-factor authentication
         </h2>
-        <p className="text-sm text-slate-500">
+        <p className="text-sm text-slate-500 dark:text-slate-400">
           Your role needs an extra step when you sign in. It takes about a
           minute.
         </p>
       </div>
 
-      <ol className="space-y-1 text-sm text-slate-600">
+      <ol className="space-y-1 text-sm text-slate-600 dark:text-slate-300">
         <li>
-          <span className="font-medium text-slate-900">1.</span> Install an
+          <span className="font-medium text-slate-900 dark:text-slate-100">1.</span> Install an
           authenticator app on your phone (Microsoft Authenticator, Google
           Authenticator, Authy or 1Password).
         </li>
         <li>
-          <span className="font-medium text-slate-900">2.</span> In the app, add
+          <span className="font-medium text-slate-900 dark:text-slate-100">2.</span> In the app, add
           an account by scanning this code.
         </li>
         <li>
-          <span className="font-medium text-slate-900">3.</span> Type the
+          <span className="font-medium text-slate-900 dark:text-slate-100">3.</span> Type the
           6-digit code the app shows.
         </li>
       </ol>
@@ -174,29 +174,29 @@ export default function TwoFactorSetup({ onBack }: { onBack: () => void }) {
               alt="QR code for your authenticator app"
               width={224}
               height={224}
-              className="rounded-lg border border-slate-200"
+              className="rounded-lg border border-slate-200 dark:border-slate-800"
               style={{ background: "#ffffff" }}
             />
           </div>
 
-          <div className="rounded-lg bg-slate-50 p-3 text-center">
-            <p className="text-xs text-slate-500">
+          <div className="rounded-lg bg-slate-50 dark:bg-slate-950 p-3 text-center">
+            <p className="text-xs text-slate-500 dark:text-slate-400">
               Cannot scan? Enter this key by hand:
             </p>
-            <p className="mt-1 break-all font-mono text-sm tracking-wider text-slate-900">
+            <p className="mt-1 break-all font-mono text-sm tracking-wider text-slate-900 dark:text-slate-100">
               {info.secret.replace(/(.{4})/g, "$1 ").trim()}
             </p>
             <div className="mt-2 flex flex-wrap items-center justify-center gap-3">
               <button
                 type="button"
                 onClick={() => void copyKey()}
-                className="inline-flex items-center gap-1 text-xs font-medium text-indigo-600 hover:underline"
+                className="inline-flex items-center gap-1 text-xs font-medium text-indigo-600 dark:text-indigo-400 hover:underline"
               >
                 <Copy className="h-3 w-3" aria-hidden /> Copy key
               </button>
               <a
                 href={info.uri}
-                className="inline-flex items-center gap-1 text-xs font-medium text-indigo-600 hover:underline"
+                className="inline-flex items-center gap-1 text-xs font-medium text-indigo-600 dark:text-indigo-400 hover:underline"
               >
                 <Smartphone className="h-3 w-3" aria-hidden /> On your phone?
                 Open in the app
@@ -217,7 +217,7 @@ export default function TwoFactorSetup({ onBack }: { onBack: () => void }) {
       <button
         type="button"
         onClick={() => void back()}
-        className="inline-flex items-center gap-1 text-sm text-slate-500 hover:text-slate-700"
+        className="inline-flex items-center gap-1 text-sm text-slate-500 dark:text-slate-400 hover:text-slate-700 dark:hover:text-slate-200"
       >
         <ArrowLeft className="h-4 w-4" /> Cancel and sign out
       </button>

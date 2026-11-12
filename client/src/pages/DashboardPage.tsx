@@ -20,12 +20,14 @@ import type {
 import BreakdownBars, {
   type BarItem,
 } from "../components/dashboard/BreakdownBars";
-import KpiCards from "../components/dashboard/KpiCards";
+import { KpiCard, type KpiKey } from "../components/dashboard/KpiCards";
 import OverdueBanner from "../components/dashboard/OverdueBanner";
 import TrendChart from "../components/dashboard/TrendChart";
 import EmptyState from "../components/ui/EmptyState";
 import FormError from "../components/ui/FormError";
-import Skeleton from "../components/ui/Skeleton";
+import { BentoCard } from "../components/ui/Bento";
+import { DashboardSkeleton } from "../components/ui/skeletons";
+import { cn } from "../lib/cn";
 import Button from "../components/ui/Button";
 
 interface Props {
@@ -37,8 +39,8 @@ interface Props {
 
 // Bar colors for each priority (only the colors dark mode knows about)
 const PRIORITY_BAR: Record<string, string> = {
-  LOW: "bg-slate-300",
-  MEDIUM: "bg-slate-400",
+  LOW: "bg-slate-300 dark:bg-slate-600",
+  MEDIUM: "bg-slate-400 dark:bg-slate-500",
   HIGH: "bg-indigo-500",
   URGENT: "bg-rose-500",
 };
@@ -50,8 +52,12 @@ const EMPTY_FILTERS: DashboardFilters = {
   createdWithin: "",
 };
 
+// The dashboard is one Bento grid: 2 columns on phones, 6 on large screens.
+const GRID = "grid grid-cols-2 gap-3 sm:gap-4 lg:grid-cols-6";
+const FULL = "col-span-2 lg:col-span-6";
+
 const SELECT_CLASS =
-  "h-9 rounded-lg border border-slate-200 bg-white px-2.5 text-sm text-slate-700 focus:border-brand focus:outline-none focus:ring-2 focus:ring-brand/25";
+  "h-9 rounded-lg border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 px-2.5 text-sm text-slate-700 dark:text-slate-200 focus:border-brand focus:outline-none focus:ring-2 focus:ring-brand/25";
 
 export default function DashboardPage({
   user,
@@ -125,9 +131,9 @@ export default function DashboardPage({
     createdWithin: filters.createdWithin,
   };
   const filterBar = (
-    <div className="space-y-2 rounded-2xl border border-slate-200 bg-white p-4 shadow-sm">
+    <BentoCard className={FULL} label="Dashboard filters" innerClassName="space-y-2 !p-3 sm:!p-4">
       <div className="flex flex-wrap items-center gap-2">
-        <span className="mr-1 text-sm font-medium text-slate-700">Filter dashboard:</span>
+        <span className="mr-1 text-sm font-medium text-slate-700 dark:text-slate-200">Filter dashboard:</span>
         {user.role === "ADMIN" && (
           <select
             aria-label="Filter dashboard by business unit"
@@ -208,48 +214,49 @@ export default function DashboardPage({
         )}
       </div>
       {unitError && <FormError message={unitError} />}
-    </div>
+    </BentoCard>
   );
 
   if (error && !data) {
     return (
-      <div className="space-y-4">
+      <div className={GRID}>
         {filterBar}
-        <FormError message={error} />
+        <div className={FULL}>
+          <FormError message={error} />
+        </div>
       </div>
     );
   }
 
   if (!data) {
     return (
-      <div className="space-y-4" aria-busy="true" aria-label="Loading dashboard">
-        {filterBar}
-        <div className="grid grid-cols-2 gap-3 lg:grid-cols-6">
-          {Array.from({ length: 6 }).map((_, i) => <Skeleton key={i} className="h-24" />)}
-        </div>
-        <Skeleton className="h-64" />
-        <Skeleton className="h-48" />
-      </div>
+      <DashboardSkeleton admin={user.role === "ADMIN"}>{filterBar}</DashboardSkeleton>
     );
   }
 
   if (data.kpis.total === 0) {
     return (
       <div
-        className={`space-y-4 transition-opacity ${loading ? "opacity-60" : ""}`}
+        className={cn(GRID, "transition-opacity", loading && "opacity-60")}
         aria-busy={loading}
       >
         {filterBar}
-        {error && <FormError message={error} />}
-        <EmptyState
-          icon={TicketIcon}
-          title={hasFilters ? "No tickets match these filters" : "No tickets yet"}
-          description={
-            hasFilters
-              ? "Try changing or clearing your dashboard filters."
-              : "Statistics will appear here as soon as the first ticket is created."
-          }
-        />
+        {error && (
+          <div className={FULL}>
+            <FormError message={error} />
+          </div>
+        )}
+        <div className={FULL}>
+          <EmptyState
+            icon={TicketIcon}
+            title={hasFilters ? "No tickets match these filters" : "No tickets yet"}
+            description={
+              hasFilters
+                ? "Try changing or clearing your dashboard filters."
+                : "Statistics will appear here as soon as the first ticket is created."
+            }
+          />
+        </div>
       </div>
     );
   }
@@ -274,13 +281,13 @@ export default function DashboardPage({
     {
       label: STATUS_META.RESOLVED.label,
       value: kpis.resolved,
-      bar: "bg-emerald-300",
+      bar: "bg-emerald-300 dark:bg-emerald-700",
       onClick: () => onShowTickets({ ...currentTicketFilters, status: "RESOLVED" }),
     },
     {
       label: STATUS_META.CLOSED.label,
       value: kpis.closed,
-      bar: "bg-slate-300",
+      bar: "bg-slate-300 dark:bg-slate-600",
       onClick: () => onShowTickets({ ...currentTicketFilters, status: "CLOSED" }),
     },
   ];
@@ -313,7 +320,7 @@ export default function DashboardPage({
     ? `${STATUS_META[filters.status].label} tickets`
     : "Open and in progress";
 
-  function showKpi(key: keyof typeof kpis) {
+  function showKpi(key: KpiKey) {
     const filters: Partial<TicketQuery> = {};
     const statusByKpi: Partial<Record<typeof key, TicketStatus>> = {
       open: "OPEN",
@@ -331,14 +338,32 @@ export default function DashboardPage({
     onShowTickets({ ...currentTicketFilters, ...filters });
   }
 
+  const hasTrend = trend.length > 1;
+  const wide = user.role === "ADMIN" && unitItems.length > 0; // admins get a third bar card
+  const barSpan = wide ? "col-span-2 lg:col-span-2" : "col-span-2 lg:col-span-3";
+  const tile = (key: KpiKey, extra?: { large?: boolean; className?: string }) => (
+    <KpiCard
+      kpiKey={key}
+      value={kpis[key]}
+      onSelect={() => showKpi(key)}
+      large={extra?.large}
+      className={extra?.className ?? "col-span-1"}
+    />
+  );
+
   return (
     <div
-      className={`space-y-4 transition-opacity ${loading ? "opacity-60" : ""}`}
+      className={cn(GRID, "transition-opacity", loading && "opacity-60")}
       aria-busy={loading}
     >
       {filterBar}
-      {error && <FormError message={error} />}
+      {error && (
+        <div className={FULL}>
+          <FormError message={error} />
+        </div>
+      )}
       <OverdueBanner
+        className={FULL}
         count={kpis.overdue}
         tickets={data.overdueTickets}
         onOpen={onOpen}
@@ -346,29 +371,38 @@ export default function DashboardPage({
           onShowTickets({ ...currentTicketFilters, overdueOnly: true })
         }
       />
-      <KpiCards kpis={kpis} onSelect={showKpi} />
 
-      {trend.length > 1 && <TrendChart points={trend} />}
+      {/* Row of counters: one large tile, four small */}
+      {tile("total", { large: true, className: "col-span-2" })}
+      {tile("open")}
+      {tile("in_progress")}
+      {tile("resolved")}
+      {tile("urgent")}
 
-      <div className="grid gap-4 lg:grid-cols-2">
-        <BreakdownBars
-          title="Tickets by status"
-          subtitle="All tickets"
-          items={statusItems}
-        />
-        <BreakdownBars
-          title={
-            filters.status
-              ? "Tickets by priority"
-              : "Active tickets by priority"
-          }
-          subtitle={breakdownSubtitle}
-          items={priorityItems}
-        />
-      </div>
+      {/* Trend chart beside the SLA tile */}
+      {hasTrend && <TrendChart points={trend} className="col-span-2 lg:col-span-4" />}
+      {tile("sla", {
+        large: true,
+        className: hasTrend ? "col-span-2" : "col-span-2 lg:col-span-6",
+      })}
 
-      {user.role === "ADMIN" && unitItems.length > 0 && (
+      <BreakdownBars
+        className={barSpan}
+        title="Tickets by status"
+        subtitle="All tickets"
+        items={statusItems}
+      />
+      <BreakdownBars
+        className={barSpan}
+        title={
+          filters.status ? "Tickets by priority" : "Active tickets by priority"
+        }
+        subtitle={breakdownSubtitle}
+        items={priorityItems}
+      />
+      {wide && (
         <BreakdownBars
+          className={barSpan}
           title={
             filters.status
               ? "Tickets by business unit"

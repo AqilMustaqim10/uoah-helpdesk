@@ -68,18 +68,18 @@ export default function SecurityModal({ onClose }: { onClose: () => void }) {
     <Modal label="Security" onClose={onClose} size="md">
       <div className="space-y-4 p-6">
         <div className="pr-10">
-          <h2 className="flex items-center gap-2 text-lg font-semibold text-slate-900">
-            <ShieldCheck className="h-5 w-5 text-emerald-600" aria-hidden />
+          <h2 className="flex items-center gap-2 text-lg font-semibold text-slate-900 dark:text-slate-100">
+            <ShieldCheck className="h-5 w-5 text-emerald-600 dark:text-emerald-400" aria-hidden />
             Security
           </h2>
-          <p className="text-sm text-slate-500">
+          <p className="text-sm text-slate-500 dark:text-slate-400">
             Two-factor authentication is on for your account.
           </p>
         </div>
 
         {codes ? (
           <>
-            <p className="text-sm font-medium text-slate-900">
+            <p className="text-sm font-medium text-slate-900 dark:text-slate-100">
               Your new recovery codes
             </p>
             <RecoveryCodes codes={codes} doneLabel="Done" onDone={onClose} />
@@ -90,13 +90,13 @@ export default function SecurityModal({ onClose }: { onClose: () => void }) {
           <Skeleton className="h-24 w-full" />
         ) : (
           <>
-            <p className="rounded-lg bg-slate-50 px-4 py-3 text-sm text-slate-700">
+            <p className="rounded-lg bg-slate-50 dark:bg-slate-950 px-4 py-3 text-sm text-slate-700 dark:text-slate-200">
               Recovery codes left:{" "}
               <span className="font-semibold tabular-nums">
                 {status.recoveryCodesLeft}
               </span>
               {status.recoveryCodesLeft <= 2 && (
-                <span className="text-amber-700">
+                <span className="text-amber-700 dark:text-amber-300">
                   {" "}
                   Running low: create a new set below.
                 </span>
@@ -104,7 +104,7 @@ export default function SecurityModal({ onClose }: { onClose: () => void }) {
             </p>
 
             <form onSubmit={regenerate} className="space-y-3" noValidate>
-              <p className="text-sm text-slate-600">
+              <p className="text-sm text-slate-600 dark:text-slate-300">
                 Creating a new set replaces all your old codes. Enter the
                 current code from your app to confirm.
               </p>

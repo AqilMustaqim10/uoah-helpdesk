@@ -62,10 +62,10 @@ export default function TwoFactorForm({ onBack }: { onBack: () => void }) {
   return (
     <form onSubmit={submit} className="space-y-4" noValidate>
       <div>
-        <h2 className="text-lg font-semibold text-slate-900">
+        <h2 className="text-lg font-semibold text-slate-900 dark:text-slate-100">
           Two-factor authentication
         </h2>
-        <p className="text-sm text-slate-500">
+        <p className="text-sm text-slate-500 dark:text-slate-400">
           Open your authenticator app and enter the 6-digit code for UOA IT
           Helpdesk.
         </p>
@@ -92,7 +92,7 @@ export default function TwoFactorForm({ onBack }: { onBack: () => void }) {
       <button
         type="button"
         onClick={() => void back()}
-        className="inline-flex items-center gap-1 text-sm text-slate-500 hover:text-slate-700"
+        className="inline-flex items-center gap-1 text-sm text-slate-500 dark:text-slate-400 hover:text-slate-700 dark:hover:text-slate-200"
       >
         <ArrowLeft className="h-4 w-4" /> Use a different account
       </button>

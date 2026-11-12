@@ -40,14 +40,14 @@ export default class ErrorBoundary extends Component<Props, State> {
 
     const { onClose } = this.props;
     const card = (
-      <div className="flex flex-col items-center rounded-2xl border border-slate-200 bg-white px-6 py-12 text-center">
-        <div className="mb-4 flex h-12 w-12 items-center justify-center rounded-xl bg-amber-50 text-amber-700">
+      <div className="flex flex-col items-center rounded-2xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 px-6 py-12 text-center">
+        <div className="mb-4 flex h-12 w-12 items-center justify-center rounded-xl bg-amber-50 dark:bg-amber-950 text-amber-700 dark:text-amber-300">
           <AlertTriangle className="h-6 w-6" aria-hidden />
         </div>
-        <h2 className="text-base font-semibold text-slate-900">
+        <h2 className="text-base font-semibold text-slate-900 dark:text-slate-100">
           Something went wrong
         </h2>
-        <p className="mt-1 max-w-sm text-sm text-slate-500">
+        <p className="mt-1 max-w-sm text-sm text-slate-500 dark:text-slate-400">
           This part of the page hit an unexpected problem. Your data is safe.
           Please try again.
         </p>

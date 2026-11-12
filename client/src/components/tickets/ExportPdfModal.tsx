@@ -166,10 +166,10 @@ export default function ExportPdfModal({
         noValidate
       >
         <div className="pr-10">
-          <h2 className="text-lg font-semibold text-slate-900">
+          <h2 className="text-lg font-semibold text-slate-900 dark:text-slate-100">
             Export PDF report
           </h2>
-          <p className="text-sm text-slate-500">
+          <p className="text-sm text-slate-500 dark:text-slate-400">
             Choose which tickets the report should contain.
           </p>
         </div>
@@ -241,9 +241,9 @@ export default function ExportPdfModal({
         {/* The logo the PDF will show for this business unit (IT: always their own unit) */}
         <ReportLogoPreview bu={isAdmin ? exportBu || "all" : "all"} />
         <fieldset>
-          <legend className="mb-1.5 text-sm font-medium text-slate-700">
+          <legend className="mb-1.5 text-sm font-medium text-slate-700 dark:text-slate-200">
             Period{" "}
-            <span className="font-normal text-slate-400">
+            <span className="font-normal text-slate-400 dark:text-slate-500">
               (by the day each ticket was created)
             </span>
           </legend>
@@ -255,7 +255,7 @@ export default function ExportPdfModal({
                   "inline-flex h-9 cursor-pointer items-center rounded-lg px-3 text-sm font-medium transition-colors focus-within:ring-2 focus-within:ring-brand/40",
                   period === p.key
                     ? "bg-brand text-onbrand shadow-sm"
-                    : "border border-slate-200 bg-white text-slate-600 hover:bg-slate-50",
+                    : "border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 text-slate-600 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-950",
                 )}
               >
                 <input
@@ -336,16 +336,16 @@ export default function ExportPdfModal({
 
         {/* The filters of the ticket list */}
         {listLines.length > 0 && (
-          <label className="flex items-start gap-2 text-sm text-slate-700">
+          <label className="flex items-start gap-2 text-sm text-slate-700 dark:text-slate-200">
             <input
               type="checkbox"
               checked={applyList}
               onChange={(e) => setApplyList(e.target.checked)}
-              className="mt-0.5 h-4 w-4 rounded border-slate-300"
+              className="mt-0.5 h-4 w-4 rounded border-slate-300 dark:border-slate-700"
             />
             <span>
               Also apply my current list filters
-              <span className="block text-xs text-slate-500">
+              <span className="block text-xs text-slate-500 dark:text-slate-400">
                 {listLines.join("  |  ")}
               </span>
             </span>
@@ -353,14 +353,14 @@ export default function ExportPdfModal({
         )}
 
         {/* What the PDF header will say */}
-        <div className="rounded-xl bg-slate-50 px-4 py-3">
-          <p className="text-xs font-medium uppercase tracking-wide text-slate-500">
+        <div className="rounded-xl bg-slate-50 dark:bg-slate-950 px-4 py-3">
+          <p className="text-xs font-medium uppercase tracking-wide text-slate-500 dark:text-slate-400">
             The report will say
           </p>
-          <p className="mt-1 text-sm font-semibold text-slate-900">
+          <p className="mt-1 text-sm font-semibold text-slate-900 dark:text-slate-100">
             Report for: {unitLabel} - {periodSummary(period, date, month, year)}
           </p>
-          <p className="mt-1 text-xs text-slate-500">
+          <p className="mt-1 text-xs text-slate-500 dark:text-slate-400">
             The performance summary counts tickets resolved or closed during
             this period, by assigned IT agent.
           </p>

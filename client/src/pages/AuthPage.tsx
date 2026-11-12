@@ -34,7 +34,7 @@ export default function AuthPage() {
 
   return (
     <div
-      className={`relative isolate flex min-h-dvh items-center justify-center bg-slate-50 px-4 ${
+      className={`relative isolate flex min-h-dvh items-center justify-center bg-slate-50 dark:bg-slate-950 px-4 ${
         view === "signup" ? "py-3 sm:py-5" : "py-10"
       }`}
     >
@@ -65,18 +65,18 @@ export default function AuthPage() {
         {/* key={view}: a new view replays the fade-in */}
         <div
           key={view}
-          className="auth-form-transition overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm"
+          className="auth-form-transition overflow-hidden rounded-2xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 shadow-sm"
         >
-          <div className="flex flex-col items-center border-b border-slate-200 bg-white px-4 py-3 text-center">
+          <div className="flex flex-col items-center border-b border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 px-4 py-3 text-center">
             <img
               src="/uoah-logo.png"
               alt="UOA Hospitality logo"
               className="mb-2 h-9 w-auto max-w-36 object-contain dark:brightness-0 dark:invert"
             />
-            <h1 className="text-base font-bold leading-tight tracking-tight text-slate-900">
+            <h1 className="text-base font-bold leading-tight tracking-tight text-slate-900 dark:text-slate-100">
               UDESK
             </h1>
-            <p className="mt-1 text-xs leading-tight text-slate-600">
+            <p className="mt-1 text-xs leading-tight text-slate-600 dark:text-slate-300">
               UOAH Digital Support &amp; Knowledge
             </p>
           </div>

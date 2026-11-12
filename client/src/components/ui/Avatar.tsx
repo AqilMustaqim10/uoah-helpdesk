@@ -3,11 +3,11 @@ import { initials } from "../../lib/format";
 import { cn } from "../../lib/cn";
 
 const COLORS = [
-  "bg-indigo-100 text-indigo-700",
-  "bg-emerald-100 text-emerald-700",
-  "bg-amber-100 text-amber-700",
-  "bg-rose-100 text-rose-700",
-  "bg-slate-200 text-slate-700",
+  "bg-indigo-100 dark:bg-indigo-900 text-indigo-700 dark:text-indigo-300",
+  "bg-emerald-100 dark:bg-emerald-900 text-emerald-700 dark:text-emerald-300",
+  "bg-amber-100 dark:bg-amber-900 text-amber-700 dark:text-amber-300",
+  "bg-rose-100 dark:bg-rose-900 text-rose-700 dark:text-rose-300",
+  "bg-slate-200 dark:bg-slate-700 text-slate-700 dark:text-slate-200",
 ];
 
 function colorFor(name: string): string {

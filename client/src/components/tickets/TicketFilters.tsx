@@ -26,7 +26,7 @@ interface Props {
 }
 
 const SELECT_CLASS =
-  "h-9 rounded-lg border border-slate-200 bg-white px-2.5 text-sm text-slate-700 transition " +
+  "h-9 rounded-lg border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 px-2.5 text-sm text-slate-700 dark:text-slate-200 transition " +
   "focus:border-brand focus:outline-none focus:ring-2 focus:ring-brand/25";
 
 export default function TicketFilters({
@@ -66,7 +66,7 @@ export default function TicketFilters({
     <div className="space-y-3">
       <div className="relative">
         <Search
-          className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-400"
+          className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-400 dark:text-slate-500"
           aria-hidden
         />
         <input
@@ -76,7 +76,7 @@ export default function TicketFilters({
           maxLength={100}
           placeholder="Search by number (TKT-12), title, text or requester email"
           aria-label="Search tickets"
-          className="h-10 w-full rounded-lg border border-slate-200 bg-white pl-9 pr-3 text-sm text-slate-900 transition placeholder:text-slate-400 focus:border-brand focus:outline-none focus:ring-2 focus:ring-brand/25"
+          className="h-10 w-full rounded-lg border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 pl-9 pr-3 text-sm text-slate-900 dark:text-slate-100 transition placeholder:text-slate-400 dark:placeholder:text-slate-500 focus:border-brand focus:outline-none focus:ring-2 focus:ring-brand/25"
         />
       </div>
 
@@ -99,7 +99,7 @@ export default function TicketFilters({
                   "inline-flex h-8 shrink-0 items-center gap-1.5 rounded-full px-3 text-sm font-medium transition-colors",
                   active
                     ? "bg-brand text-onbrand shadow-sm"
-                    : "border border-slate-200 bg-white text-slate-600 hover:bg-slate-50",
+                    : "border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 text-slate-600 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-950",
                 )}
               >
                 {c.label}
@@ -107,7 +107,7 @@ export default function TicketFilters({
                   <span
                     className={cn(
                       "text-xs",
-                      active ? "opacity-90" : "text-slate-400",
+                      active ? "opacity-90" : "text-slate-400 dark:text-slate-500",
                     )}
                   >
                     {c.count}
@@ -177,7 +177,7 @@ export default function TicketFilters({
             <button
               type="button"
               onClick={() => onChange({ activeOnly: false })}
-              className="rounded-full border border-slate-200 bg-slate-50 px-3 py-1 text-xs font-medium text-slate-700 hover:bg-slate-100 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand"
+              className="rounded-full border border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-slate-950 px-3 py-1 text-xs font-medium text-slate-700 dark:text-slate-200 hover:bg-slate-100 dark:hover:bg-slate-800 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand"
             >
               Active tickets ×
             </button>
@@ -186,7 +186,7 @@ export default function TicketFilters({
             <button
               type="button"
               onClick={() => onChange({ overdueOnly: false })}
-              className="rounded-full border border-rose-200 bg-rose-50 px-3 py-1 text-xs font-medium text-rose-700 hover:bg-rose-100 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand"
+              className="rounded-full border border-rose-200 dark:border-rose-800 bg-rose-50 dark:bg-rose-950 px-3 py-1 text-xs font-medium text-rose-700 dark:text-rose-300 hover:bg-rose-100 dark:hover:bg-rose-900 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand"
             >
               Overdue tickets ×
             </button>
@@ -198,7 +198,7 @@ export default function TicketFilters({
           <button
             type="button"
             onClick={() => onChange({ createdWithin: "" })}
-            className="rounded-full border border-slate-200 bg-slate-50 px-3 py-1 text-xs font-medium text-slate-700 hover:bg-slate-100 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand"
+            className="rounded-full border border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-slate-950 px-3 py-1 text-xs font-medium text-slate-700 dark:text-slate-200 hover:bg-slate-100 dark:hover:bg-slate-800 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand"
           >
             Created in last {query.createdWithin} days ×
           </button>

@@ -5,9 +5,9 @@ import type { ToastItem, ToastKind } from "../../types";
 import { cn } from "../../lib/cn";
 
 const STYLES: Record<ToastKind, string> = {
-  success: "border-emerald-200 bg-emerald-50 text-emerald-800",
-  error: "border-rose-200 bg-rose-50 text-rose-800",
-  info: "border-slate-200 bg-white text-slate-800",
+  success: "border-emerald-200 dark:border-emerald-800 bg-emerald-50 dark:bg-emerald-950 text-emerald-800 dark:text-emerald-200",
+  error: "border-rose-200 dark:border-rose-800 bg-rose-50 dark:bg-rose-950 text-rose-800 dark:text-rose-200",
+  info: "border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 text-slate-800 dark:text-slate-200",
 };
 
 const ICONS = {

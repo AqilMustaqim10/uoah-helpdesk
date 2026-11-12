@@ -51,14 +51,14 @@ export default function AuditTicketDetailModal({ ticket, onClose }: Props) {
       onClose={onClose}
       size="wide"
     >
-      <div className="border-b border-slate-200 px-6 py-5 pr-14">
+      <div className="border-b border-slate-200 dark:border-slate-800 px-6 py-5 pr-14">
         <p className="font-mono text-xs font-medium text-brand">
           TKT-{ticket.ticket_id}
         </p>
-        <h2 className="mt-1 text-lg font-semibold text-slate-900">
+        <h2 className="mt-1 text-lg font-semibold text-slate-900 dark:text-slate-100">
           {ticket.title}
         </h2>
-        <p className="mt-1 text-sm text-slate-500">
+        <p className="mt-1 text-sm text-slate-500 dark:text-slate-400">
           {ticket.business_unit_code === "HOTEL"
             ? "Hotel"
             : ticket.business_unit_name}{" "}
@@ -87,25 +87,25 @@ export default function AuditTicketDetailModal({ ticket, onClose }: Props) {
                 <li key={event.id} className="flex gap-3">
                   <Avatar name={actor} size="sm" />
                   <div className="min-w-0 flex-1">
-                    <p className="break-words text-sm text-slate-700">
+                    <p className="break-words text-sm text-slate-700 dark:text-slate-200">
                       <span
-                        className="font-medium text-slate-900"
+                        className="font-medium text-slate-900 dark:text-slate-100"
                         title={event.actor_email ?? undefined}
                       >
                         {actor}
                       </span>{" "}
                       {describeAudit(event.action, event.details ?? {})}
                     </p>
-                    <div className="mt-1 flex flex-wrap items-center gap-x-3 gap-y-1 text-xs text-slate-400">
+                    <div className="mt-1 flex flex-wrap items-center gap-x-3 gap-y-1 text-xs text-slate-400 dark:text-slate-500">
                       <time dateTime={event.created_at}>
                         {formatDateTime(event.created_at)}
                       </time>
                       <span>{event.entity_type}</span>
-                      <details className="text-slate-500">
-                        <summary className="cursor-pointer hover:text-slate-700">
+                      <details className="text-slate-500 dark:text-slate-400">
+                        <summary className="cursor-pointer hover:text-slate-700 dark:hover:text-slate-200">
                           Recorded values
                         </summary>
-                        <pre className="mt-2 max-h-40 overflow-auto rounded-lg bg-slate-50 p-3 text-xs text-slate-600">
+                        <pre className="mt-2 max-h-40 overflow-auto rounded-lg bg-slate-50 dark:bg-slate-950 p-3 text-xs text-slate-600 dark:text-slate-300">
                           {JSON.stringify(
                             {
                               action: event.action,
@@ -124,7 +124,7 @@ export default function AuditTicketDetailModal({ ticket, onClose }: Props) {
             })}
           </ol>
         ) : !error ? (
-          <p className="py-8 text-center text-sm text-slate-500">
+          <p className="py-8 text-center text-sm text-slate-500 dark:text-slate-400">
             No audit history is available for this ticket.
           </p>
         ) : null}

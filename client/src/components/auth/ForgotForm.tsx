@@ -109,12 +109,12 @@ export default function ForgotForm({ onBackToLogin, onDone }: Props) {
     return (
       <form onSubmit={submitReset} className="space-y-4" noValidate>
         <div>
-          <h2 className="text-lg font-semibold text-slate-900">
+          <h2 className="text-lg font-semibold text-slate-900 dark:text-slate-100">
             Set a new password
           </h2>
-          <p className="text-sm text-slate-500">
+          <p className="text-sm text-slate-500 dark:text-slate-400">
             If{" "}
-            <span className="font-medium text-slate-700">{email.trim()}</span>{" "}
+            <span className="font-medium text-slate-700 dark:text-slate-200">{email.trim()}</span>{" "}
             has an account, we sent it a 6-digit code. It expires in 10 minutes.
           </p>
         </div>
@@ -150,7 +150,7 @@ export default function ForgotForm({ onBackToLogin, onDone }: Props) {
               setStep("email");
               setFormError("");
             }}
-            className="inline-flex items-center gap-1 text-slate-500 hover:text-slate-700"
+            className="inline-flex items-center gap-1 text-slate-500 dark:text-slate-400 hover:text-slate-700 dark:hover:text-slate-200"
           >
             <ArrowLeft className="h-4 w-4" /> Change email
           </button>
@@ -158,7 +158,7 @@ export default function ForgotForm({ onBackToLogin, onDone }: Props) {
             type="button"
             onClick={resend}
             disabled={cooldown > 0 || busy}
-            className="font-medium text-indigo-600 hover:underline disabled:cursor-not-allowed disabled:text-slate-400 disabled:no-underline"
+            className="font-medium text-indigo-600 dark:text-indigo-400 hover:underline disabled:cursor-not-allowed disabled:text-slate-400 dark:disabled:text-slate-500 disabled:no-underline"
           >
             {cooldown > 0 ? `Resend code in ${cooldown}s` : "Resend code"}
           </button>
@@ -171,10 +171,10 @@ export default function ForgotForm({ onBackToLogin, onDone }: Props) {
   return (
     <form onSubmit={submitEmail} className="space-y-4" noValidate>
       <div>
-        <h2 className="text-lg font-semibold text-slate-900">
+        <h2 className="text-lg font-semibold text-slate-900 dark:text-slate-100">
           Forgot your password?
         </h2>
-        <p className="text-sm text-slate-500">
+        <p className="text-sm text-slate-500 dark:text-slate-400">
           Enter your email and we will send you a 6-digit code.
         </p>
       </div>
@@ -195,11 +195,11 @@ export default function ForgotForm({ onBackToLogin, onDone }: Props) {
         Send code
       </Button>
 
-      <p className="text-center text-sm text-slate-500">
+      <p className="text-center text-sm text-slate-500 dark:text-slate-400">
         <button
           type="button"
           onClick={onBackToLogin}
-          className="font-medium text-indigo-600 hover:underline"
+          className="font-medium text-indigo-600 dark:text-indigo-400 hover:underline"
         >
           Back to sign in
         </button>

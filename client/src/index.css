@@ -6,8 +6,7 @@
 
 /* ---------- Design tokens ---------- */
 @theme {
-    /* White text that stays white in dark mode (used on brand-colored buttons).
-     Do not use text-white for that: dark mode remaps "white" to a dark color. */
+    /* White text that stays white in both modes (used on brand-colored buttons). */
     --color-onbrand: #ffffff;
 
     --font-sans: "Segoe UI", system-ui, -apple-system, Roboto, "Helvetica Neue", Arial, sans-serif;
@@ -17,7 +16,7 @@
     --animate-fade-in: fade-in 0.2s ease-out both;
     --animate-scale-in: scale-in 0.2s ease-out both;
     --animate-slide-in: slide-in 0.25s ease-out both;
-    --animate-shimmer: shimmer 1.4s ease-in-out infinite;
+    --animate-shimmer: shimmer 1.6s ease-in-out infinite;
 
     @keyframes fade-in {
         from {
@@ -54,14 +53,12 @@
     }
 
     @keyframes shimmer {
-
-        0%,
-        100% {
-            opacity: 1;
+        0% {
+            background-position: 120% 0;
         }
 
-        50% {
-            opacity: 0.5;
+        100% {
+            background-position: -120% 0;
         }
     }
 }
@@ -79,87 +76,25 @@
 }
 
 /* ---------- Dark mode ----------
-   Instead of rewriting every component, we remap the color scale itself:
-   in dark mode "slate-50" becomes the darkest shade, "slate-900" the lightest,
-   and so on. The same class names (bg-white, text-slate-700...) now give dark colors. */
+   Dark mode is plain Tailwind: the .dark class on <html> switches every `dark:` variant.
+   Components say what they want in both modes, e.g. "bg-white dark:bg-slate-900". */
 .dark {
     color-scheme: dark;
-
-    --color-white: #0f172a;
-    --color-slate-50: #020617;
-    --color-slate-100: #1e293b;
-    --color-slate-200: #334155;
-    --color-slate-300: #475569;
-    --color-slate-400: #64748b;
-    --color-slate-500: #94a3b8;
-    --color-slate-600: #cbd5e1;
-    --color-slate-700: #e2e8f0;
-    --color-slate-800: #f1f5f9;
-    --color-slate-900: #f8fafc;
-    --color-slate-950: #ffffff;
-
-    --color-emerald-50: #022c22;
-    --color-emerald-100: #064e3b;
-    --color-emerald-200: #065f46;
-    --color-emerald-300: #047857;
-    --color-emerald-400: #059669;
-    --color-emerald-500: #10b981;
-    --color-emerald-600: #34d399;
-    --color-emerald-700: #6ee7b7;
-    --color-emerald-800: #a7f3d0;
-    --color-emerald-900: #d1fae5;
-    --color-emerald-950: #ecfdf5;
-
-    --color-amber-50: #451a03;
-    --color-amber-100: #78350f;
-    --color-amber-200: #92400e;
-    --color-amber-300: #b45309;
-    --color-amber-400: #d97706;
-    --color-amber-500: #f59e0b;
-    --color-amber-600: #fbbf24;
-    --color-amber-700: #fcd34d;
-    --color-amber-800: #fde68a;
-    --color-amber-900: #fef3c7;
-    --color-amber-950: #fffbeb;
-
-    --color-rose-50: #4c0519;
-    --color-rose-100: #881337;
-    --color-rose-200: #9f1239;
-    --color-rose-300: #be123c;
-    --color-rose-400: #e11d48;
-    --color-rose-500: #f43f5e;
-    --color-rose-600: #fb7185;
-    --color-rose-700: #fda4af;
-    --color-rose-800: #fecdd3;
-    --color-rose-900: #ffe4e6;
-    --color-rose-950: #fff1f2;
-
-    --color-indigo-50: #1e1b4b;
-    --color-indigo-100: #312e81;
-    --color-indigo-200: #3730a3;
-    --color-indigo-300: #4338ca;
-    --color-indigo-400: #4f46e5;
-    --color-indigo-500: #6366f1;
-    --color-indigo-600: #818cf8;
-    --color-indigo-700: #a5b4fc;
-    --color-indigo-800: #c7d2fe;
-    --color-indigo-900: #e0e7ff;
-    --color-indigo-950: #eef2ff;
 }
 
 /* ---------- Base look ---------- */
-*,
-::before,
-::after {
-    border-color: var(--color-slate-200);
-}
+@layer base {
 
-body {
-    margin: 0;
-    background-color: var(--color-slate-50);
-    color: var(--color-slate-900);
-    font-family: var(--font-sans);
-    -webkit-font-smoothing: antialiased;
+    *,
+    ::before,
+    ::after {
+        @apply border-slate-200 dark:border-slate-800;
+    }
+
+    body {
+        @apply m-0 bg-slate-50 text-slate-900 antialiased dark:bg-[#090d16] dark:text-slate-100;
+        font-family: var(--font-sans);
+    }
 }
 
 /* Clear focus ring for keyboard users */
@@ -237,5 +172,49 @@ html.theme-transition *::after {
 
     .auth-background-image:first-child {
         opacity: 1;
+    }
+}
+/* ---------- Skeleton shimmer ----------
+   A soft highlight sweeps across the block. Both colors come from the theme, so it works in light and dark. */
+.skeleton {
+    background-image: linear-gradient(100deg,
+            transparent 30%,
+            var(--skeleton-shine) 50%,
+            transparent 70%);
+    background-size: 220% 100%;
+    background-repeat: no-repeat;
+    background-color: var(--skeleton-base);
+    --skeleton-base: var(--color-slate-200);
+    --skeleton-shine: color-mix(in oklab, var(--color-white) 70%, transparent);
+}
+
+.dark .skeleton {
+    --skeleton-base: var(--color-slate-800);
+    --skeleton-shine: color-mix(in oklab, var(--color-slate-600) 45%, transparent);
+}
+
+/* ---------- Entrance choreography (GSAP) ----------
+   Elements marked data-reveal start hidden and are revealed by useReveal(). The attribute
+   flips to "done" afterwards, so they can never stay invisible if the animation is skipped. */
+[data-reveal]:not([data-reveal="done"]) {
+    opacity: 0;
+    /* failsafe: if JavaScript never reveals it, show it anyway after 2 s */
+    animation: reveal-failsafe 0.01s linear 2s forwards;
+}
+
+@keyframes reveal-failsafe {
+    to {
+        opacity: 1;
+    }
+}
+
+@media (prefers-reduced-motion: reduce) {
+    [data-reveal] {
+        opacity: 1 !important;
+    }
+
+    .skeleton {
+        animation: none;
+        background-image: none;
     }
 }

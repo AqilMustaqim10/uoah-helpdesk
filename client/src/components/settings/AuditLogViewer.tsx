@@ -50,8 +50,8 @@ const BUSINESS_UNITS = [
 const TICKET_RE = /^(?:(tkt|hd)-?)?\d{1,15}$/i;
 
 const FIELD =
-  "h-9 rounded-lg border border-slate-200 bg-white px-2.5 text-sm text-slate-700 transition " +
-  "placeholder:text-slate-400 focus:border-brand focus:outline-none focus:ring-2 focus:ring-brand/25";
+  "h-9 rounded-lg border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 px-2.5 text-sm text-slate-700 dark:text-slate-200 transition " +
+  "placeholder:text-slate-400 dark:placeholder:text-slate-500 focus:border-brand focus:outline-none focus:ring-2 focus:ring-brand/25";
 
 export default function AuditLogViewer() {
   const [query, setQuery] = useState<AuditQuery>(EMPTY);
@@ -133,8 +133,8 @@ export default function AuditLogViewer() {
   return (
     <div className="space-y-4">
       <div>
-        <h2 className="text-base font-semibold text-slate-900">Audit log</h2>
-        <p className="text-sm text-slate-500">
+        <h2 className="text-base font-semibold text-slate-900 dark:text-slate-100">Audit log</h2>
+        <p className="text-sm text-slate-500 dark:text-slate-400">
           One row per ticket with a complete, read-only change history.
         </p>
       </div>
@@ -198,10 +198,10 @@ export default function AuditLogViewer() {
             value={ticketText}
             onChange={(e) => setTicketText(e.target.value)}
             maxLength={20}
-            className={cn(FIELD, "w-32", ticketInvalid && "border-rose-400")}
+            className={cn(FIELD, "w-32", ticketInvalid && "border-rose-400 dark:border-rose-600")}
           />
         </div>
-        <label className="flex items-center gap-1.5 text-sm text-slate-500">
+        <label className="flex items-center gap-1.5 text-sm text-slate-500 dark:text-slate-400">
           From
           <input
             type="date"
@@ -211,7 +211,7 @@ export default function AuditLogViewer() {
             onChange={(e) => change({ from: e.target.value })}
           />
         </label>
-        <label className="flex items-center gap-1.5 text-sm text-slate-500">
+        <label className="flex items-center gap-1.5 text-sm text-slate-500 dark:text-slate-400">
           To
           <input
             type="date"
@@ -228,7 +228,7 @@ export default function AuditLogViewer() {
         )}
       </div>
       {ticketInvalid && (
-        <p className="text-xs text-rose-600">
+        <p className="text-xs text-rose-600 dark:text-rose-400">
           Use a ticket number such as TKT-12 or 12.
         </p>
       )}
@@ -237,7 +237,7 @@ export default function AuditLogViewer() {
 
       {firstLoad ? (
         <div
-          className="space-y-px overflow-hidden rounded-2xl border border-slate-200 bg-white"
+          className="space-y-px overflow-hidden rounded-2xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900"
           aria-busy="true"
         >
           {Array.from({ length: 6 }).map((_, i) => (
@@ -249,12 +249,12 @@ export default function AuditLogViewer() {
         </div>
       ) : data && data.rows.length > 0 ? (
         <>
-          <p className="text-sm text-slate-500">
+          <p className="text-sm text-slate-500 dark:text-slate-400">
             {data.total} ticket{data.total === 1 ? "" : "s"}
           </p>
           <ul
             className={cn(
-              "divide-y divide-slate-200 overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm transition-opacity",
+              "divide-y divide-slate-200 dark:divide-slate-800 overflow-hidden rounded-2xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 shadow-sm transition-opacity",
               loading && "opacity-60",
             )}
           >
@@ -264,18 +264,18 @@ export default function AuditLogViewer() {
                   <button
                     type="button"
                     onClick={() => setSelectedTicket(r)}
-                    className="flex w-full items-center gap-4 px-4 py-4 text-left transition hover:bg-slate-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-brand"
+                    className="flex w-full items-center gap-4 px-4 py-4 text-left transition hover:bg-slate-50 dark:hover:bg-slate-950 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-brand"
                   >
                     <span className="flex min-w-0 flex-1 flex-col gap-1 sm:flex-row sm:items-center sm:gap-4">
                       <span className="min-w-0 flex-1">
-                        <span className="block truncate text-sm font-medium text-slate-900">
+                        <span className="block truncate text-sm font-medium text-slate-900 dark:text-slate-100">
                           {r.title}
                         </span>
-                        <span className="mt-1 block font-mono text-xs text-slate-500">
+                        <span className="mt-1 block font-mono text-xs text-slate-500 dark:text-slate-400">
                           TKT-{r.ticket_id}
                         </span>
                       </span>
-                      <span className="flex flex-wrap items-center gap-2 text-xs text-slate-500 sm:justify-end">
+                      <span className="flex flex-wrap items-center gap-2 text-xs text-slate-500 dark:text-slate-400 sm:justify-end">
                         <span className="rounded-full bg-brand/10 px-2 py-0.5 font-medium text-brand">
                           {r.business_unit_code === "HOTEL"
                             ? "Hotel"
@@ -291,7 +291,7 @@ export default function AuditLogViewer() {
                       </span>
                     </span>
                     <ChevronRight
-                      className="h-4 w-4 shrink-0 text-slate-400"
+                      className="h-4 w-4 shrink-0 text-slate-400 dark:text-slate-500"
                       aria-hidden
                     />
                   </button>

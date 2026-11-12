@@ -21,7 +21,7 @@ function Thumb({ file }: { file: File }) {
       className="h-10 w-10 shrink-0 rounded-md object-cover"
     />
   ) : (
-    <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-md bg-slate-100 text-slate-500">
+    <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-md bg-slate-100 dark:bg-slate-800 text-slate-500 dark:text-slate-400">
       <FileText className="h-5 w-5" aria-hidden />
     </div>
   );
@@ -39,18 +39,18 @@ export default function PendingFileList({ files, onRemove }: Props) {
       {files.map((f, i) => (
         <li
           key={`${f.name}-${f.size}-${i}`}
-          className="flex animate-fade-in items-center gap-3 rounded-lg border border-slate-200 bg-white px-2 py-1.5"
+          className="flex animate-fade-in items-center gap-3 rounded-lg border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 px-2 py-1.5"
         >
           <Thumb file={f} />
           <div className="min-w-0 flex-1">
-            <p className="truncate text-sm text-slate-700">{f.name}</p>
-            <p className="text-xs text-slate-400">{formatBytes(f.size)}</p>
+            <p className="truncate text-sm text-slate-700 dark:text-slate-200">{f.name}</p>
+            <p className="text-xs text-slate-400 dark:text-slate-500">{formatBytes(f.size)}</p>
           </div>
           <button
             type="button"
             onClick={() => onRemove(i)}
             aria-label={`Remove ${f.name}`}
-            className="rounded-md p-1.5 text-slate-400 transition hover:bg-slate-100 hover:text-slate-600"
+            className="rounded-md p-1.5 text-slate-400 dark:text-slate-500 transition hover:bg-slate-100 dark:hover:bg-slate-800 hover:text-slate-600 dark:hover:text-slate-300"
           >
             <X className="h-4 w-4" />
           </button>

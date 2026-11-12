@@ -51,11 +51,11 @@ function Card({
   return (
     <section
       aria-label={title}
-      className="rounded-xl border border-slate-200 bg-white"
+      className="rounded-xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900"
     >
-      <header className="flex items-center gap-2 border-b border-slate-200 px-4 py-3">
+      <header className="flex items-center gap-2 border-b border-slate-200 dark:border-slate-800 px-4 py-3">
         <Icon className="h-4 w-4 shrink-0 text-brand" aria-hidden />
-        <h3 className="text-xs font-semibold uppercase tracking-wide text-slate-700">
+        <h3 className="text-xs font-semibold uppercase tracking-wide text-slate-700 dark:text-slate-200">
           {title}
         </h3>
         {count !== undefined && count > 0 && (
@@ -73,10 +73,10 @@ function Card({
 function Fact({ label, children }: { label: string; children: ReactNode }) {
   return (
     <div className="min-w-0">
-      <dt className="text-[11px] font-medium uppercase tracking-wide text-slate-500">
+      <dt className="text-[11px] font-medium uppercase tracking-wide text-slate-500 dark:text-slate-400">
         {label}
       </dt>
-      <dd className="mt-1 text-sm text-slate-900">{children}</dd>
+      <dd className="mt-1 text-sm text-slate-900 dark:text-slate-100">{children}</dd>
     </div>
   );
 }
@@ -98,21 +98,21 @@ function FileTile({ file }: { file: HistoryFile }) {
           alt={file.original_name}
           loading="lazy"
           onError={() => setFailed(true)}
-          className="h-24 w-36 rounded-lg border border-slate-200 object-cover"
+          className="h-24 w-36 rounded-lg border border-slate-200 dark:border-slate-800 object-cover"
         />
       ) : (
-        <div className="flex h-24 w-36 items-center justify-center rounded-lg border border-slate-200 bg-slate-100">
+        <div className="flex h-24 w-36 items-center justify-center rounded-lg border border-slate-200 dark:border-slate-800 bg-slate-100 dark:bg-slate-800">
           {isImage(file.mime) ? (
-            <ImageOff className="h-6 w-6 text-slate-400" aria-hidden />
+            <ImageOff className="h-6 w-6 text-slate-400 dark:text-slate-500" aria-hidden />
           ) : (
             <FileText className="h-7 w-7 text-rose-500" aria-hidden />
           )}
         </div>
       )}
-      <span className="mt-1 block truncate text-xs font-medium text-slate-700">
+      <span className="mt-1 block truncate text-xs font-medium text-slate-700 dark:text-slate-200">
         {file.original_name}
       </span>
-      <span className="block text-[11px] text-slate-400">
+      <span className="block text-[11px] text-slate-400 dark:text-slate-500">
         {formatBytes(file.size_bytes)}
       </span>
     </a>
@@ -179,8 +179,8 @@ export default function HistoryDetailModal({
     >
       {error ? (
         <div className="flex flex-col items-center px-6 py-16 text-center">
-          <AlertCircle className="mb-3 h-8 w-8 text-slate-400" aria-hidden />
-          <p className="max-w-sm text-sm font-medium text-slate-900">{error}</p>
+          <AlertCircle className="mb-3 h-8 w-8 text-slate-400 dark:text-slate-500" aria-hidden />
+          <p className="max-w-sm text-sm font-medium text-slate-900 dark:text-slate-100">{error}</p>
         </div>
       ) : !data || !t ? (
         <div
@@ -195,13 +195,13 @@ export default function HistoryDetailModal({
       ) : (
         <div>
           {/* header */}
-          <header className="flex items-center gap-3 border-b border-slate-200 px-6 py-4 pr-14">
+          <header className="flex items-center gap-3 border-b border-slate-200 dark:border-slate-800 px-6 py-4 pr-14">
             <span className="shrink-0 rounded-md bg-brand px-2.5 py-1 font-mono text-sm font-semibold text-onbrand">
               {ticketRef(t.id)}
             </span>
             <div className="min-w-0">
               <div className="flex flex-wrap items-center gap-2">
-                <h2 className="text-base font-semibold text-slate-900">
+                <h2 className="text-base font-semibold text-slate-900 dark:text-slate-100">
                   Ticket history
                 </h2>
                 <span
@@ -215,34 +215,34 @@ export default function HistoryDetailModal({
                   {t.unit_code}
                 </span>
               </div>
-              <p className="truncate text-xs text-slate-500">
+              <p className="truncate text-xs text-slate-500 dark:text-slate-400">
                 {t.requester_department ?? t.unit_name}
               </p>
             </div>
           </header>
 
           {/* body */}
-          <div className="space-y-4 bg-slate-50 px-6 py-5">
+          <div className="space-y-4 bg-slate-50 dark:bg-slate-950 px-6 py-5">
             <div>
               <div className="mb-2 flex flex-wrap items-center gap-2">
                 <StatusBadge status={t.status} />
                 <PriorityBadge priority={t.priority} />
               </div>
-              <h3 className="break-words text-lg font-semibold text-slate-900">
+              <h3 className="break-words text-lg font-semibold text-slate-900 dark:text-slate-100">
                 {t.title}
               </h3>
             </div>
 
             {/* plain text: React escapes it, so nobody can inject HTML */}
-            <p className="whitespace-pre-wrap break-words rounded-xl border border-slate-200 bg-white px-4 py-3 text-sm text-slate-700">
+            <p className="whitespace-pre-wrap break-words rounded-xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 px-4 py-3 text-sm text-slate-700 dark:text-slate-200">
               {t.description}
             </p>
 
-            <dl className="grid grid-cols-2 gap-x-4 gap-y-4 rounded-xl border border-slate-200 bg-slate-100/60 p-4 md:grid-cols-3">
+            <dl className="grid grid-cols-2 gap-x-4 gap-y-4 rounded-xl border border-slate-200 dark:border-slate-800 bg-slate-100/60 dark:bg-slate-800/60 p-4 md:grid-cols-3">
               <Fact label="Created by">
                 <p className="truncate font-semibold">{t.requester_name}</p>
                 <p
-                  className="truncate text-xs text-slate-500"
+                  className="truncate text-xs text-slate-500 dark:text-slate-400"
                   title={t.requester_email}
                 >
                   {t.requester_email}
@@ -263,14 +263,14 @@ export default function HistoryDetailModal({
                     {t.requester_department}
                   </span>
                 ) : (
-                  <span className="text-slate-400">Not set</span>
+                  <span className="text-slate-400 dark:text-slate-500">Not set</span>
                 )}
               </Fact>
               <Fact label="Handled by">
                 {t.assignee_name ? (
                   <span className="font-semibold">{t.assignee_name}</span>
                 ) : (
-                  <span className="text-slate-400">Nobody was assigned</span>
+                  <span className="text-slate-400 dark:text-slate-500">Nobody was assigned</span>
                 )}
               </Fact>
             </dl>
@@ -291,7 +291,7 @@ export default function HistoryDetailModal({
               count={data.comments.length}
             >
               {data.comments.length === 0 ? (
-                <p className="text-sm text-slate-500">No replies.</p>
+                <p className="text-sm text-slate-500 dark:text-slate-400">No replies.</p>
               ) : (
                 <ul className="space-y-3">
                   {data.comments.map((c) => {
@@ -299,25 +299,25 @@ export default function HistoryDetailModal({
                     return (
                       <li key={c.id} className="flex gap-3">
                         <Avatar name={c.author_name} />
-                        <div className="min-w-0 flex-1 rounded-xl border border-slate-200 bg-white px-3 py-2">
+                        <div className="min-w-0 flex-1 rounded-xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 px-3 py-2">
                           <div className="flex flex-wrap items-center gap-x-2 gap-y-1 text-xs">
-                            <span className="text-sm font-medium text-slate-900">
+                            <span className="text-sm font-medium text-slate-900 dark:text-slate-100">
                               {c.author_name}
                             </span>
                             {c.author_role !== "USER" && (
                               <RoleBadge role={c.author_role} />
                             )}
                             {c.source === "EMAIL" && (
-                              <span className="text-slate-400">via email</span>
+                              <span className="text-slate-400 dark:text-slate-500">via email</span>
                             )}
                             <span
-                              className="text-slate-400"
+                              className="text-slate-400 dark:text-slate-500"
                               title={formatDateTime(c.created_at)}
                             >
                               {timeAgo(c.created_at)}
                             </span>
                           </div>
-                          <p className="mt-1 whitespace-pre-wrap break-words text-sm text-slate-700">
+                          <p className="mt-1 whitespace-pre-wrap break-words text-sm text-slate-700 dark:text-slate-200">
                             {c.body}
                           </p>
                           {own.length > 0 && (
@@ -331,7 +331,7 @@ export default function HistoryDetailModal({
                   })}
                 </ul>
               )}
-              <p className="mt-3 flex items-center gap-1.5 text-xs text-slate-400">
+              <p className="mt-3 flex items-center gap-1.5 text-xs text-slate-400 dark:text-slate-500">
                 <Lock className="h-3 w-3" aria-hidden /> Internal notes are not
                 shown in the history.
               </p>
@@ -339,7 +339,7 @@ export default function HistoryDetailModal({
           </div>
 
           {/* footer: the only difference between the roles */}
-          <footer className="flex flex-wrap items-center gap-2 border-t border-slate-200 px-6 py-3">
+          <footer className="flex flex-wrap items-center gap-2 border-t border-slate-200 dark:border-slate-800 px-6 py-3">
             <Button variant="secondary" onClick={onClose}>
               Close
             </Button>
@@ -355,7 +355,7 @@ export default function HistoryDetailModal({
                 Manage ticket
               </Button>
             ) : (
-              <span className="ml-auto inline-flex items-center gap-1.5 text-xs text-slate-500">
+              <span className="ml-auto inline-flex items-center gap-1.5 text-xs text-slate-500 dark:text-slate-400">
                 <Lock className="h-3.5 w-3.5" aria-hidden /> View only
               </span>
             )}

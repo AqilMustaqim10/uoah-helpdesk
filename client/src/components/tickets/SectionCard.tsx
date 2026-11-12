@@ -23,11 +23,11 @@ export default function SectionCard({
   return (
     <section
       aria-label={title}
-      className="rounded-xl border border-slate-200 bg-white"
+      className="rounded-xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900"
     >
-      <header className="flex items-center gap-2 border-b border-slate-200 px-4 py-3">
+      <header className="flex items-center gap-2 border-b border-slate-200 dark:border-slate-800 px-4 py-3">
         <Icon className="h-4 w-4 shrink-0 text-brand" aria-hidden />
-        <h3 className="text-xs font-semibold uppercase tracking-wide text-slate-700">
+        <h3 className="text-xs font-semibold uppercase tracking-wide text-slate-700 dark:text-slate-200">
           {title}
         </h3>
         {count !== undefined && count > 0 && (

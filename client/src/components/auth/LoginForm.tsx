@@ -57,10 +57,10 @@ export default function LoginForm({
   return (
     <form onSubmit={submit} className="space-y-5" noValidate>
       <div className="space-y-1">
-        <h2 className="text-xl font-semibold tracking-tight text-slate-900">
+        <h2 className="text-xl font-semibold tracking-tight text-slate-900 dark:text-slate-100">
           Welcome back
         </h2>
-        <p className="text-sm text-slate-500">Sign in to your account.</p>
+        <p className="text-sm text-slate-500 dark:text-slate-400">Sign in to your account.</p>
       </div>
 
       <FormError message={error} />
@@ -87,7 +87,7 @@ export default function LoginForm({
         <button
           type="button"
           onClick={onForgot}
-          className="text-sm font-medium text-indigo-600 hover:underline"
+          className="text-sm font-medium text-indigo-600 dark:text-indigo-400 hover:underline"
         >
           Forgot password?
         </button>
@@ -97,12 +97,12 @@ export default function LoginForm({
         Sign in
       </Button>
 
-      <p className="text-center text-sm text-slate-500">
+      <p className="text-center text-sm text-slate-500 dark:text-slate-400">
         New here?{" "}
         <button
           type="button"
           onClick={onSignup}
-          className="font-medium text-indigo-600 hover:underline"
+          className="font-medium text-indigo-600 dark:text-indigo-400 hover:underline"
         >
           Create an account
         </button>

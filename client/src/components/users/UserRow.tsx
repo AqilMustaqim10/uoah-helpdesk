@@ -37,7 +37,7 @@ interface Props {
 }
 
 const SELECT_CLASS =
-  "h-9 rounded-lg border border-slate-200 bg-white px-2.5 text-sm text-slate-700 transition " +
+  "h-9 rounded-lg border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 px-2.5 text-sm text-slate-700 dark:text-slate-200 transition " +
   "focus:border-brand focus:outline-none focus:ring-2 focus:ring-brand/25 disabled:cursor-not-allowed disabled:opacity-60";
 
 const ROLE_OPTIONS: Array<{ value: Role; label: string }> = [
@@ -100,7 +100,7 @@ export default function UserRow({
     <li
       className={cn(
         "flex animate-fade-in flex-col gap-3 px-4 py-3 lg:flex-row lg:items-center lg:gap-4",
-        !user.is_active && "bg-slate-50",
+        !user.is_active && "bg-slate-50 dark:bg-slate-950",
       )}
     >
       {/* Who */}
@@ -113,7 +113,7 @@ export default function UserRow({
         <Avatar name={user.name} />
         <div className="min-w-0">
           <div className="flex flex-wrap items-center gap-2">
-            <span className="truncate text-sm font-medium text-slate-900">
+            <span className="truncate text-sm font-medium text-slate-900 dark:text-slate-100">
               {user.name}
             </span>
             {isSelf && (
@@ -122,26 +122,26 @@ export default function UserRow({
               </span>
             )}
             {!user.is_active && (
-              <span className="rounded-full bg-rose-50 px-2 py-0.5 text-xs font-medium text-rose-700 ring-1 ring-inset ring-rose-200">
+              <span className="rounded-full bg-rose-50 dark:bg-rose-950 px-2 py-0.5 text-xs font-medium text-rose-700 dark:text-rose-300 ring-1 ring-inset ring-rose-200 dark:ring-rose-800">
                 Disabled
               </span>
             )}
             {canViewTwoFactor &&
               (twoFactorOn ? (
-                <span className="inline-flex items-center gap-1 rounded-full bg-emerald-50 px-2 py-0.5 text-xs font-medium text-emerald-700 ring-1 ring-inset ring-emerald-200">
+                <span className="inline-flex items-center gap-1 rounded-full bg-emerald-50 dark:bg-emerald-950 px-2 py-0.5 text-xs font-medium text-emerald-700 dark:text-emerald-300 ring-1 ring-inset ring-emerald-200 dark:ring-emerald-800">
                   <ShieldCheck className="h-3 w-3" aria-hidden /> 2FA on
                 </span>
               ) : (
                 <span
                   title="They must set up an authenticator app the next time they sign in"
-                  className="inline-flex items-center gap-1 rounded-full bg-amber-50 px-2 py-0.5 text-xs font-medium text-amber-700 ring-1 ring-inset ring-amber-200"
+                  className="inline-flex items-center gap-1 rounded-full bg-amber-50 dark:bg-amber-950 px-2 py-0.5 text-xs font-medium text-amber-700 dark:text-amber-300 ring-1 ring-inset ring-amber-200 dark:ring-amber-800"
                 >
                   <ShieldAlert className="h-3 w-3" aria-hidden /> 2FA pending
                 </span>
               ))}
           </div>
-          <p className="truncate text-xs text-slate-500">{user.email}</p>
-          <p className="text-xs text-slate-400">
+          <p className="truncate text-xs text-slate-500 dark:text-slate-400">{user.email}</p>
+          <p className="text-xs text-slate-400 dark:text-slate-500">
             {user.department ?? "No department"}
             {!admin && user.unit_code && (
               <span className="font-mono"> · {user.unit_code}</span>
@@ -250,7 +250,7 @@ export default function UserRow({
             type="button"
             onClick={onDelete}
             disabled={busy}
-            className="inline-flex h-9 items-center gap-1.5 rounded-lg border border-rose-200 px-3 text-sm font-medium text-rose-700 transition hover:bg-rose-50 disabled:cursor-not-allowed disabled:opacity-60"
+            className="inline-flex h-9 items-center gap-1.5 rounded-lg border border-rose-200 dark:border-rose-800 px-3 text-sm font-medium text-rose-700 dark:text-rose-300 transition hover:bg-rose-50 dark:hover:bg-rose-950 disabled:cursor-not-allowed disabled:opacity-60"
           >
             <Trash2 className="h-4 w-4" aria-hidden />
             Delete
@@ -259,7 +259,7 @@ export default function UserRow({
       </div>
 
       {admin && user.business_unit_id === null && user.role !== "ADMIN" && (
-        <p className="text-xs text-amber-700 lg:basis-full">
+        <p className="text-xs text-amber-700 dark:text-amber-300 lg:basis-full">
           This person has no business unit, so they cannot see or create
           tickets.
         </p>

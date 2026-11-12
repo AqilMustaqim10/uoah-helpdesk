@@ -28,7 +28,7 @@ export default function Select({
       <label
         htmlFor={selectId}
         className={cn(
-          "mb-1 block text-sm font-medium text-slate-700",
+          "mb-1 block text-sm font-medium text-slate-700 dark:text-slate-200",
           labelClassName,
         )}
       >
@@ -38,15 +38,15 @@ export default function Select({
         id={selectId}
         aria-invalid={error ? true : undefined}
         className={cn(
-          "h-10 w-full rounded-lg border bg-white px-3 text-sm text-slate-900 transition",
+          "h-10 w-full rounded-lg border bg-white dark:bg-slate-900 px-3 text-sm text-slate-900 dark:text-slate-100 transition",
           "focus:border-brand focus:outline-none focus:ring-2 focus:ring-brand/25",
-          error ? "border-rose-400" : "border-slate-200",
+          error ? "border-rose-400 dark:border-rose-600" : "border-slate-200 dark:border-slate-800",
         )}
         {...rest}
       >
         {children}
       </select>
-      {error && <p className="mt-1 text-xs text-rose-600">{error}</p>}
+      {error && <p className="mt-1 text-xs text-rose-600 dark:text-rose-400">{error}</p>}
     </div>
   );
 }

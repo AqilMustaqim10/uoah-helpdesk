@@ -44,13 +44,13 @@ export default function RecoveryCodes({ codes, doneLabel, onDone }: Props) {
 
   return (
     <div className="space-y-4">
-      <p className="text-sm text-slate-600">
+      <p className="text-sm text-slate-600 dark:text-slate-300">
         If you lose your phone, each of these codes lets you sign in{" "}
         <strong>once</strong>. They are shown only now, so save them somewhere
         safe (a password manager, or print them).
       </p>
 
-      <ul className="grid grid-cols-2 gap-2 rounded-xl border border-slate-200 bg-slate-50 p-4 font-mono text-sm tracking-wider text-slate-900">
+      <ul className="grid grid-cols-2 gap-2 rounded-xl border border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-slate-950 p-4 font-mono text-sm tracking-wider text-slate-900 dark:text-slate-100">
         {codes.map((c) => (
           <li key={c}>{c}</li>
         ))}
@@ -75,12 +75,12 @@ export default function RecoveryCodes({ codes, doneLabel, onDone }: Props) {
         </Button>
       </div>
 
-      <label className="flex items-start gap-2 text-sm text-slate-700">
+      <label className="flex items-start gap-2 text-sm text-slate-700 dark:text-slate-200">
         <input
           type="checkbox"
           checked={saved}
           onChange={(e) => setSaved(e.target.checked)}
-          className="mt-0.5 h-4 w-4 rounded border-slate-300"
+          className="mt-0.5 h-4 w-4 rounded border-slate-300 dark:border-slate-700"
         />
         I have saved these codes in a safe place.
       </label>

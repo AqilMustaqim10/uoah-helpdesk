@@ -32,10 +32,10 @@ function Thumb({ file, className }: { file: TicketFile; className: string }) {
   }
   return (
     <div
-      className={cn("flex items-center justify-center bg-slate-100", className)}
+      className={cn("flex items-center justify-center bg-slate-100 dark:bg-slate-800", className)}
     >
       {isImage(file.mime) ? (
-        <ImageOff className="h-6 w-6 text-slate-400" aria-hidden />
+        <ImageOff className="h-6 w-6 text-slate-400 dark:text-slate-500" aria-hidden />
       ) : (
         <FileText className="h-7 w-7 text-rose-500" aria-hidden />
       )}
@@ -98,11 +98,11 @@ export default function AttachmentTiles({
             : "h-8 shrink-0 rounded-md px-2",
           overlay &&
             !confirming &&
-            "bg-white text-slate-600 opacity-100 hover:text-rose-600 focus-visible:opacity-100 md:opacity-0 md:group-hover:opacity-100",
+            "bg-white dark:bg-slate-900 text-slate-600 dark:text-slate-300 opacity-100 hover:text-rose-600 dark:hover:text-rose-400 focus-visible:opacity-100 md:opacity-0 md:group-hover:opacity-100",
           !overlay &&
             !confirming &&
-            "text-slate-500 hover:bg-slate-100 hover:text-rose-600",
-          confirming && "bg-rose-600 text-onbrand opacity-100",
+            "text-slate-500 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800 hover:text-rose-600 dark:hover:text-rose-400",
+          confirming && "bg-rose-600 dark:bg-rose-400 text-onbrand opacity-100",
         )}
       >
         {busy ? (
@@ -118,11 +118,11 @@ export default function AttachmentTiles({
   // ---------- list view ----------
   if (view === "list") {
     return (
-      <ul className="divide-y divide-slate-200 overflow-hidden rounded-lg border border-slate-200">
+      <ul className="divide-y divide-slate-200 dark:divide-slate-800 overflow-hidden rounded-lg border border-slate-200 dark:border-slate-800">
         {files.map((f) => (
           <li
             key={f.id}
-            className="flex animate-fade-in items-center gap-3 bg-white px-3 py-2"
+            className="flex animate-fade-in items-center gap-3 bg-white dark:bg-slate-900 px-3 py-2"
           >
             <a
               href={`/api/files/${f.id}`}
@@ -132,13 +132,13 @@ export default function AttachmentTiles({
             >
               <Thumb
                 file={f}
-                className="h-10 w-10 shrink-0 rounded-md border border-slate-200"
+                className="h-10 w-10 shrink-0 rounded-md border border-slate-200 dark:border-slate-800"
               />
               <span className="min-w-0">
-                <span className="block truncate text-sm font-medium text-slate-800">
+                <span className="block truncate text-sm font-medium text-slate-800 dark:text-slate-200">
                   {f.original_name}
                 </span>
-                <span className="block truncate text-xs text-slate-500">
+                <span className="block truncate text-xs text-slate-500 dark:text-slate-400">
                   {formatBytes(f.size_bytes)} · {f.uploader_name} ·{" "}
                   {timeAgo(f.created_at)}
                 </span>
@@ -165,12 +165,12 @@ export default function AttachmentTiles({
           >
             <Thumb
               file={f}
-              className="h-28 w-40 rounded-lg border border-slate-200"
+              className="h-28 w-40 rounded-lg border border-slate-200 dark:border-slate-800"
             />
-            <span className="mt-1.5 block truncate text-xs font-medium text-slate-700">
+            <span className="mt-1.5 block truncate text-xs font-medium text-slate-700 dark:text-slate-200">
               {f.original_name}
             </span>
-            <span className="block text-[11px] text-slate-400">
+            <span className="block text-[11px] text-slate-400 dark:text-slate-500">
               {formatBytes(f.size_bytes)}
             </span>
           </a>
