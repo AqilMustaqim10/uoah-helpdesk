@@ -10,7 +10,12 @@ import { audit } from "../db/audit";
 import { ah, HttpError } from "../lib/http";
 import { bodyId, cleanText, idParam, oneOf } from "../lib/validate";
 import { escapeLike } from "../lib/sql";
-import { ARTICLE_STATUSES, FILE_LIMITS, PAGINATION } from "../config/constants";
+import {
+  ARTICLE_CATEGORIES,
+  ARTICLE_STATUSES,
+  FILE_LIMITS,
+  PAGINATION,
+} from "../config/constants";
 import type { AuthUser } from "../middleware/auth";
 import { writeLimiter } from "../middleware/rateLimit";
 import {
@@ -34,7 +39,7 @@ function qstr(v: unknown): string {
 
 /** Columns shared by the list and the detail view. */
 const ARTICLE_COLUMNS = `
-  a.id, a.title, a.status, a.tags, a.business_unit_id,
+  a.id, a.title, a.category, a.status, a.tags, a.business_unit_id,
   bu.code AS unit_code, bu.name AS unit_name,
   a.created_by, cu.name AS author_name, a.updated_by, uu.name AS editor_name,
   a.created_at, a.updated_at`;
@@ -205,7 +210,7 @@ router.delete(
 );
 
 // ---------------------------------------------------------------------------
-// GET /api/kb?q=&status=&unit=&page=
+// GET /api/kb?q=&category=&status=&unit=&page=
 // ---------------------------------------------------------------------------
 router.get(
   "/",
@@ -218,6 +223,12 @@ router.get(
     const params: unknown[] = [...scope.params];
 
     // 2) Optional filters
+    const category = qstr(req.query.category);
+    if (category) {
+      params.push(oneOf(category, ARTICLE_CATEGORIES, "category"));
+      conds.push(`a.category = $${params.length}`);
+    }
+
     const status = qstr(req.query.status);
     if (status) {
       params.push(oneOf(status, ARTICLE_STATUSES, "status"));
@@ -237,7 +248,7 @@ router.get(
       params.push(`%${escapeLike(q)}%`);
       const n = params.length;
       conds.push(
-        `(a.title ILIKE $${n} OR a.body ILIKE $${n} OR EXISTS (SELECT 1 FROM unnest(a.tags) AS tg WHERE tg ILIKE $${n}))`,
+        `(a.title ILIKE $${n} OR a.body ILIKE $${n} OR a.category ILIKE $${n} OR EXISTS (SELECT 1 FROM unnest(a.tags) AS tg WHERE tg ILIKE $${n}))`,
       );
     }
 
@@ -268,7 +279,7 @@ router.get(
 );
 
 // ---------------------------------------------------------------------------
-// POST /api/kb   { title, body, status?, tags?, business_unit_id? }
+// POST /api/kb   { title, body, category, status?, tags?, business_unit_id? }
 // ---------------------------------------------------------------------------
 router.post(
   "/",
@@ -284,6 +295,11 @@ router.post(
       max: 50000,
       multiline: true,
     });
+    const category = oneOf(
+      req.body?.category,
+      ARTICLE_CATEGORIES,
+      "category",
+    );
     const status =
       req.body?.status === undefined
         ? "DRAFT"
@@ -307,9 +323,9 @@ router.post(
 
     const id = await withTx(async (c) => {
       const ins = await c.query(
-        `INSERT INTO articles (title, body, status, tags, business_unit_id, created_by, updated_by)
-         VALUES ($1, $2, $3, $4, $5, $6, $6) RETURNING id`,
-        [title, body, status, tags, unitId, user.id],
+        `INSERT INTO articles (title, body, category, status, tags, business_unit_id, created_by, updated_by)
+         VALUES ($1, $2, $3, $4, $5, $6, $7, $7) RETURNING id`,
+        [title, body, category, status, tags, unitId, user.id],
       );
       const articleId: number = ins.rows[0].id;
       await audit(c, {
@@ -317,7 +333,7 @@ router.post(
         action: "ARTICLE_CREATED",
         entityType: "article",
         entityId: articleId,
-        details: { title, status, business_unit_id: unitId },
+        details: { title, category, status, business_unit_id: unitId },
       });
       return articleId;
     });
@@ -337,7 +353,7 @@ router.get(
 );
 
 // ---------------------------------------------------------------------------
-// PATCH /api/kb/:id   any of { title, body, status, tags, business_unit_id }
+// PATCH /api/kb/:id   any of { title, body, category, status, tags, business_unit_id }
 // ---------------------------------------------------------------------------
 router.patch(
   "/:id",
@@ -388,6 +404,12 @@ router.patch(
           "body",
         );
       }
+      if (b.category !== undefined)
+        set(
+          "category",
+          oneOf(b.category, ARTICLE_CATEGORIES, "category"),
+          "category",
+        );
       if (b.status !== undefined)
         set("status", oneOf(b.status, ARTICLE_STATUSES, "status"), "status");
       if (b.tags !== undefined) set("tags", parseTags(b.tags), "tags");

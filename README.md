@@ -11,7 +11,7 @@ A web-based helpdesk for UOA Hospitality. Employees can submit and follow suppor
 - Priority-based SLA countdowns, overdue alerts, and dashboard compliance metrics
 - Staff quick views, sortable ticket columns, and bulk assignment/status actions
 - IT dashboards, ticket history, audit logs, and PDF reports
-- Searchable knowledge base with unit-specific and shared articles
+- Searchable, categorized knowledge base with unit-specific and shared articles
 - User, business-unit, department, and branding administration
 - Email verification, password recovery, and optional two-factor authentication
 - Optional email-to-ticket ingestion using a dedicated POP3 worker
@@ -74,9 +74,12 @@ psql -U postgres -d uoa_helpdesk -f server\sql\migration_step_i.sql
 psql -U postgres -d uoa_helpdesk -f server\sql\migration_2fa.sql
 psql -U postgres -d uoa_helpdesk -f server\sql\migration_departments.sql
 psql -U postgres -d uoa_helpdesk -f server\sql\migration_kb_link.sql
+psql -U postgres -d uoa_helpdesk -f server\sql\migration_kb_categories.sql
 ```
 
-The base schema already includes the audit-retention and business-unit audit changes, and grants the article permissions used by the app. The remaining migrations above add user deletion/departments, two-factor authentication, managed departments, and knowledge-base links on replies.
+The base schema already includes the audit-retention and business-unit audit changes, and grants the article permissions used by the app. The remaining migrations above add user deletion/departments, two-factor authentication, managed departments, knowledge-base links on replies, and knowledge-base article categories. Existing articles are assigned to **Other** when the category migration runs.
+
+Knowledge-base articles use one required category: Accounts & access, Network & Wi-Fi, Devices & printing, Email & collaboration, Hospitality systems, Security & policies, Guides & how-tos, or Other. Tags remain available for more specific topics.
 
 ### 3. Configure the server
 

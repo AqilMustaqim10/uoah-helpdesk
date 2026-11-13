@@ -3,6 +3,7 @@ import { Globe2 } from "lucide-react";
 import { AnimatePresence, m, useReducedMotion } from "framer-motion";
 import type { ArticleSummary } from "../../types";
 import { timeAgo } from "../../lib/format";
+import { ARTICLE_CATEGORY_META } from "../../lib/kbMeta";
 import ArticleStatusBadge from "./ArticleStatusBadge";
 
 interface Props {
@@ -46,6 +47,10 @@ export default function ArticleList({ articles, showStatus, onOpen }: Props) {
                 </h3>
                 {showStatus && <ArticleStatusBadge status={a.status} />}
               </div>
+
+              <span className="w-fit rounded-full bg-brand/10 px-2 py-0.5 text-xs font-medium text-brand">
+                {ARTICLE_CATEGORY_META[a.category]}
+              </span>
 
               <p className="line-clamp-2 text-sm text-slate-500">
                 {a.excerpt}

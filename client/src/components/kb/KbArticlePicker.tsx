@@ -7,6 +7,7 @@ import { BookOpen, Search } from "lucide-react";
 import { kbApi, type LinkableArticle } from "../../api/kb";
 import { useDebounce } from "../../hooks/useDebounce";
 import { cn } from "../../lib/cn";
+import { ARTICLE_CATEGORY_META } from "../../lib/kbMeta";
 import Skeleton from "../ui/Skeleton";
 
 interface Props {
@@ -178,7 +179,7 @@ export default function KbArticlePicker({
                   </span>
                 </div>
                 <p className="mt-0.5 truncate pl-6 text-xs text-slate-500">
-                  {a.excerpt}
+                  {ARTICLE_CATEGORY_META[a.category]} · {a.excerpt}
                 </p>
               </div>
             ))

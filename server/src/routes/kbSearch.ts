@@ -49,7 +49,7 @@ router.get(
     }
 
     const r = await query(
-      `SELECT a.id, a.title, left(a.body, 160) AS excerpt, a.tags, bu.code AS unit_code, a.updated_at
+      `SELECT a.id, a.title, a.category, left(a.body, 160) AS excerpt, a.tags, bu.code AS unit_code, a.updated_at
          FROM articles a
          LEFT JOIN business_units bu ON bu.id = a.business_unit_id
         WHERE a.status = 'PUBLISHED'

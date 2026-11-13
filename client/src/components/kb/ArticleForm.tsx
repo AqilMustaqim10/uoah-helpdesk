@@ -6,7 +6,12 @@ import { useEffect, useState, type FormEvent } from "react";
 import { authApi } from "../../api/auth";
 import { ApiError } from "../../api/client";
 import { kbApi } from "../../api/kb";
-import { ARTICLE_STATUS_LIST, ARTICLE_STATUS_META } from "../../lib/kbMeta";
+import {
+  ARTICLE_CATEGORY_LIST,
+  ARTICLE_CATEGORY_META,
+  ARTICLE_STATUS_LIST,
+  ARTICLE_STATUS_META,
+} from "../../lib/kbMeta";
 import type {
   ArticleDetail,
   ArticleDetailResponse,
@@ -40,6 +45,9 @@ export default function ArticleForm({
 
   const [title, setTitle] = useState(initial?.title ?? "");
   const [body, setBody] = useState(initial?.body ?? "");
+  const [category, setCategory] = useState<
+    ArticleInput["category"] | ""
+  >(initial?.category ?? "");
   const [tags, setTags] = useState(initial ? initial.tags.join(", ") : "");
   const [status, setStatus] = useState<ArticleStatus>(
     initial?.status ?? "DRAFT",
@@ -48,7 +56,11 @@ export default function ArticleForm({
     initial?.business_unit_id ? String(initial.business_unit_id) : "",
   ); // '' = global
   const [units, setUnits] = useState<UnitOption[]>([]);
-  const [errors, setErrors] = useState<{ title?: string; body?: string }>({});
+  const [errors, setErrors] = useState<{
+    title?: string;
+    body?: string;
+    category?: string;
+  }>({});
   const [formError, setFormError] = useState("");
   const [busy, setBusy] = useState(false);
 
@@ -75,12 +87,14 @@ export default function ArticleForm({
     if (title.trim().length < 3)
       errs.title = "Please enter a title (at least 3 characters).";
     if (!body.trim()) errs.body = "Please write the article text.";
+    if (!category) errs.category = "Choose a category.";
     setErrors(errs);
-    if (Object.keys(errs).length > 0) return;
+    if (!category || Object.keys(errs).length > 0) return;
 
     const payload: ArticleInput = {
       title: title.trim(),
       body: body.trim(),
+      category,
       status,
       tags: tags
         .split(",")
@@ -136,6 +150,21 @@ export default function ArticleForm({
         placeholder="e.g. How to connect to the guest Wi-Fi"
         autoFocus
       />
+      <Select
+        label="Category"
+        value={category}
+        onChange={(e) =>
+          setCategory(e.target.value as ArticleInput["category"] | "")
+        }
+        error={errors.category}
+      >
+        <option value="">Choose a category</option>
+        {ARTICLE_CATEGORY_LIST.map((item) => (
+          <option key={item} value={item}>
+            {ARTICLE_CATEGORY_META[item]}
+          </option>
+        ))}
+      </Select>
       <Textarea
         label="Article text"
         value={body}

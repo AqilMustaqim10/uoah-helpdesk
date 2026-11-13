@@ -142,6 +142,7 @@ router.get(
       matches.push(
         `(CASE
           WHEN a.title ILIKE $${n}
+            OR a.category ILIKE $${n}
             OR a.body ILIKE $${n}
             OR ${inTags}
           THEN 1
@@ -151,6 +152,7 @@ router.get(
 
       scores.push(
         `(CASE WHEN a.title ILIKE $${n} THEN 3 ELSE 0 END
+          + CASE WHEN a.category ILIKE $${n} THEN 2 ELSE 0 END
           + CASE WHEN ${inTags} THEN 2 ELSE 0 END
           + CASE WHEN a.body ILIKE $${n} THEN 1 ELSE 0 END)`,
       );
@@ -161,11 +163,12 @@ router.get(
     const need = Math.min(2, words.length);
 
     const r = await query(
-      `SELECT id, title, excerpt, unit_code, tags
+      `SELECT id, title, category, excerpt, unit_code, tags
          FROM (
            SELECT
              a.id,
              a.title,
+             a.category,
              left(a.body, 160) AS excerpt,
              bu.code AS unit_code,
              a.tags,

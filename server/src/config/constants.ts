@@ -34,6 +34,18 @@ export const DEFAULT_PRIORITY: Priority = "MEDIUM";
 export const ARTICLE_STATUSES = ["DRAFT", "PUBLISHED", "ARCHIVED"] as const;
 export type ArticleStatus = (typeof ARTICLE_STATUSES)[number];
 
+export const ARTICLE_CATEGORIES = [
+  "access_accounts",
+  "network_wifi",
+  "devices_printing",
+  "email_collaboration",
+  "hospitality_systems",
+  "security_policies",
+  "guides_howtos",
+  "other",
+] as const;
+export type ArticleCategory = (typeof ARTICLE_CATEGORIES)[number];
+
 /** Allowed status moves: key = current status, value = statuses it may move to. CLOSED has none. */
 export const TRANSITIONS: Record<Status, readonly Status[]> = {
   OPEN: ["IN_PROGRESS"],

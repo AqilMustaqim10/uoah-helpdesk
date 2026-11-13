@@ -2,7 +2,12 @@
 import { useEffect, useState } from "react";
 import { Search } from "lucide-react";
 import type { ArticleQuery, UnitOption } from "../../types";
-import { ARTICLE_STATUS_LIST, ARTICLE_STATUS_META } from "../../lib/kbMeta";
+import {
+  ARTICLE_CATEGORY_LIST,
+  ARTICLE_CATEGORY_META,
+  ARTICLE_STATUS_LIST,
+  ARTICLE_STATUS_META,
+} from "../../lib/kbMeta";
 import { useDebounce } from "../../hooks/useDebounce";
 import { cn } from "../../lib/cn";
 
@@ -57,6 +62,26 @@ export default function ArticleFilters({
           aria-label="Search articles"
           className="h-10 w-full rounded-lg border border-slate-200 bg-white pl-9 pr-3 text-sm text-slate-900 transition placeholder:text-slate-400 focus:border-brand focus:outline-none focus:ring-2 focus:ring-brand/25"
         />
+      </div>
+
+      <div className="flex flex-wrap items-center gap-2">
+        <select
+          aria-label="Filter by category"
+          className={SELECT_CLASS}
+          value={query.category}
+          onChange={(e) =>
+            onChange({
+              category: e.target.value as ArticleQuery["category"],
+            })
+          }
+        >
+          <option value="">All categories</option>
+          {ARTICLE_CATEGORY_LIST.map((category) => (
+            <option key={category} value={category}>
+              {ARTICLE_CATEGORY_META[category]}
+            </option>
+          ))}
+        </select>
       </div>
 
       {(staff || isAdmin) && (

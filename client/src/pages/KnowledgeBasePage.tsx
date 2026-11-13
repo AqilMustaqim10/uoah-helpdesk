@@ -22,7 +22,13 @@ import Pagination from "../components/ui/Pagination";
 import Skeleton from "../components/ui/Skeleton";
 import { cn } from "../lib/cn";
 
-const EMPTY_QUERY: ArticleQuery = { q: "", status: "", unit: "", page: 1 };
+const EMPTY_QUERY: ArticleQuery = {
+  q: "",
+  category: "",
+  status: "",
+  unit: "",
+  page: 1,
+};
 
 export default function KnowledgeBasePage({ user }: { user: User }) {
   const staff = user.role !== "USER";
@@ -88,7 +94,12 @@ export default function KnowledgeBasePage({ user }: { user: User }) {
     setFilterKey((k) => k + 1);
   }
 
-  const filtersActive = !!(query.q || query.status || query.unit);
+  const filtersActive = !!(
+    query.q ||
+    query.category ||
+    query.status ||
+    query.unit
+  );
   const firstLoad = loading && !data;
 
   return (

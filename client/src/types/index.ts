@@ -257,11 +257,21 @@ export interface UnitBranding {
 // ---------------- Knowledge Base ----------------
 
 export type ArticleStatus = "DRAFT" | "PUBLISHED" | "ARCHIVED";
+export type ArticleCategory =
+  | "access_accounts"
+  | "network_wifi"
+  | "devices_printing"
+  | "email_collaboration"
+  | "hospitality_systems"
+  | "security_policies"
+  | "guides_howtos"
+  | "other";
 
 /** One card in the article list. */
 export interface ArticleSummary {
   id: number;
   title: string;
+  category: ArticleCategory;
   status: ArticleStatus;
   tags: string[];
   business_unit_id: number | null; // null = global (all units)
@@ -306,6 +316,7 @@ export interface ArticleListResponse {
 
 export interface ArticleQuery {
   q: string;
+  category: "" | ArticleCategory;
   status: "" | ArticleStatus;
   unit: string; // '' = all, 'global' = global only, or a unit id
   page: number;
@@ -315,6 +326,7 @@ export interface ArticleQuery {
 export interface ArticleInput {
   title: string;
   body: string;
+  category: ArticleCategory;
   status: ArticleStatus;
   tags: string[];
   business_unit_id?: number | null;

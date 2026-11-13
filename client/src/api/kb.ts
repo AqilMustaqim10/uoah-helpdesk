@@ -1,6 +1,7 @@
 // Knowledge base server calls (they match server/src/routes/kb.ts and kbSuggest.ts).
 import { api } from "./client";
 import type {
+  ArticleCategory,
   ArticleDetailResponse,
   ArticleInput,
   ArticleListResponse,
@@ -11,6 +12,7 @@ import type {
 export interface ArticleSuggestion {
   id: number;
   title: string;
+  category: ArticleCategory;
   excerpt: string;
   unit_code: string | null;
   tags: string[];
@@ -19,6 +21,7 @@ export interface ArticleSuggestion {
 function toQueryString(q: ArticleQuery): string {
   const p = new URLSearchParams();
   if (q.q.trim()) p.set("q", q.q.trim());
+  if (q.category) p.set("category", q.category);
   if (q.status) p.set("status", q.status);
   if (q.unit) p.set("unit", q.unit);
   p.set("page", String(q.page));
@@ -29,6 +32,7 @@ function toQueryString(q: ArticleQuery): string {
 export interface LinkableArticle {
   id: number;
   title: string;
+  category: ArticleCategory;
   excerpt: string;
   tags: string[];
   unit_code: string | null; // null = global (all units)

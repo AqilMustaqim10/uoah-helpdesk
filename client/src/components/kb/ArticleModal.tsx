@@ -15,6 +15,7 @@ import ArticleAttachments from "./ArticleAttachments";
 import ArticleForm from "./ArticleForm";
 import ArticleStatusBadge from "./ArticleStatusBadge";
 import ConfirmModal from "../ui/ConfirmModal";
+import { ARTICLE_CATEGORY_META } from "../../lib/kbMeta";
 
 interface Props {
   user: User;
@@ -130,6 +131,9 @@ export default function ArticleModal({
               {user.role !== "USER" && (
                 <ArticleStatusBadge status={data.article.status} />
               )}
+              <span className="rounded-full bg-brand/10 px-2 py-0.5 text-xs font-medium text-brand">
+                {ARTICLE_CATEGORY_META[data.article.category]}
+              </span>
               {data.article.unit_code ? (
                 <span className="rounded-full bg-slate-100 px-2 py-0.5 font-mono text-xs text-slate-600">
                   {data.article.unit_code}

@@ -7,6 +7,7 @@ import { BookOpen, ChevronDown } from "lucide-react";
 import { kbApi, type ArticleSuggestion } from "../../api/kb";
 import { useDebounce } from "../../hooks/useDebounce";
 import { cn } from "../../lib/cn";
+import { ARTICLE_CATEGORY_META } from "../../lib/kbMeta";
 import Button from "../ui/Button";
 import Skeleton from "../ui/Skeleton";
 
@@ -98,6 +99,9 @@ export default function SuggestedArticles({ title, onSolved }: Props) {
                 <span className="min-w-0 flex-1">
                   <span className="block truncate text-sm font-medium text-slate-900">
                     {a.title}
+                  </span>
+                  <span className="block text-xs font-medium text-brand">
+                    {ARTICLE_CATEGORY_META[a.category]}
                   </span>
                   {!open && (
                     <span className="block truncate text-xs text-slate-500">

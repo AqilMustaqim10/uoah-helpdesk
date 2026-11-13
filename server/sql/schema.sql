@@ -194,6 +194,10 @@ CREATE TABLE articles (
   id                BIGSERIAL PRIMARY KEY,
   title             TEXT NOT NULL CHECK (char_length(title) BETWEEN 3 AND 200),
   body              TEXT NOT NULL CHECK (char_length(body) <= 50000),
+  category          TEXT NOT NULL DEFAULT 'other'
+                    CHECK (category IN ('access_accounts','network_wifi','devices_printing',
+                      'email_collaboration','hospitality_systems','security_policies',
+                      'guides_howtos','other')),
   status            TEXT NOT NULL DEFAULT 'DRAFT'
                     CHECK (status IN ('DRAFT','PUBLISHED','ARCHIVED')),
   tags              TEXT[] NOT NULL DEFAULT '{}',
