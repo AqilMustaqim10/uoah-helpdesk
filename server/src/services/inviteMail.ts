@@ -37,12 +37,14 @@ export function sendInvitationEmail(o: {
       "",
       footer,
     ].join("\n"),
+    logo: true,
     // renderHtml escapes every piece of text, so a name can never become HTML
     html: renderHtml({
       heading: "Your account is ready",
       paragraphs: [intro, why, ...steps, ...(extra ? [extra] : [])],
       link: { url: config.appUrl, label: "Open the helpdesk" },
       footer,
+      logo: true,
     }),
   });
 }

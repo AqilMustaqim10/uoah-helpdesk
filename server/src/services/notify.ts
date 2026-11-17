@@ -7,12 +7,7 @@
 import { pool } from "../db/pool";
 import { config } from "../config/env";
 import { ticketRef } from "../lib/sql";
-import {
-  EMAIL_LOGO_CID,
-  EMAIL_LOGO_PATH,
-  renderHtml,
-  sendMail,
-} from "./mailer";
+import { renderHtml, sendMail } from "./mailer";
 
 const STATUS_LABEL: Record<string, string> = {
   OPEN: "Open",
@@ -75,7 +70,7 @@ async function emailAbout(
   to: string,
   lead: string,
   paragraphs: string[],
-  includeLogo = false,
+  includeLogo = true,
 ): Promise<void> {
   const ref = ticketRef(t.id);
   const ticketUrl = `${config.appUrl}/tickets/${ref}`;
@@ -104,15 +99,7 @@ async function emailAbout(
       footer,
       logo: includeLogo,
     }),
-    attachments: includeLogo
-      ? [
-          {
-            filename: "email-reply-logo.jpeg",
-            path: EMAIL_LOGO_PATH,
-            cid: EMAIL_LOGO_CID,
-          },
-        ]
-      : undefined,
+    logo: includeLogo,
     headers: { "X-Helpdesk-Ticket": ref },
   });
 }
@@ -128,12 +115,12 @@ export function notifyTicketCreated(ticketId: number): void {
     await emailAbout(
       t,
       t.requester_email,
-      "We received your request",
+      "Request received",
       [
         `Hello ${t.requester_name},`,
-        "We received your request and the IT team will look at it soon.",
-        `Ticket: ${ticketRef(t.id)}`,
-        `Title: ${t.title}`,
+        `Thanks for contacting UOA IT Helpdesk. We have received your request and created ticket ${ticketRef(t.id)}.`,
+        `Request: ${t.title}`,
+        "Our IT team will review it and follow up if we need more information.",
       ],
       true,
     );
@@ -157,10 +144,13 @@ export function notifyStatusChanged(
     const toLabel = STATUS_LABEL[to] ?? to;
     const lines = [
       `Hello ${t.requester_name},`,
-      `The status of your ticket ${ticketRef(t.id)} changed from ${fromLabel} to ${toLabel}.`,
+      `There is an update to your request "${t.title}" (${ticketRef(t.id)}).`,
+      `Status updated: ${fromLabel} -> ${toLabel}.`,
     ];
     if (to === "RESOLVED") {
-      lines.push("If the problem is not fixed, please reply to let us know.");
+      lines.push(
+        "If this resolves the issue, no further action is needed. If you still need help, reply to this email and we will take another look.",
+      );
     }
     await emailAbout(
       t,
@@ -192,11 +182,13 @@ export function notifyAssigned(
     if (!assignee || !assignee.is_active) return;
 
     const actor = await userName(actorId);
-    await emailAbout(t, assignee.email, "Assigned to you", [
+    await emailAbout(t, assignee.email, "Ticket assigned to you", [
       `Hello ${assignee.name},`,
-      `${actor} assigned ticket ${ticketRef(t.id)} to you.`,
-      `Title: ${t.title}`,
+      `${actor} assigned you a helpdesk request.`,
+      `Request: ${t.title}`,
+      `Ticket: ${ticketRef(t.id)}`,
       `Requester: ${t.requester_name}`,
+      "Open the ticket to review the details and respond.",
     ]);
   });
 }
@@ -238,7 +230,7 @@ export function notifyReply(
         return;
       await emailAbout(t, t.assignee_email, "New reply from the requester", [
         `Hello ${t.assignee_name},`,
-        `${comment.author_name} replied on your ticket ${ticketRef(t.id)}:`,
+        `${comment.author_name} added a reply to the request "${t.title}" (${ticketRef(t.id)}):`,
         excerpt(comment.body),
         // Only the title of the linked article goes into the email (the article itself stays in the helpdesk)
         ...(comment.kb_title ? [`Suggested article: ${comment.kb_title}`] : []),
@@ -248,7 +240,7 @@ export function notifyReply(
       if (!t.requester_active || t.created_by === actorId) return;
       await emailAbout(t, t.requester_email, "New reply", [
         `Hello ${t.requester_name},`,
-        `${comment.author_name} replied on your ticket ${ticketRef(t.id)}:`,
+        `${comment.author_name} replied to your request "${t.title}" (${ticketRef(t.id)}):`,
         excerpt(comment.body),
       ]);
     }
@@ -262,20 +254,23 @@ export function notifyReply(
 export function sendRejectionEmail(to: string): void {
   background("rejection", async () => {
     const p1 =
-      "We received your email, but we could not find an active helpdesk account for this address, so we could not create a ticket.";
+      "We received your email, but this address is not linked to an active UOA IT Helpdesk account. We could not create a ticket.";
     const p2 =
-      "Please register with this email address, then send your request again.";
-    const p3 = "You will receive this message at most once a day.";
+      "Please register or sign in using this email address, then submit your request through the helpdesk.";
+    const p3 =
+      "For your privacy, we send this notice no more than once every 24 hours.";
     await sendMail({
       to,
       subject: "[UOA IT Helpdesk] We could not process your email",
       text: [p1, "", p2, "", `Register here: ${config.appUrl}`, "", p3].join(
         "\n",
       ),
+      logo: true,
       html: renderHtml({
         heading: "We could not process your email",
         paragraphs: [p1, p2, p3],
         link: { url: config.appUrl, label: "Register or sign in" },
+        logo: true,
       }),
     });
   });

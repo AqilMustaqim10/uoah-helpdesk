@@ -23,7 +23,13 @@ export function sendCodeEmail(
     to,
     subject,
     text: `${intro}\n\nYour code: ${code}\n\n${expiry}`,
-    html: renderHtml({ heading: subject, paragraphs: [intro, expiry], code }),
+    logo: true,
+    html: renderHtml({
+      heading: subject,
+      paragraphs: [intro, expiry],
+      code,
+      logo: true,
+    }),
   });
 }
 
@@ -42,10 +48,12 @@ export function sendAccountExistsEmail(to: string): void {
     to,
     subject,
     text: `${line1}\n\n${line2}`,
+    logo: true,
     html: renderHtml({
       heading: subject,
       paragraphs: [line1, line2],
       link: { url: config.appUrl, label: "Open the helpdesk" },
+      logo: true,
     }),
   });
 }

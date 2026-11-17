@@ -38,6 +38,7 @@ export interface MailInput {
   subject: string;
   text: string;
   html?: string;
+  logo?: boolean;
   attachments?: NonNullable<Parameters<Transporter["sendMail"]>[0]["attachments"]>;
   /** Extra headers (used later for threading), never taken from user input. */
   headers?: Record<string, string>;
@@ -69,13 +70,22 @@ export async function sendMail(m: MailInput): Promise<boolean> {
       return false;
     }
 
+    const attachments = [...(m.attachments ?? [])];
+    if (m.logo) {
+      attachments.push({
+        filename: "email-reply-logo.jpeg",
+        path: EMAIL_LOGO_PATH,
+        cid: EMAIL_LOGO_CID,
+      });
+    }
+
     await t.sendMail({
       from: config.smtp.from || config.smtp.user,
       to,
       subject: safeSubject(m.subject), // line breaks removed so no header injection
       text: m.text,
       html: m.html,
-      attachments: m.attachments,
+      attachments: attachments.length ? attachments : undefined,
       headers: {
         "Auto-Submitted": "auto-generated",
         "X-Auto-Response-Suppress": "All",
