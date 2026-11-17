@@ -5,23 +5,27 @@ import type { Db } from "../db/pool";
 
 /** True only for a short, unambiguous confirmation from the requester. */
 export function isResolutionConfirmation(text: string): boolean {
-  const message = text
-    .trim()
-    .toLowerCase()
-    .replace(/[.!?]/g, "")
-    .replace(/\s+/g, " ");
+  // Email replies often have a greeting or signature around the confirmation.
+  // Only inspect the first few non-empty lines: quoted earlier messages must
+  // never cause an old confirmation phrase to close a ticket.
+  const lines = text
+    .replace(/\r\n?/g, "\n")
+    .split("\n")
+    .map((line) =>
+      line
+        .trim()
+        .toLowerCase()
+        .replace(/[.!?,:;]+$/g, "")
+        .replace(/\s+/g, " "),
+    )
+    .filter(Boolean)
+    .slice(0, 3);
 
-  return [
-    "resolved",
-    "mark as resolved",
-    "mark this as resolved",
-    "mark ticket as resolved",
-    "mark this ticket as resolved",
-    "confirm resolved",
-    "confirmed resolved",
-    "issue resolved",
-    "problem resolved",
-  ].includes(message);
+  return lines.some((line) =>
+    /^(?:please\s+)?(?:mark\s+(?:(?:this|the)\s+)?(?:ticket\s+)?as\s+resolved|(?:this|the)\s+(?:ticket|issue|problem)\s+(?:is|has been)\s+resolved|(?:issue|problem)\s+resolved|(?:yes\s+)?(?:confirm(?:ed)?\s+)?resolved)(?:\s+(?:now|thanks?|thank you))?$/.test(
+      line,
+    ),
+  );
 }
 
 /** Close a resolved ticket after its requester has explicitly confirmed it. */

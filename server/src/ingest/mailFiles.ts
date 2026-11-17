@@ -11,6 +11,9 @@ import { detectFileType } from "../lib/fileType";
 import type { PreparedFile } from "../services/upload";
 
 export const MIN_INLINE_PICTURE_BYTES = 50 * 1024;
+// This is the CID used by services/mailer.ts for the image in every helpdesk email.
+// A reply can include that image again as part of the quoted original email.
+const HELPDESK_LOGO_CID = "uoa-helpdesk-logo";
 
 export interface PickedFiles {
   files: PreparedFile[]; // ready to be saved
@@ -24,6 +27,11 @@ function isInline(a: Attachment): boolean {
   if (a.contentDisposition === "inline") return true;
   if (a.contentDisposition === "attachment") return false;
   return false;
+}
+
+/** Do not turn our own email template image, quoted back by a mail client, into a ticket file. */
+function isQuotedHelpdeskLogo(a: Attachment): boolean {
+  return a.cid?.replace(/[<>]/g, "").toLowerCase() === HELPDESK_LOGO_CID;
 }
 
 /** A safe name to SHOW (it is never used as a path; the file is stored under a random name). */
@@ -42,6 +50,10 @@ export function pickMailFiles(mail: ParsedMail): PickedFiles {
   let ignoredSmall = 0;
 
   for (const a of mail.attachments ?? []) {
+    if (isQuotedHelpdeskLogo(a)) {
+      continue;
+    }
+
     const buf = a.content;
     if (
       !Buffer.isBuffer(buf) ||

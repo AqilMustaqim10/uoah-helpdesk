@@ -127,12 +127,12 @@ router.post(
         ]);
         // A requester can confirm resolution with an explicit public reply.
         // Do not treat any general follow-up as confirmation.
-        if (
+        const confirmsResolution =
           !internal &&
           t.created_by === user.id &&
           t.status === "RESOLVED" &&
-          isResolutionConfirmation(body)
-        ) {
+          isResolutionConfirmation(body);
+        if (confirmsResolution) {
           await closeAfterRequesterConfirmation(c, id, user.id, "reply");
         }
         await audit(c, {
@@ -145,6 +145,7 @@ router.post(
           details: {
             internal,
             files: stored.length,
+            ...(confirmsResolution ? { resolution_confirmation: true } : {}),
             ...(linkedKbId !== null ? { kb_id: linkedKbId } : {}),
           },
         });

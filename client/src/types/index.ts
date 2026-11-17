@@ -28,7 +28,8 @@ export type NotificationType =
   | "TICKET_REPLY"
   | "ASSIGNED"
   | "SLA_WARNING"
-  | "NEW_TICKET";
+  | "NEW_TICKET"
+  | "TICKET_CLOSED";
 
 export interface Notification {
   id: string;

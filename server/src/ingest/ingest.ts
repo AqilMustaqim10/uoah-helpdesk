@@ -143,11 +143,11 @@ async function addComment(
   await c.query("UPDATE tickets SET updated_at = now() WHERE id = $1", [
     ticket.id,
   ]);
-  if (
+  const confirmsResolution =
     ticket.created_by === u.id &&
     ticket.status === "RESOLVED" &&
-    isResolutionConfirmation(body)
-  ) {
+    isResolutionConfirmation(body);
+  if (confirmsResolution) {
     await closeAfterRequesterConfirmation(c, ticket.id, u.id, "reply");
   }
   await audit(c, {
@@ -156,7 +156,11 @@ async function addComment(
     entityType: "comment",
     entityId: ins.rows[0].id,
     ticketId: ticket.id,
-    details: { internal: false, source: "EMAIL" },
+    details: {
+      internal: false,
+      source: "EMAIL",
+      ...(confirmsResolution ? { resolution_confirmation: true } : {}),
+    },
   });
   return ins.rows[0].id as number;
 }

@@ -57,11 +57,16 @@ router.get(
                 CASE a.action
                   WHEN 'TICKET_ASSIGNED' THEN 'This ticket was assigned to you.'
                   WHEN 'TICKET_CREATED' THEN 'A new ticket is waiting for assignment.'
-                  ELSE 'The requester replied to your assigned ticket.'
+                  WHEN 'TICKET_STATUS_CHANGED' THEN 'The requester confirmed the resolution and closed this ticket.'
+                  ELSE CASE WHEN t.assigned_to IS NULL
+                    THEN 'The requester replied to an unassigned ticket.'
+                    ELSE 'The requester replied to your assigned ticket.'
+                  END
                 END AS message,
                 CASE a.action
                   WHEN 'TICKET_ASSIGNED' THEN 'ASSIGNED'
                   WHEN 'TICKET_CREATED' THEN 'NEW_TICKET'
+                  WHEN 'TICKET_STATUS_CHANGED' THEN 'TICKET_CLOSED'
                   ELSE 'TICKET_REPLY'
                 END AS type, a.created_at AS "createdAt"
            FROM audit_log a
@@ -76,9 +81,13 @@ router.get(
             AND (
               (a.action = 'TICKET_ASSIGNED' AND a.details->>'to_id' = $1::text)
               OR (a.action = 'TICKET_CREATED' AND t.assigned_to IS NULL)
+              OR (a.action = 'TICKET_STATUS_CHANGED'
+                  AND a.details->>'reason' = 'requester_confirmation'
+                  AND (t.assigned_to = $1 OR t.assigned_to IS NULL))
               OR (a.action = 'COMMENT_ADDED'
                   AND a.details->>'internal' = 'false'
-                  AND t.assigned_to = $1
+                  AND COALESCE(a.details->>'resolution_confirmation', 'false') <> 'true'
+                  AND (t.assigned_to = $1 OR t.assigned_to IS NULL)
                   AND author.role = 'USER')
             )
           ORDER BY a.created_at DESC
@@ -89,13 +98,23 @@ router.get(
       } else if (user.role === "ADMIN") {
         const result = await query(
           `SELECT 'audit-' || a.id AS id, a.ticket_id AS "ticketId",
-                t.title, 'A high-priority ticket was created.' AS message,
-                'NEW_TICKET' AS type, a.created_at AS "createdAt"
+                t.title,
+                CASE a.action
+                  WHEN 'TICKET_STATUS_CHANGED' THEN 'The requester confirmed the resolution and closed this ticket.'
+                  ELSE 'A high-priority ticket was created.'
+                END AS message,
+                CASE a.action
+                  WHEN 'TICKET_STATUS_CHANGED' THEN 'TICKET_CLOSED'
+                  ELSE 'NEW_TICKET'
+                END AS type, a.created_at AS "createdAt"
            FROM audit_log a
            JOIN tickets t ON t.id = a.ticket_id
           WHERE a.created_at > now() - interval '14 days'
-            AND a.action = 'TICKET_CREATED'
-            AND a.details->>'priority' IN ('HIGH', 'URGENT')
+            AND (
+              (a.action = 'TICKET_CREATED' AND a.details->>'priority' IN ('HIGH', 'URGENT'))
+              OR (a.action = 'TICKET_STATUS_CHANGED'
+                  AND a.details->>'reason' = 'requester_confirmation')
+            )
           ORDER BY a.created_at DESC
           LIMIT 50`,
         );

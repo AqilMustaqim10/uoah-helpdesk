@@ -73,7 +73,21 @@ r = pickMailFiles(
 );
 assert.equal(r.files.length, 1);
 
-// 5) A program disguised as a picture is refused
+// 5) Our own large inline logo, carried back in a reply, is never saved again
+r = pickMailFiles(
+  mailWith({
+    filename: "email-reply-logo.jpeg",
+    contentDisposition: "attachment",
+    cid: "<uoa-helpdesk-logo>",
+    related: true,
+    content: png(66 * 1024),
+  }),
+);
+assert.equal(r.files.length, 0);
+assert.equal(r.skipped, 0);
+assert.equal(r.ignoredSmall, 0);
+
+// 6) A program disguised as a picture is refused
 r = pickMailFiles(
   mailWith({
     filename: "evil.png",
@@ -84,7 +98,7 @@ r = pickMailFiles(
 assert.equal(r.files.length, 0);
 assert.equal(r.skipped, 1);
 
-// 6) Plain text named .pdf is refused, but a real PDF with a vague type is accepted as a PDF
+// 7) Plain text named .pdf is refused, but a real PDF with a vague type is accepted as a PDF
 r = pickMailFiles(
   mailWith(
     {
@@ -103,7 +117,7 @@ assert.equal(r.files.length, 1);
 assert.equal(r.files[0].kind.mime, "application/pdf");
 assert.equal(r.skipped, 1);
 
-// 7) The same picture twice is saved once
+// 8) The same picture twice is saved once
 r = pickMailFiles(
   mailWith(
     { filename: "a.png", contentDisposition: "attachment", content: png(3000) },
@@ -112,7 +126,7 @@ r = pickMailFiles(
 );
 assert.equal(r.files.length, 1);
 
-// 8) File names are cleaned (folders removed), and a missing name gets a fallback
+// 9) File names are cleaned (folders removed), and a missing name gets a fallback
 r = pickMailFiles(
   mailWith(
     {
@@ -133,7 +147,7 @@ assert.deepEqual(
   ["evil.png", "scan.png", "email-attachment-3.png"],
 );
 
-// 9) At most 10 files are kept
+// 10) At most 10 files are kept
 r = pickMailFiles(
   mailWith(
     ...Array.from({ length: 12 }, (_, i) => ({
@@ -146,7 +160,7 @@ r = pickMailFiles(
 assert.equal(r.files.length, 10);
 assert.equal(r.skipped, 2);
 
-// 10) No attachments at all
+// 11) No attachments at all
 assert.equal(
   pickMailFiles({ attachments: [] } as unknown as ParsedMail).files.length,
   0,

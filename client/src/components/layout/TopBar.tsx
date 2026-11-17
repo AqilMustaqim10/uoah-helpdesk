@@ -4,6 +4,7 @@ import { AnimatePresence, m, useReducedMotion } from "framer-motion";
 import {
   AlertTriangle,
   Bell,
+  CheckCircle2,
   CheckCheck,
   ChevronDown,
   LogOut,
@@ -202,6 +203,8 @@ export default function TopBar({
                       const NotificationIcon =
                         notification.type === "SLA_WARNING"
                           ? AlertTriangle
+                          : notification.type === "TICKET_CLOSED"
+                            ? CheckCircle2
                           : notification.type === "ASSIGNED"
                             ? UserCheck
                             : notification.type === "NEW_TICKET"
