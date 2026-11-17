@@ -5,6 +5,7 @@ import {
   CheckCircle2,
   CircleDot,
   Clock,
+  Hourglass,
   Lock,
   type LucideIcon,
 } from "lucide-react";
@@ -34,10 +35,10 @@ export const STATUS_META: Record<
     icon: Clock,
   },
   RESOLVED: {
-    label: "Resolved",
-    chip: "bg-emerald-50 text-emerald-700 ring-emerald-200",
-    step: "bg-emerald-100 text-emerald-900",
-    icon: CheckCircle2,
+    label: "Awaiting confirmation",
+    chip: "bg-amber-50 text-amber-800 ring-amber-200",
+    step: "bg-amber-100 text-amber-900",
+    icon: Hourglass,
   },
   CLOSED: {
     label: "Closed",
@@ -81,7 +82,6 @@ export const TRANSITIONS: Record<
     { to: "OPEN", label: "Move back to Open" },
   ],
   RESOLVED: [
-    { to: "CLOSED", label: "Close ticket", primary: true },
     { to: "IN_PROGRESS", label: "Reopen work" },
   ],
   CLOSED: [],

@@ -50,7 +50,9 @@ export type ArticleCategory = (typeof ARTICLE_CATEGORIES)[number];
 export const TRANSITIONS: Record<Status, readonly Status[]> = {
   OPEN: ["IN_PROGRESS"],
   IN_PROGRESS: ["RESOLVED", "OPEN"],
-  RESOLVED: ["CLOSED", "IN_PROGRESS"],
+  // RESOLVED means "awaiting the requester's confirmation".  Only that
+  // confirmation (web button or explicit reply) may close the ticket.
+  RESOLVED: ["IN_PROGRESS"],
   CLOSED: [],
 };
 

@@ -27,6 +27,10 @@ import { classifyMessage } from "./classify";
 import { cleanBody, cleanSubject, sanitizeBody } from "./cleaner";
 import { pickMailFiles, type PickedFiles } from "./mailFiles";
 import { classifyEmailPriority } from "./priority";
+import {
+  closeAfterRequesterConfirmation,
+  isResolutionConfirmation,
+} from "../services/resolutionConfirmation";
 import { Pop3Client, pop3FromConfig, type MailboxEntry } from "./pop3";
 import { config } from "../config/env";
 
@@ -123,7 +127,7 @@ function fileNote(saved: number, picked: PickedFiles): string {
 async function addComment(
   c: Db,
   u: KnownUser,
-  ticketId: number,
+  ticket: { id: number; status: string; created_by: number },
   text: string,
   names: string[],
 ): Promise<number> {
@@ -134,17 +138,24 @@ async function addComment(
   const ins = await c.query(
     `INSERT INTO comments (ticket_id, author_id, body, raw_body, is_internal, source)
      VALUES ($1, $2, $3, $4, FALSE, 'EMAIL') RETURNING id`,
-    [ticketId, u.id, body, raw], // email can only ever make PUBLIC replies, never internal notes
+    [ticket.id, u.id, body, raw], // email can only ever make PUBLIC replies, never internal notes
   );
   await c.query("UPDATE tickets SET updated_at = now() WHERE id = $1", [
-    ticketId,
+    ticket.id,
   ]);
+  if (
+    ticket.created_by === u.id &&
+    ticket.status === "RESOLVED" &&
+    isResolutionConfirmation(body)
+  ) {
+    await closeAfterRequesterConfirmation(c, ticket.id, u.id, "reply");
+  }
   await audit(c, {
     actorId: u.id,
     action: "COMMENT_ADDED",
     entityType: "comment",
     entityId: ins.rows[0].id,
-    ticketId,
+    ticketId: ticket.id,
     details: { internal: false, source: "EMAIL" },
   });
   return ins.rows[0].id as number;
@@ -365,7 +376,7 @@ async function handleMessage(uidl: string, mail: ParsedMail): Promise<void> {
 
       // 3) A reply to an existing ticket? Only if the sender may SEE that ticket.
       const threadId = threadedTicketId(subject);
-      let target: { id: number; status: string } | null = null;
+      let target: { id: number; status: string; created_by: number } | null = null;
       if (threadId) {
         const t = await c.query(
           "SELECT id, status, created_by, business_unit_id FROM tickets WHERE id = $1 FOR UPDATE",
@@ -373,12 +384,16 @@ async function handleMessage(uidl: string, mail: ParsedMail): Promise<void> {
         );
         const row = t.rows[0];
         if (row && canSeeTicketRow(user, row))
-          target = { id: row.id, status: row.status };
+          target = {
+            id: row.id,
+            status: row.status,
+            created_by: row.created_by,
+          };
         // otherwise: treated as a brand new ticket (nothing is revealed about the other ticket)
       }
 
       if (target && target.status !== "CLOSED") {
-        const commentId = await addComment(c, user, target.id, text, names);
+        const commentId = await addComment(c, user, target, text, names);
         const saved = await saveMailFiles(
           c,
           written,

@@ -203,6 +203,8 @@ export default function TicketModal({
 
   const staff = user.role === "ADMIN" || user.role === "IT";
   const closed = data?.ticket.status === "CLOSED";
+  const awaitingUserConfirmation =
+    !staff && data?.ticket.status === "RESOLVED" && data.ticket.created_by === user.id;
   const canEdit = staff && !closed;
 
   /** Who may remove a file (the server checks again): the uploader or IT/ADMIN, never on a closed ticket. */
@@ -454,6 +456,21 @@ export default function TicketModal({
                   <span className="text-xs text-slate-500">
                     This ticket is closed and read-only.
                   </span>
+                )}
+                {awaitingUserConfirmation && (
+                  <Button
+                    loading={busy === "confirm-resolution"}
+                    disabled={!!busy}
+                    onClick={() =>
+                      void run(
+                        "confirm-resolution",
+                        () => ticketsApi.confirmResolution(ticketId),
+                        "Ticket closed after your confirmation",
+                      )
+                    }
+                  >
+                    Confirm resolved & close
+                  </Button>
                 )}
                 {primary && (
                   <Button

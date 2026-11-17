@@ -53,6 +53,8 @@ export const ticketsApi = {
 
   setStatus: (id: number, status: TicketStatus) =>
     api.patch<TicketDetailResponse>(`/tickets/${id}/status`, { status }),
+  confirmResolution: (id: number) =>
+    api.post<TicketDetailResponse>(`/tickets/${id}/confirm-resolution`, {}),
   setPriority: (id: number, priority: Priority) =>
     api.patch<TicketDetailResponse>(`/tickets/${id}/priority`, { priority }),
   setAssignee: (id: number, assignee_id: number | null) =>

@@ -34,6 +34,7 @@ import {
   buildDetail,
 } from "../services/ticketQueries";
 import { addTicketActivityFilters } from "../services/ticketFilters";
+import { closeAfterRequesterConfirmation } from "../services/resolutionConfirmation";
 
 const router = Router();
 const SLA_DEADLINE_SQL = `COALESCE(t.due_at, t.created_at + (CASE t.priority ${Object.entries(
@@ -335,6 +336,29 @@ router.patch(
 
     // Email the requester (unless they made the change themselves): after commit, never blocking
     notifyStatusChanged(id, user.id, previous, to);
+
+    res.json(await buildDetail(pool, user, id));
+  }),
+);
+
+// ---------------------------------------------------------------------------
+// POST /api/tickets/:id/confirm-resolution
+// The requester, not staff, gives the final confirmation and closes a ticket.
+// ---------------------------------------------------------------------------
+router.post(
+  "/:id/confirm-resolution",
+  ah(async (req, res) => {
+    const user = req.user!;
+    const id = idParam(req.params.id);
+
+    await withTx(async (c) => {
+      const t = await getScopedTicket(c, user, id, true);
+      if (t.created_by !== user.id)
+        throw new HttpError(403, "Only the requester can confirm resolution.");
+      if (t.status !== "RESOLVED")
+        throw new HttpError(409, "This ticket is not awaiting resolution confirmation.");
+      await closeAfterRequesterConfirmation(c, id, user.id, "button");
+    });
 
     res.json(await buildDetail(pool, user, id));
   }),

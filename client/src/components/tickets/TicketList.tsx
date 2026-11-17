@@ -143,7 +143,7 @@ export default function TicketList({
             className="h-4 w-4 rounded border-slate-300 text-brand focus:ring-brand"
           />
         )}
-        <div className="hidden flex-1 grid-cols-[minmax(15rem,1.65fr)_minmax(8rem,1fr)_6.5rem_7.5rem_10rem] items-center gap-4 xl:grid">
+        <div className="hidden flex-1 grid-cols-[minmax(15rem,1.65fr)_minmax(8rem,1fr)_6.5rem_10.5rem_10rem] items-center gap-4 xl:grid">
           <span className="text-xs font-semibold uppercase tracking-wide text-slate-500">Requester</span>
           {sortable.map(({ key, label }) => (
             <button
@@ -230,7 +230,7 @@ export default function TicketList({
                   event.preventDefault();
                   onOpen(t.id);
                 }}
-                className="grid min-w-0 flex-1 grid-cols-1 items-center gap-3 text-left xl:grid-cols-[minmax(15rem,1.65fr)_minmax(8rem,1fr)_6.5rem_7.5rem_10rem] xl:gap-4"
+                className="grid min-w-0 flex-1 grid-cols-1 items-center gap-3 text-left xl:grid-cols-[minmax(15rem,1.65fr)_minmax(8rem,1fr)_6.5rem_10.5rem_10rem] xl:gap-4"
               >
                 <div className="min-w-0">
                   <div className="flex items-baseline gap-2">

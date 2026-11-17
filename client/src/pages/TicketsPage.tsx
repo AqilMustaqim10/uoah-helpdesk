@@ -399,8 +399,7 @@ export default function TicketsPage({
                   <option value="">Choose status</option>
                   <option value="OPEN">Open</option>
                   <option value="IN_PROGRESS">In progress</option>
-                  <option value="RESOLVED">Resolved</option>
-                  <option value="CLOSED">Closed</option>
+                  <option value="RESOLVED">Awaiting user confirmation</option>
                 </select>
                 <Button
                   size="sm"

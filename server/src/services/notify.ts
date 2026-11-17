@@ -12,7 +12,7 @@ import { renderHtml, sendMail } from "./mailer";
 const STATUS_LABEL: Record<string, string> = {
   OPEN: "Open",
   IN_PROGRESS: "In progress",
-  RESOLVED: "Resolved",
+  RESOLVED: "Awaiting your confirmation",
   CLOSED: "Closed",
 };
 
@@ -149,7 +149,7 @@ export function notifyStatusChanged(
     ];
     if (to === "RESOLVED") {
       lines.push(
-        "If this resolves the issue, no further action is needed. If you still need help, reply to this email and we will take another look.",
+        "Please confirm the fix by opening the ticket and selecting \"Confirm resolved & close\", or reply with \"mark as resolved\". If you still need help, reply to this email and we will take another look.",
       );
     }
     await emailAbout(

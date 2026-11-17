@@ -20,6 +20,10 @@ import { insertTicketFiles } from "../services/attachments";
 import { notifyReply } from "../services/notify";
 import { buildDetail } from "../services/ticketQueries";
 import {
+  closeAfterRequesterConfirmation,
+  isResolutionConfirmation,
+} from "../services/resolutionConfirmation";
+import {
   prepareFiles,
   removeStored,
   upload,
@@ -121,6 +125,16 @@ router.post(
         await c.query("UPDATE tickets SET updated_at = now() WHERE id = $1", [
           id,
         ]);
+        // A requester can confirm resolution with an explicit public reply.
+        // Do not treat any general follow-up as confirmation.
+        if (
+          !internal &&
+          t.created_by === user.id &&
+          t.status === "RESOLVED" &&
+          isResolutionConfirmation(body)
+        ) {
+          await closeAfterRequesterConfirmation(c, id, user.id, "reply");
+        }
         await audit(c, {
           actorId: user.id,
           action: "COMMENT_ADDED",
