@@ -108,14 +108,31 @@
     --brand: #2563eb;
     /* default brand color (blue-600) */
     --onbrand: #ffffff;
-    --surface: #ffffff;
-    --surface-muted: #f1f5f9;
-    --text-primary: #0f172a;
-    --text-muted: #64748b;
-    --border: #e2e8f0;
+    /* A soft neutral-grey light theme: less glare than a pure-white canvas. */
+    --surface: #edf0f2;
+    --surface-muted: #d7dde2;
+    --text-primary: #1f2933;
+    --text-muted: #5f6b76;
+    --border: #c7cfd6;
     --on-danger: #ffffff;
     --on-warning: #0f172a;
     color-scheme: light;
+
+    /* Most components use Tailwind's slate and white utility classes directly.
+       Remapping the lightest steps gives cards, panels, and page backgrounds
+       the same calm grey treatment without changing component markup. */
+    --color-white: #edf0f2;
+    --color-slate-50: #dfe4e8;
+    --color-slate-100: #d3d9de;
+    --color-slate-200: #c7cfd6;
+    --color-slate-300: #adb8c1;
+    --color-slate-400: #71808b;
+    --color-slate-500: #596773;
+    --color-slate-600: #43515c;
+    --color-slate-700: #303c46;
+    --color-slate-800: #253039;
+    --color-slate-900: #182128;
+    --color-slate-950: #0f151a;
 }
 
 /* ---------- Dark mode ----------
