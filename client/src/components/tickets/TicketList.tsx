@@ -122,15 +122,15 @@ export default function TicketList({
     };
   }, [reduceMotion, tickets.length]);
   const sortable: Array<{ key: TicketSortKey; label: string }> = [
-    { key: "title", label: "Ticket" },
+    { key: "title", label: "Ticket / issue" },
     { key: "priority", label: "Priority" },
     { key: "status", label: "Status" },
-    { key: "sla", label: "SLA due" },
+    { key: "sla", label: "Assignee & SLA" },
   ];
 
   return (
     <div ref={listRef} className="overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm">
-      <div className="flex items-center gap-3 border-b border-slate-200 bg-slate-50 px-4 py-2">
+      <div className="flex items-center gap-3 border-b border-slate-200 bg-slate-50/80 px-4 py-3">
         {role !== "USER" && (
           <input
             type="checkbox"
@@ -143,15 +143,16 @@ export default function TicketList({
             className="h-4 w-4 rounded border-slate-300 text-brand focus:ring-brand"
           />
         )}
-        <div className="hidden flex-1 grid-cols-[minmax(0,1fr)_7rem_8rem_10rem] items-center gap-4 sm:grid">
+        <div className="hidden flex-1 grid-cols-[minmax(15rem,1.65fr)_minmax(8rem,1fr)_6.5rem_7.5rem_10rem] items-center gap-4 xl:grid">
+          <span className="text-xs font-semibold uppercase tracking-wide text-slate-500">Requester</span>
           {sortable.map(({ key, label }) => (
             <button
               key={key}
               type="button"
               onClick={() => onSort(key)}
               aria-label={`Sort by ${label}`}
-              className={cn(
-                "text-left text-xs font-semibold",
+            className={cn(
+                "text-left text-xs font-semibold uppercase tracking-wide",
                 sortBy === key ? "text-slate-900" : "text-slate-500",
               )}
             >
@@ -166,7 +167,7 @@ export default function TicketList({
           onChange={(event) =>
             onSort(event.target.value as TicketSortKey)
           }
-          className="h-8 flex-1 rounded-md border border-slate-200 bg-white px-2 text-xs text-slate-600 sm:hidden"
+          className="h-8 flex-1 rounded-md border border-slate-200 bg-white px-2 text-xs text-slate-600 xl:hidden"
         >
           {sortable.map(({ key, label }) => (
             <option key={key} value={key}>
@@ -178,7 +179,7 @@ export default function TicketList({
           type="button"
           onClick={() => onSort(sortBy)}
           aria-label={`Sort ${sortDirection === "asc" ? "descending" : "ascending"}`}
-          className="h-8 rounded-md border border-slate-200 bg-white px-2 text-xs text-slate-600 sm:hidden"
+          className="h-8 rounded-md border border-slate-200 bg-white px-2 text-xs text-slate-600 xl:hidden"
         >
           {sortDirection === "asc" ? "↑" : "↓"}
         </button>
@@ -229,7 +230,7 @@ export default function TicketList({
                   event.preventDefault();
                   onOpen(t.id);
                 }}
-                className="grid min-w-0 flex-1 grid-cols-1 items-center gap-2 text-left sm:grid-cols-[minmax(0,1fr)_7rem_8rem_10rem] sm:gap-4"
+                className="grid min-w-0 flex-1 grid-cols-1 items-center gap-3 text-left xl:grid-cols-[minmax(15rem,1.65fr)_minmax(8rem,1fr)_6.5rem_7.5rem_10rem] xl:gap-4"
               >
                 <div className="min-w-0">
                   <div className="flex items-baseline gap-2">
@@ -267,6 +268,10 @@ export default function TicketList({
                   </div>
                 </div>
 
+                <div className="hidden min-w-0 xl:block">
+                  <p className="truncate text-sm font-medium text-slate-700">{t.requester_name}</p>
+                  <p className="truncate text-xs text-slate-500">{t.requester_department ?? t.unit_code}</p>
+                </div>
                 <div className="flex items-center gap-2">
                   <span className="text-[11px] text-slate-400 sm:hidden">
                     Priority
@@ -279,13 +284,13 @@ export default function TicketList({
                   </span>
                   <StatusBadge status={t.status} />
                 </div>
-                <div className="flex items-center gap-2">
+                <div className="flex min-w-0 items-center gap-2">
                   <span className="text-[11px] text-slate-400 sm:hidden">
                     SLA
                   </span>
                   <SlaCountdown ticket={t} />
                   {t.assignee_name && (
-                    <Avatar name={t.assignee_name} size="sm" />
+                    <><Avatar name={t.assignee_name} size="sm" /><span className="hidden truncate text-xs text-slate-600 2xl:inline">{t.assignee_name}</span></>
                   )}
                 </div>
               </a>

@@ -99,14 +99,14 @@ export default function UserRow({
   return (
     <li
       className={cn(
-        "flex animate-fade-in flex-col gap-3 px-4 py-3 lg:flex-row lg:items-center lg:gap-4",
+        "grid animate-fade-in gap-4 px-4 py-4 sm:px-5 xl:grid-cols-[minmax(14rem,1fr)_minmax(26rem,1.45fr)_auto] xl:items-center",
         !user.is_active && "bg-slate-50",
       )}
     >
       {/* Who */}
       <div
         className={cn(
-          "flex min-w-0 flex-1 items-center gap-3",
+          "flex min-w-0 items-center gap-3",
           !user.is_active && "opacity-70",
         )}
       >
@@ -141,7 +141,7 @@ export default function UserRow({
               ))}
           </div>
           <p className="truncate text-xs text-slate-500">{user.email}</p>
-          <p className="text-xs text-slate-400">
+          <p className="mt-0.5 text-xs text-slate-400">
             {user.department ?? "No department"}
             {!admin && user.unit_code && (
               <span className="font-mono"> · {user.unit_code}</span>
@@ -151,69 +151,25 @@ export default function UserRow({
         </div>
       </div>
 
-      {/* Controls */}
-      <div className="flex flex-wrap items-center gap-2">
+      {/* Account fields: labelled controls make scanning and bulk management easier. */}
+      <div className="grid gap-2 border-t border-slate-100 pt-3 sm:grid-cols-3 xl:border-y-0 xl:border-l xl:border-slate-200 xl:py-1 xl:pl-4 xl:pt-1">
         {canManage &&
           (isSelf ? (
-            <RoleBadge role={user.role} />
+            <div className="flex flex-col gap-1"><span className="text-[10px] font-semibold uppercase tracking-wider text-slate-400">Role</span><RoleBadge role={user.role} /></div>
           ) : (
-            <select
-              aria-label={`Role of ${user.name}`}
-              className={SELECT_CLASS}
-              value={user.role}
-              disabled={busy}
-              onChange={(e) => onRole(e.target.value as Role)}
-            >
-              {ROLE_OPTIONS.map((o) => (
-                <option key={o.value} value={o.value}>
-                  {o.label}
-                </option>
-              ))}
-            </select>
+            <label className="flex min-w-0 flex-col gap-1"><span className="text-[10px] font-semibold uppercase tracking-wider text-slate-400">Role</span><select aria-label={`Role of ${user.name}`} className={SELECT_CLASS} value={user.role} disabled={busy} onChange={(e) => onRole(e.target.value as Role)}>{ROLE_OPTIONS.map((o) => <option key={o.value} value={o.value}>{o.label}</option>)}</select></label>
           ))}
 
         {canManage && (
-          <select
-            aria-label={`Business unit of ${user.name}`}
-            className={SELECT_CLASS}
-            value={user.business_unit_id ?? ""}
-            disabled={busy}
-            onChange={(e) => e.target.value && onUnit(Number(e.target.value))}
-          >
-            {user.business_unit_id === null && (
-              <option value="" disabled>
-                No unit
-              </option>
-            )}
-            {units.map((u) => (
-              <option key={u.id} value={u.id}>
-                {u.code}
-              </option>
-            ))}
-          </select>
+          <label className="flex min-w-0 flex-col gap-1"><span className="text-[10px] font-semibold uppercase tracking-wider text-slate-400">Business unit</span><select aria-label={`Business unit of ${user.name}`} className={SELECT_CLASS} value={user.business_unit_id ?? ""} disabled={busy} onChange={(e) => e.target.value && onUnit(Number(e.target.value))}>{user.business_unit_id === null && <option value="" disabled>No unit</option>}{units.map((u) => <option key={u.id} value={u.id}>{u.code}</option>)}</select></label>
         )}
 
         {canManage && (
-          <select
-            aria-label={`Department of ${user.name}`}
-            className={SELECT_CLASS}
-            value={user.department ?? ""}
-            disabled={busy}
-            onChange={(e) => e.target.value && onDepartment(e.target.value)}
-          >
-            {!user.department && (
-              <option value="" disabled>
-                No department
-              </option>
-            )}
-            {departmentOptions.map((d) => (
-              <option key={d} value={d}>
-                {d}
-              </option>
-            ))}
-          </select>
+          <label className="flex min-w-0 flex-col gap-1"><span className="text-[10px] font-semibold uppercase tracking-wider text-slate-400">Department</span><select aria-label={`Department of ${user.name}`} className={SELECT_CLASS} value={user.department ?? ""} disabled={busy} onChange={(e) => e.target.value && onDepartment(e.target.value)}>{!user.department && <option value="" disabled>No department</option>}{departmentOptions.map((d) => <option key={d} value={d}>{d}</option>)}</select></label>
         )}
+      </div>
 
+      <div className="flex flex-wrap items-center gap-2 xl:justify-end">
         {canManage && !isSelf && twoFactorOn && (
           <Button
             size="sm"
@@ -259,7 +215,7 @@ export default function UserRow({
       </div>
 
       {admin && user.business_unit_id === null && user.role !== "ADMIN" && (
-        <p className="text-xs text-amber-700 lg:basis-full">
+        <p className="text-xs text-amber-700 xl:col-span-3">
           This person has no business unit, so they cannot see or create
           tickets.
         </p>

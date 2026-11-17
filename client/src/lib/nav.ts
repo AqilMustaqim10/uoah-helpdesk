@@ -26,7 +26,7 @@ export const TABS: TabDef[] = [
     key: "dashboard",
     label: "Dashboard",
     icon: LayoutDashboard,
-    roles: ["ADMIN", "IT"],
+    roles: ["ADMIN", "IT", "USER"],
     soon: "Ticket statistics and trends.",
   },
   {
@@ -73,6 +73,6 @@ export function tabsForRole(role: Role): TabDef[] {
 }
 
 /** IT and ADMIN land on the dashboard, everyone else on their tickets. */
-export function defaultTabFor(role: Role): TabKey {
-  return role === "USER" ? "tickets" : "dashboard";
+export function defaultTabFor(_role: Role): TabKey {
+  return "dashboard";
 }

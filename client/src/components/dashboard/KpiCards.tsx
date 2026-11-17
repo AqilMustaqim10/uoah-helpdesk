@@ -1,13 +1,5 @@
 // The row of number cards at the top of the dashboard. Numbers count up when they appear.
-import {
-  CheckCircle2,
-  CircleDot,
-  Clock,
-  Flame,
-  Gauge,
-  Ticket,
-  type LucideIcon,
-} from "lucide-react";
+import { CheckCircle2, CircleDot, Clock, Flame, type LucideIcon } from "lucide-react";
 import { m } from "framer-motion";
 import { useCountUp } from "../../hooks/useCountUp";
 import type { DashboardStats } from "../../types";
@@ -23,43 +15,32 @@ interface CardDef {
 
 const CARDS: CardDef[] = [
   {
-    key: "total",
-    label: "Total tickets",
-    icon: Ticket,
-    tone: "bg-surface-muted text-muted",
-  },
-  {
     key: "open",
-    label: "Open",
+    label: "Open queue",
+    hint: "Ready to be assigned",
     icon: CircleDot,
     tone: "bg-indigo-50 text-indigo-700",
   },
   {
     key: "in_progress",
     label: "In progress",
+    hint: "Currently being handled",
     icon: Clock,
     tone: "bg-amber-50 text-amber-700",
   },
   {
-    key: "resolved",
-    label: "Resolved",
-    icon: CheckCircle2,
-    tone: "bg-emerald-50 text-emerald-700",
-  },
-  {
     key: "urgent",
-    label: "Urgent",
-    hint: "Still open or in progress",
+    label: "High priority",
+    hint: "Urgent active tickets",
     icon: Flame,
     tone: "bg-rose-50 text-rose-700",
   },
   {
-    key: "sla",
-    label: "SLA met",
-    hint: "Active tickets on track",
-    icon: Gauge,
-    tone: "bg-indigo-50 text-indigo-700",
-    suffix: "%",
+    key: "resolved",
+    label: "Resolved",
+    hint: "Completed requests",
+    icon: CheckCircle2,
+    tone: "bg-emerald-50 text-emerald-700",
   },
 ];
 
@@ -80,12 +61,11 @@ function Card({
     <m.button
       type="button"
       onClick={onSelect}
-      disabled={value === 0}
       data-motion-button="true"
-      whileHover={value === 0 ? undefined : { y: -3, scale: 1.015 }}
-      whileTap={value === 0 ? undefined : { scale: 0.98 }}
+      whileHover={{ y: -3, scale: 1.015 }}
+      whileTap={{ scale: 0.98 }}
       transition={{ type: "spring", stiffness: 420, damping: 26 }}
-      className={`rounded-2xl border border-border bg-surface p-4 text-left text-foreground shadow-sm transition enabled:hover:border-brand/40 enabled:hover:shadow-md focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand focus-visible:ring-offset-2 disabled:cursor-default ${className ?? ""}`}
+      className={`flex min-h-[132px] w-full flex-col rounded-2xl border border-border bg-surface p-5 text-left text-foreground shadow-sm transition hover:border-brand/40 hover:shadow-md focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand focus-visible:ring-offset-2 ${className ?? ""}`}
       aria-label={`View ${value} ${def.label.toLowerCase()} tickets`}
     >
       <div className="flex items-center justify-between">
@@ -96,11 +76,11 @@ function Card({
           <Icon className="h-4 w-4" aria-hidden />
         </span>
       </div>
-      <p className="mt-2 text-3xl font-semibold tabular-nums text-foreground">
+      <p className="mt-auto pt-5 text-3xl font-semibold tabular-nums tracking-tight text-foreground">
         {shown}
         {def.suffix ?? ""}
       </p>
-      {def.hint && <p className="mt-0.5 text-xs text-muted">{def.hint}</p>}
+      {def.hint && <p className="mt-1 text-xs text-muted">{def.hint}</p>}
     </m.button>
   );
 }
@@ -113,7 +93,7 @@ export default function KpiCards({
   onSelect: (key: keyof DashboardStats["kpis"]) => void;
 }) {
   return (
-    <div className="grid grid-cols-2 gap-3 lg:grid-cols-6">
+    <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 xl:grid-cols-4">
       {CARDS.map((c) => (
         <div key={c.key} className="dashboard-stagger-item">
           <Card

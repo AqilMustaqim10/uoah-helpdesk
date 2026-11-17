@@ -27,18 +27,19 @@ import SuggestedArticles from "./SuggestedArticles";
 interface Props {
   user: User;
   onClose: () => void;
+  initialDraft?: { title?: string; description?: string } | null;
   /** Called with the new ticket's id after it was created. */
   onCreated: (id: number) => void;
 }
 
-export default function CreateTicketModal({ user, onClose, onCreated }: Props) {
+export default function CreateTicketModal({ user, onClose, onCreated, initialDraft }: Props) {
   const toast = useToast();
   const staff = user.role !== "USER";
   const isAdmin = user.role === "ADMIN";
   const noUnit = user.business_unit_id === null && !isAdmin;
 
-  const [title, setTitle] = useState("");
-  const [description, setDescription] = useState("");
+  const [title, setTitle] = useState(initialDraft?.title ?? "");
+  const [description, setDescription] = useState(initialDraft?.description ?? "");
   const [priority, setPriority] = useState<Priority>("MEDIUM");
   const [unitId, setUnitId] = useState(
     user.business_unit_id ? String(user.business_unit_id) : "",

@@ -80,6 +80,7 @@ export default function AppShell({ user }: { user: User }) {
 
   // Ticket windows + "reload the data" counter (the list and the dashboard both listen to it)
   const [createOpen, setCreateOpen] = useState(false);
+  const [ticketDraft, setTicketDraft] = useState<{ title?: string; description?: string } | null>(null);
   const [selectedId, setSelectedId] = useState<number | null>(
     () => routeFromLocation(tabs, fallbackTab).ticketId,
   );
@@ -202,6 +203,11 @@ export default function AppShell({ user }: { user: User }) {
     setMobileOpen(false); // close the phone drawer after choosing
   }
 
+  const openCreateTicket = useCallback((draft: { title?: string; description?: string } | null = null) => {
+    setTicketDraft(draft);
+    setCreateOpen(true);
+  }, []);
+
   const current = tabs.find((t) => t.key === tab) ?? tabs[0];
 
   /** The page for the active tab. */
@@ -235,6 +241,7 @@ export default function AppShell({ user }: { user: User }) {
             version={version}
             onOpen={openTicket}
             onShowTickets={showTickets}
+            onCreate={openCreateTicket}
           />
         );
       case "kb":
@@ -283,7 +290,7 @@ export default function AppShell({ user }: { user: User }) {
           mobileOpen={mobileOpen}
           onOpenMenu={() => setMobileOpen(true)}
           onCloseMenu={() => setMobileOpen(false)}
-          onCreateTicket={() => setCreateOpen(true)}
+          onCreateTicket={() => openCreateTicket()}
           onOpenTicket={openTicket}
           onLogout={logout}
         />
@@ -312,9 +319,11 @@ export default function AppShell({ user }: { user: User }) {
         <ErrorBoundary key="create-ticket" onClose={() => setCreateOpen(false)}>
           <CreateTicketModal
             user={user}
-            onClose={() => setCreateOpen(false)}
+            initialDraft={ticketDraft}
+            onClose={() => { setCreateOpen(false); setTicketDraft(null); }}
             onCreated={(id) => {
               setCreateOpen(false);
+              setTicketDraft(null);
               setTab("tickets");
               refresh();
               openTicket(id);

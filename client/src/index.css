@@ -109,7 +109,7 @@
     /* default brand color (blue-600) */
     --onbrand: #ffffff;
     --surface: #ffffff;
-    --surface-muted: #f8fafc;
+    --surface-muted: #f1f5f9;
     --text-primary: #0f172a;
     --text-muted: #64748b;
     --border: #e2e8f0;
@@ -125,24 +125,24 @@
 .dark {
     color-scheme: dark;
 
-    --surface: #0f172a;
-    --surface-muted: #1e293b;
+    --surface: #18181b;
+    --surface-muted: #27272a;
     --text-primary: #f8fafc;
     --text-muted: #94a3b8;
     --border: #334155;
     --on-danger: #0f172a;
 
-    --color-white: #0f172a;
-    --color-slate-50: #020617;
-    --color-slate-100: #1e293b;
-    --color-slate-200: #334155;
-    --color-slate-300: #475569;
-    --color-slate-400: #64748b;
-    --color-slate-500: #94a3b8;
-    --color-slate-600: #cbd5e1;
-    --color-slate-700: #e2e8f0;
-    --color-slate-800: #f1f5f9;
-    --color-slate-900: #f8fafc;
+    --color-white: #18181b;
+    --color-slate-50: #09090b;
+    --color-slate-100: #18181b;
+    --color-slate-200: #27272a;
+    --color-slate-300: #3f3f46;
+    --color-slate-400: #71717a;
+    --color-slate-500: #a1a1aa;
+    --color-slate-600: #d4d4d8;
+    --color-slate-700: #e4e4e7;
+    --color-slate-800: #f4f4f5;
+    --color-slate-900: #fafafa;
     --color-slate-950: #ffffff;
 
     --color-emerald-50: #022c22;
@@ -210,6 +210,10 @@ body {
     -webkit-font-smoothing: antialiased;
 }
 
+/* Enterprise surfaces: restrained radii, fine borders, and dependable density. */
+button, input, select, textarea { font: inherit; }
+input, select, textarea { border-radius: 0.625rem; }
+
 button:not([data-motion-button="true"]):not(:disabled) {
     transition: transform 180ms cubic-bezier(0.2, 0.8, 0.2, 1);
 }
@@ -234,6 +238,17 @@ html.theme-transition *,
 html.theme-transition *::before,
 html.theme-transition *::after {
     transition: background-color 0.25s ease, border-color 0.25s ease, color 0.25s ease !important;
+}
+
+/* Prevent viewport-width surprises on notched phones and retain usable controls at 320px. */
+html {
+    -webkit-text-size-adjust: 100%;
+    text-size-adjust: 100%;
+}
+
+@media (max-width: 374px) {
+    body { font-size: 15px; }
+    button, select, input { max-width: 100%; }
 }
 
 /* People who turned on "reduce motion" in their system get no animations */

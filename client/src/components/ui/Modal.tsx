@@ -118,7 +118,7 @@ export default function Modal({
         "fixed inset-0 z-50 bg-black/40 backdrop-blur-sm",
         presentation === "drawer" ? "overflow-hidden" : "overflow-y-auto",
       )}
-      onMouseDown={(e) => {
+      onClick={(e) => {
         if (e.target === e.currentTarget) requestClose(); // click on the dark area
       }}
     >
@@ -130,7 +130,7 @@ export default function Modal({
             ? "items-stretch justify-end"
             : "items-center justify-center p-4 sm:p-6",
         )}
-        onMouseDown={(e) => {
+        onClick={(e) => {
           if (e.target === e.currentTarget) requestClose();
         }}
       >
@@ -177,7 +177,7 @@ export default function Modal({
           className={cn(
             "relative w-full rounded-2xl border border-slate-200 bg-white shadow-xl outline-none",
             presentation === "drawer"
-              ? "h-dvh max-w-none rounded-none sm:max-w-3xl sm:rounded-l-2xl"
+              ? "h-dvh max-w-none rounded-none sm:max-w-6xl sm:rounded-l-2xl"
               : SIZES[size],
           )}
         >

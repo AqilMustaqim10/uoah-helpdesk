@@ -66,7 +66,7 @@ export default function Sidebar({
           : { type: "spring", stiffness: 360, damping: 34 }
       }
       className={cn(
-        "fixed inset-y-0 left-0 z-40 flex w-64 flex-col border-r border-slate-200 bg-white transition-[width] duration-200",
+        "fixed inset-y-0 left-0 z-40 flex w-64 flex-col border-r border-slate-200 bg-white/95 shadow-sm backdrop-blur transition-[width] duration-200",
         "md:sticky md:top-0 md:h-dvh md:z-auto",
         mobileOpen && isMobile && "shadow-xl",
         collapsed ? "md:w-[72px]" : "md:w-64",

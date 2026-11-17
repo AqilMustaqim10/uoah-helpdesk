@@ -298,9 +298,10 @@ export default function TicketModal({
             </header>
 
             {/* ---------- body (scrolls) ---------- */}
-            <div className="min-h-0 flex-1 space-y-4 overflow-y-auto bg-slate-50 px-6 py-5" data-lenis-prevent>
-              {/* Status chips and the title */}
-              <div>
+            <div className="min-h-0 flex-1 overflow-y-auto bg-slate-50 px-5 py-5 sm:px-6" data-lenis-prevent>
+              <div className="grid gap-5 xl:grid-cols-[minmax(0,7fr)_minmax(17rem,3fr)]">
+              <div className="min-w-0 space-y-4">
+              <div className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm">
                 <div className="mb-2 flex flex-wrap items-center gap-2">
                   <StatusBadge status={data.ticket.status} />
                   <PriorityBadge priority={data.ticket.priority} />
@@ -311,15 +312,14 @@ export default function TicketModal({
                     </span>
                   )}
                 </div>
-                <h3 className="break-words text-lg font-semibold text-slate-900">
+                <h3 className="break-words text-xl font-semibold tracking-tight text-slate-900">
                   {data.ticket.title}
                 </h3>
-              </div>
 
-              {/* The description (plain text: React escapes it) */}
-              <p className="whitespace-pre-wrap break-words rounded-xl border border-slate-200 bg-white px-4 py-3 text-sm text-slate-700">
+              <p className="mt-5 whitespace-pre-wrap break-words border-t border-slate-200 pt-5 text-sm leading-6 text-slate-700">
                 {data.ticket.description}
               </p>
+              </div>
 
               {/* Key facts */}
               <dl className="grid grid-cols-2 gap-x-4 gap-y-4 rounded-xl border border-slate-200 bg-slate-100/60 p-4 md:grid-cols-4">
@@ -361,16 +361,6 @@ export default function TicketModal({
                   )}
                 </Fact>
               </dl>
-
-              {/* Progress, priority, assignee, due date */}
-              <TicketManage
-                ticket={data.ticket}
-                canEdit={canEdit}
-                busy={busy}
-                run={run}
-                secondary={secondary}
-                onMove={(to) => void move(to)}
-              />
 
               <Attachments
                 ticketId={ticketId}
@@ -415,6 +405,27 @@ export default function TicketModal({
                   <HistoryTimeline history={data.history} />
                 </div>
               )}
+              </div>
+              <aside className="space-y-4 xl:sticky xl:top-0 xl:self-start">
+                <TicketManage
+                  ticket={data.ticket}
+                  canEdit={canEdit}
+                  busy={busy}
+                  run={run}
+                  secondary={secondary}
+                  onMove={(to) => void move(to)}
+                />
+                <section className="rounded-xl border border-slate-200 bg-white p-4 shadow-sm">
+                  <p className="text-xs font-semibold uppercase tracking-[0.12em] text-slate-500">Requester information</p>
+                  <dl className="mt-4 space-y-3">
+                    <Fact label="Name"><span className="font-medium">{data.ticket.requester_name}</span></Fact>
+                    <Fact label="Department">{data.ticket.requester_department ?? "Not set"}</Fact>
+                    <Fact label="Email"><a className="break-all text-brand hover:underline" href={`mailto:${data.ticket.requester_email}`}>{data.ticket.requester_email}</a></Fact>
+                    <Fact label="Last updated"><span className="font-mono text-xs">{formatDateTime(data.ticket.updated_at)}</span></Fact>
+                  </dl>
+                </section>
+              </aside>
+              </div>
             </div>
 
             {/* ---------- footer ---------- */}

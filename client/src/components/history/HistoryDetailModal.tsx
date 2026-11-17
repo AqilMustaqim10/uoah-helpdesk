@@ -193,7 +193,7 @@ export default function HistoryDetailModal({
           <Skeleton className="h-40 w-full" />
         </div>
       ) : (
-        <div>
+        <div className="flex h-[calc(100dvh-2rem)] max-h-[56rem] flex-col overflow-hidden sm:h-[calc(100dvh-3rem)]">
           {/* header */}
           <header className="flex items-center gap-3 border-b border-slate-200 px-6 py-4 pr-14">
             <span className="shrink-0 rounded-md bg-brand px-2.5 py-1 font-mono text-sm font-semibold text-onbrand">
@@ -222,7 +222,7 @@ export default function HistoryDetailModal({
           </header>
 
           {/* body */}
-          <div className="space-y-4 bg-slate-50 px-6 py-5">
+          <div className="min-h-0 flex-1 space-y-4 overflow-y-auto bg-slate-50 px-4 py-5 sm:px-6" data-lenis-prevent>
             <div>
               <div className="mb-2 flex flex-wrap items-center gap-2">
                 <StatusBadge status={t.status} />

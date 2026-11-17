@@ -120,7 +120,7 @@ export default function TicketManage({
     >
       <ProgressSteps status={ticket.status} />
 
-      <dl className="mt-5 grid gap-4 border-t border-slate-200 pt-4 sm:grid-cols-4">
+      <dl className="mt-5 grid gap-4 border-t border-slate-200 pt-4 sm:grid-cols-2 xl:grid-cols-1">
         <Field label="Priority">
           {canEdit ? (
             <select

@@ -23,8 +23,8 @@ export const STATUS_META: Record<
 > = {
   OPEN: {
     label: "Open",
-    chip: "bg-indigo-50 text-indigo-700 ring-indigo-200",
-    step: "bg-indigo-100 text-indigo-900",
+    chip: "bg-blue-50 text-blue-700 ring-blue-200",
+    step: "bg-blue-100 text-blue-900",
     icon: CircleDot,
   },
   IN_PROGRESS: {
@@ -65,7 +65,7 @@ export const PRIORITY_META: Record<Priority, { label: string; chip: string }> =
     },
     HIGH: {
       label: "High",
-      chip: "bg-indigo-50 text-indigo-700 ring-indigo-200",
+      chip: "bg-amber-50 text-amber-800 ring-amber-200",
     },
     URGENT: { label: "Urgent", chip: "bg-rose-50 text-rose-700 ring-rose-200" },
   };

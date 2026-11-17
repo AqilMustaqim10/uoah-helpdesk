@@ -1,10 +1,11 @@
 // The Dashboard tab (IT / ADMIN). Reloads whenever `version` changes (a ticket was changed elsewhere).
 import { useEffect, useRef, useState } from "react";
 import { m, useReducedMotion } from "framer-motion";
-import { Ticket as TicketIcon } from "lucide-react";
+import { Laptop, Network, Printer, Search, ShieldCheck, Ticket as TicketIcon, Workflow } from "lucide-react";
 import { authApi } from "../api/auth";
 import { ApiError } from "../api/client";
 import { dashboardApi, type DashboardData } from "../api/dashboard";
+import { ticketsApi } from "../api/tickets";
 import {
   PRIORITY_LIST,
   PRIORITY_META,
@@ -15,9 +16,12 @@ import type {
   DashboardFilters,
   TicketQuery,
   TicketStatus,
+  TicketSummary,
   UnitOption,
   User,
 } from "../types";
+import { ticketRef, timeAgo } from "../lib/format";
+import { StatusBadge } from "../components/ui/Badges";
 import BreakdownBars, {
   type BarItem,
 } from "../components/dashboard/BreakdownBars";
@@ -35,6 +39,7 @@ interface Props {
   version: number;
   onOpen: (id: number) => void;
   onShowTickets: (filters: Partial<TicketQuery>) => void;
+  onCreate: (draft?: { title?: string; description?: string } | null) => void;
 }
 
 // Bar colors for each priority (only the colors dark mode knows about)
@@ -55,11 +60,53 @@ const EMPTY_FILTERS: DashboardFilters = {
 const SELECT_CLASS =
   "h-9 rounded-lg border border-slate-200 bg-white px-2.5 text-sm text-slate-700 focus:border-brand focus:outline-none focus:ring-2 focus:ring-brand/25";
 
+function RequesterPortal({ user, version, onOpen, onShowTickets, onCreate }: {
+  user: User; version: number; onOpen: (id: number) => void;
+  onShowTickets: (filters: Partial<TicketQuery>) => void;
+  onCreate: (draft?: { title?: string; description?: string } | null) => void;
+}) {
+  const [tickets, setTickets] = useState<TicketSummary[]>([]);
+  useEffect(() => {
+    let cancelled = false;
+    ticketsApi.list({ q: "", status: "", priority: "", unit: "", assignee: "", page: 1, activeOnly: true, sortBy: "created_at", sortDirection: "desc" })
+      .then((result) => { if (!cancelled) setTickets(result.tickets.slice(0, 4)); })
+      .catch(() => undefined);
+    return () => { cancelled = true; };
+  }, [version]);
+
+  const categories = [
+    { label: "Hardware & laptop", detail: "Device, monitor or accessories", icon: Laptop, draft: "I need help with my laptop or hardware." },
+    { label: "Network & Wi-Fi", detail: "Connection, VPN or network access", icon: Network, draft: "I need help connecting to the network or Wi-Fi." },
+    { label: "Software & access", detail: "Applications, accounts or permissions", icon: ShieldCheck, draft: "I need help with software access or permissions." },
+    { label: "Printer & office", detail: "Printing, scanners and meeting rooms", icon: Printer, draft: "I need help with office equipment or printing." },
+  ];
+  const step = (status: TicketStatus) => status === "OPEN" ? 1 : status === "IN_PROGRESS" ? 2 : 3;
+  return <div className="space-y-6">
+    <section className="overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm">
+      <div className="grid gap-6 bg-[linear-gradient(115deg,var(--surface)_0%,color-mix(in_srgb,var(--brand)_7%,var(--surface))_100%)] px-6 py-7 sm:px-8 lg:grid-cols-[1fr_auto] lg:items-end">
+        <div>
+          <p className="mb-2 text-xs font-semibold uppercase tracking-[0.14em] text-brand">Service portal</p>
+          <h2 className="text-2xl font-semibold tracking-tight text-slate-900">How can we help, {user.name.split(" ")[0]}?</h2>
+          <p className="mt-2 max-w-xl text-sm text-slate-600">Find help quickly, report an issue, or follow the progress of your requests.</p>
+          <div className="relative mt-5 max-w-xl"><Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-400" /><input aria-label="Search common issues" placeholder="Search common issues, guides, or ticket IDs" className="h-11 w-full rounded-xl border border-slate-200 bg-white pl-10 pr-3 text-sm shadow-sm outline-none focus:border-brand focus:ring-2 focus:ring-brand/20" onFocus={() => onShowTickets({})} /></div>
+        </div>
+        <Button onClick={() => onCreate()} icon={<TicketIcon className="h-4 w-4" />}>Submit new ticket</Button>
+      </div>
+    </section>
+    <section className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm">
+      <div className="mb-4 flex items-center justify-between"><div><h3 className="font-semibold text-slate-900">Active tickets</h3><p className="text-xs text-slate-500">Track every request from submission to resolution.</p></div><button onClick={() => onShowTickets({ activeOnly: true })} className="text-sm font-medium text-brand hover:underline">View all</button></div>
+      {tickets.length ? <div className="grid gap-3 lg:grid-cols-2">{tickets.map((ticket) => <button key={ticket.id} onClick={() => onOpen(ticket.id)} className="rounded-xl border border-slate-200 p-4 text-left transition hover:border-brand/40 hover:bg-slate-50"><div className="flex items-start justify-between gap-3"><div className="min-w-0"><p className="font-mono text-xs font-semibold text-slate-500">{ticketRef(ticket.id)}</p><p className="mt-1 truncate text-sm font-semibold text-slate-900">{ticket.title}</p></div><StatusBadge status={ticket.status} /></div><div className="mt-4 flex items-center gap-1.5">{[1,2,3].map((item) => <span key={item} className={`h-1.5 flex-1 rounded-full ${item <= step(ticket.status) ? "bg-brand" : "bg-slate-200"}`} />)}</div><div className="mt-2 flex justify-between text-[11px] text-slate-500"><span>{ticket.status === "OPEN" ? "Submitted" : ticket.status === "IN_PROGRESS" ? "In progress" : "Resolved"}</span><span className="font-mono">Updated {timeAgo(ticket.updated_at)}</span></div></button>)}</div> : <div className="rounded-xl border border-dashed border-slate-200 py-8 text-center text-sm text-slate-500">You have no active tickets. <button onClick={() => onCreate()} className="font-medium text-brand hover:underline">Create one now.</button></div>}
+    </section>
+    <section><div className="mb-4"><h3 className="font-semibold text-slate-900">Quick issue categories</h3><p className="text-sm text-slate-500">Choose a category to start with a focused request.</p></div><div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-4">{categories.map(({ label, detail, icon: Icon, draft }) => <button key={label} onClick={() => onCreate({ title: label, description: draft })} className="group rounded-2xl border border-slate-200 bg-white p-5 text-left shadow-sm transition hover:-translate-y-0.5 hover:border-brand/40 hover:shadow-md"><span className="flex h-10 w-10 items-center justify-center rounded-xl bg-brand/10 text-brand"><Icon className="h-5 w-5" /></span><p className="mt-5 text-sm font-semibold text-slate-900">{label}</p><p className="mt-1 text-xs leading-5 text-slate-500">{detail}</p></button>)}</div></section>
+  </div>;
+}
+
 export default function DashboardPage({
   user,
   version,
   onOpen,
   onShowTickets,
+  onCreate,
 }: Props) {
   const dashboardRef = useRef<HTMLDivElement>(null);
   const reduceMotion = useReducedMotion();
@@ -168,6 +215,10 @@ export default function DashboardPage({
   }, [user.role]);
 
   const hasFilters = Object.values(filters).some(Boolean);
+
+  if (user.role === "USER") {
+    return <RequesterPortal user={user} version={version} onOpen={onOpen} onShowTickets={onShowTickets} onCreate={onCreate} />;
+  }
   const currentTicketFilters: Partial<TicketQuery> = {
     ...(user.role === "ADMIN" ? { unit: filters.unit } : {}),
     status: filters.status,
