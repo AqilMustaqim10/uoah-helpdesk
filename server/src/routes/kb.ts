@@ -245,11 +245,16 @@ router.get(
 
     const q = qstr(req.query.q).slice(0, 100);
     if (q) {
-      params.push(`%${escapeLike(q)}%`);
-      const n = params.length;
-      conds.push(
-        `(a.title ILIKE $${n} OR a.body ILIKE $${n} OR a.category ILIKE $${n} OR EXISTS (SELECT 1 FROM unnest(a.tags) AS tg WHERE tg ILIKE $${n}))`,
-      );
+      // Treat each word as a keyword, so a search such as "wifi disconnects"
+      // finds an article even when those words are not adjacent in its text.
+      const keywords = [...new Set(q.split(/\s+/).filter(Boolean))];
+      for (const keyword of keywords) {
+        params.push(`%${escapeLike(keyword)}%`);
+        const n = params.length;
+        conds.push(
+          `(a.title ILIKE $${n} OR a.body ILIKE $${n} OR a.category ILIKE $${n} OR EXISTS (SELECT 1 FROM unnest(a.tags) AS tg WHERE tg ILIKE $${n}))`,
+        );
+      }
     }
 
     const where = conds.join(" AND ");

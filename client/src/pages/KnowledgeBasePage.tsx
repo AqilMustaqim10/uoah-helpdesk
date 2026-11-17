@@ -30,11 +30,22 @@ const EMPTY_QUERY: ArticleQuery = {
   page: 1,
 };
 
-export default function KnowledgeBasePage({ user }: { user: User }) {
+export default function KnowledgeBasePage({
+  user,
+  initialSearch = "",
+  onInitialSearchApplied,
+}: {
+  user: User;
+  initialSearch?: string;
+  onInitialSearchApplied?: () => void;
+}) {
   const staff = user.role !== "USER";
   const isAdmin = user.role === "ADMIN";
 
-  const [query, setQuery] = useState<ArticleQuery>(EMPTY_QUERY);
+  const [query, setQuery] = useState<ArticleQuery>(() => ({
+    ...EMPTY_QUERY,
+    q: initialSearch,
+  }));
   const [data, setData] = useState<ArticleListResponse | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
@@ -43,6 +54,10 @@ export default function KnowledgeBasePage({ user }: { user: User }) {
   const [filterKey, setFilterKey] = useState(0); // changing it resets the search box
   const [open, setOpen] = useState<{ id: number | null } | null>(null); // id null = a new article
   const requestId = useRef(0);
+
+  useEffect(() => {
+    if (initialSearch) onInitialSearchApplied?.();
+  }, [initialSearch, onInitialSearchApplied]);
 
   // ADMIN's unit filter needs the list of units
   useEffect(() => {

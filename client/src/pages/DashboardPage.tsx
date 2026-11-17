@@ -39,6 +39,7 @@ interface Props {
   version: number;
   onOpen: (id: number) => void;
   onShowTickets: (filters: Partial<TicketQuery>) => void;
+  onSearchKnowledgeBase: (keywords: string) => void;
   onCreate: (draft?: { title?: string; description?: string } | null) => void;
 }
 
@@ -60,12 +61,14 @@ const EMPTY_FILTERS: DashboardFilters = {
 const SELECT_CLASS =
   "h-9 rounded-lg border border-slate-200 bg-white px-2.5 text-sm text-slate-700 focus:border-brand focus:outline-none focus:ring-2 focus:ring-brand/25";
 
-function RequesterPortal({ user, version, onOpen, onShowTickets, onCreate }: {
+function RequesterPortal({ user, version, onOpen, onShowTickets, onSearchKnowledgeBase, onCreate }: {
   user: User; version: number; onOpen: (id: number) => void;
   onShowTickets: (filters: Partial<TicketQuery>) => void;
+  onSearchKnowledgeBase: (keywords: string) => void;
   onCreate: (draft?: { title?: string; description?: string } | null) => void;
 }) {
   const [tickets, setTickets] = useState<TicketSummary[]>([]);
+  const [search, setSearch] = useState("");
   useEffect(() => {
     let cancelled = false;
     ticketsApi.list({ q: "", status: "", priority: "", unit: "", assignee: "", page: 1, activeOnly: true, sortBy: "created_at", sortDirection: "desc" })
@@ -88,7 +91,10 @@ function RequesterPortal({ user, version, onOpen, onShowTickets, onCreate }: {
           <p className="mb-2 text-xs font-semibold uppercase tracking-[0.14em] text-brand">Service portal</p>
           <h2 className="text-2xl font-semibold tracking-tight text-slate-900">How can we help, {user.name.split(" ")[0]}?</h2>
           <p className="mt-2 max-w-xl text-sm text-slate-600">Find help quickly, report an issue, or follow the progress of your requests.</p>
-          <div className="relative mt-5 max-w-xl"><Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-400" /><input aria-label="Search common issues" placeholder="Search common issues, guides, or ticket IDs" className="h-11 w-full rounded-xl border border-slate-200 bg-white pl-10 pr-3 text-sm shadow-sm outline-none focus:border-brand focus:ring-2 focus:ring-brand/20" onFocus={() => onShowTickets({})} /></div>
+          <form className="relative mt-5 max-w-xl" onSubmit={(event) => { event.preventDefault(); onSearchKnowledgeBase(search); }}>
+            <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-400" />
+            <input aria-label="Search the knowledge base" type="search" value={search} maxLength={100} onChange={(event) => setSearch(event.target.value)} placeholder="Search common issues and guides" className="h-11 w-full rounded-xl border border-slate-200 bg-white pl-10 pr-3 text-sm shadow-sm outline-none focus:border-brand focus:ring-2 focus:ring-brand/20" />
+          </form>
         </div>
         <Button onClick={() => onCreate()} icon={<TicketIcon className="h-4 w-4" />}>Submit new ticket</Button>
       </div>
@@ -106,6 +112,7 @@ export default function DashboardPage({
   version,
   onOpen,
   onShowTickets,
+  onSearchKnowledgeBase,
   onCreate,
 }: Props) {
   const dashboardRef = useRef<HTMLDivElement>(null);
@@ -217,7 +224,7 @@ export default function DashboardPage({
   const hasFilters = Object.values(filters).some(Boolean);
 
   if (user.role === "USER") {
-    return <RequesterPortal user={user} version={version} onOpen={onOpen} onShowTickets={onShowTickets} onCreate={onCreate} />;
+    return <RequesterPortal user={user} version={version} onOpen={onOpen} onShowTickets={onShowTickets} onSearchKnowledgeBase={onSearchKnowledgeBase} onCreate={onCreate} />;
   }
   const currentTicketFilters: Partial<TicketQuery> = {
     ...(user.role === "ADMIN" ? { unit: filters.unit } : {}),

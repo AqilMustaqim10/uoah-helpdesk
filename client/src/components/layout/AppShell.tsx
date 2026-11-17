@@ -77,6 +77,8 @@ export default function AppShell({ user }: { user: User }) {
   const [mobileOpen, setMobileOpen] = useState(false);
   const [pendingTicketFilters, setPendingTicketFilters] =
     useState<Partial<TicketQuery> | null>(null);
+  const [pendingKnowledgeBaseSearch, setPendingKnowledgeBaseSearch] =
+    useState("");
 
   // Ticket windows + "reload the data" counter (the list and the dashboard both listen to it)
   const [createOpen, setCreateOpen] = useState(false);
@@ -97,6 +99,19 @@ export default function AppShell({ user }: { user: User }) {
     setSelectedId(null);
     if (window.location.pathname !== TAB_PATHS.tickets) {
       window.history.pushState({}, "", TAB_PATHS.tickets);
+    }
+    setMobileOpen(false);
+  }, []);
+  const showKnowledgeBaseSearch = useCallback((keywords: string) => {
+    const search = keywords.trim();
+    setPendingKnowledgeBaseSearch(search);
+    setTab("kb");
+    setSelectedId(null);
+    const path = search
+      ? `${TAB_PATHS.kb}?q=${encodeURIComponent(search)}`
+      : TAB_PATHS.kb;
+    if (`${window.location.pathname}${window.location.search}` !== path) {
+      window.history.pushState({}, "", path);
     }
     setMobileOpen(false);
   }, []);
@@ -241,11 +256,18 @@ export default function AppShell({ user }: { user: User }) {
             version={version}
             onOpen={openTicket}
             onShowTickets={showTickets}
+            onSearchKnowledgeBase={showKnowledgeBaseSearch}
             onCreate={openCreateTicket}
           />
         );
       case "kb":
-        return <KnowledgeBasePage user={user} />;
+        return (
+          <KnowledgeBasePage
+            user={user}
+            initialSearch={pendingKnowledgeBaseSearch}
+            onInitialSearchApplied={() => setPendingKnowledgeBaseSearch("")}
+          />
+        );
       case "users":
         return <UsersPage user={user} />;
       case "settings":
