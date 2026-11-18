@@ -26,6 +26,15 @@ const WORDMARK_STYLES = [
   "font-semibold tracking-[0.1em]",
 ];
 
+const UNIT_LOGOS: Record<string, { src: string; alt: string; light: boolean }> = {
+  CCEC: { src: "/logo/Property_Logo_CCEC.png", alt: "CCEC", light: true },
+  FNB: { src: "/logo/Property_Logo_FNB.jpeg", alt: "Food & Beverage", light: false },
+  HOTEL: { src: "/logo/Property_Logo_VE.png", alt: "VE Hotel", light: true },
+  KLBS: { src: "/logo/Property_Logo_KLBS.png", alt: "KLBS", light: true },
+  KLW: { src: "/logo/Property_Logo_KLW.png", alt: "KLW", light: true },
+  HQ: { src: "/logo/Property_Logo_UOAH.png", alt: "UOA Hospitality", light: true },
+};
+
 export default function AuthPage() {
   const pageRef = useRef<HTMLElement>(null);
   const reduceMotion = useReducedMotion();
@@ -192,11 +201,19 @@ export default function AuthPage() {
                 className="auth-unit-card group flex min-h-24 flex-col justify-between rounded-xl border border-white/[0.09] bg-white/[0.035] p-4 transition duration-300 hover:scale-[1.03] hover:border-indigo-300/30 hover:bg-white/[0.07] hover:shadow-[0_0_28px_rgba(99,102,241,0.12)] xl:min-h-28"
                 title={`${unit.name} (${unit.code})`}
               >
-                <Building2
-                  aria-hidden="true"
-                  className="h-4 w-4 text-[#94a3b8] opacity-70 transition duration-300 group-hover:scale-110 group-hover:text-indigo-300 group-hover:opacity-100"
-                  strokeWidth={1.5}
-                />
+                {UNIT_LOGOS[unit.code] ? (
+                  <img
+                    src={UNIT_LOGOS[unit.code].src}
+                    alt={UNIT_LOGOS[unit.code].alt}
+                    className={`h-16 w-full object-contain object-left transition duration-300 group-hover:scale-105 ${UNIT_LOGOS[unit.code].light ? "brightness-0 invert opacity-90 drop-shadow-[0_1px_8px_rgba(255,255,255,0.18)]" : ""}`}
+                  />
+                ) : (
+                  <Building2
+                    aria-hidden="true"
+                    className="h-4 w-4 text-[#94a3b8] opacity-70 transition duration-300 group-hover:scale-110 group-hover:text-indigo-300 group-hover:opacity-100"
+                    strokeWidth={1.5}
+                  />
+                )}
                 <div className="mt-3 min-w-0">
                   <p
                     className={`truncate text-[11px] text-[#f8fafc]/60 opacity-70 grayscale transition duration-300 group-hover:text-indigo-100 group-hover:opacity-100 group-hover:grayscale-0 xl:text-xs ${WORDMARK_STYLES[index % WORDMARK_STYLES.length]}`}
