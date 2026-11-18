@@ -33,11 +33,9 @@ const EMPTY_QUERY: ArticleQuery = {
 export default function KnowledgeBasePage({
   user,
   initialSearch = "",
-  onInitialSearchApplied,
 }: {
   user: User;
   initialSearch?: string;
-  onInitialSearchApplied?: () => void;
 }) {
   const staff = user.role !== "USER";
   const isAdmin = user.role === "ADMIN";
@@ -55,9 +53,15 @@ export default function KnowledgeBasePage({
   const [open, setOpen] = useState<{ id: number | null } | null>(null); // id null = a new article
   const requestId = useRef(0);
 
+  // The dashboard and browser history can both update the URL search while this
+  // page is mounted. Keep the article query in step with that value.
   useEffect(() => {
-    if (initialSearch) onInitialSearchApplied?.();
-  }, [initialSearch, onInitialSearchApplied]);
+    setQuery((current) =>
+      current.q === initialSearch
+        ? current
+        : { ...current, q: initialSearch, page: 1 },
+    );
+  }, [initialSearch]);
 
   // ADMIN's unit filter needs the list of units
   useEffect(() => {

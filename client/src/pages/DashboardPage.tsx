@@ -1,10 +1,11 @@
 // The Dashboard tab (IT / ADMIN). Reloads whenever `version` changes (a ticket was changed elsewhere).
 import { useEffect, useRef, useState } from "react";
 import { m, useReducedMotion } from "framer-motion";
-import { Laptop, Network, Printer, Search, ShieldCheck, Ticket as TicketIcon, Workflow } from "lucide-react";
+import { BookOpen, Laptop, Network, Printer, Search, ShieldCheck, Ticket as TicketIcon, Workflow } from "lucide-react";
 import { authApi } from "../api/auth";
 import { ApiError } from "../api/client";
 import { dashboardApi, type DashboardData } from "../api/dashboard";
+import { kbApi, type ArticleSuggestion } from "../api/kb";
 import { ticketsApi } from "../api/tickets";
 import {
   PRIORITY_LIST,
@@ -33,6 +34,8 @@ import FormError from "../components/ui/FormError";
 import { DashboardSkeleton } from "../components/ui/Skeleton";
 import Button from "../components/ui/Button";
 import { loadGsap } from "../lib/gsapRuntime";
+import { useDebounce } from "../hooks/useDebounce";
+import { ARTICLE_CATEGORY_META } from "../lib/kbMeta";
 
 interface Props {
   user: User;
@@ -61,6 +64,86 @@ const EMPTY_FILTERS: DashboardFilters = {
 const SELECT_CLASS =
   "h-9 rounded-lg border border-slate-200 bg-white px-2.5 text-sm text-slate-700 focus:border-brand focus:outline-none focus:ring-2 focus:ring-brand/25";
 
+function KnowledgeBaseQuickSearch({
+  search,
+  onViewResults,
+}: {
+  search: string;
+  onViewResults: () => void;
+}) {
+  const query = useDebounce(search.trim(), 300);
+  const [articles, setArticles] = useState<ArticleSuggestion[]>([]);
+  const [loading, setLoading] = useState(false);
+  const requestId = useRef(0);
+
+  useEffect(() => {
+    const id = ++requestId.current;
+    if (query.length < 3) {
+      setArticles([]);
+      setLoading(false);
+      return;
+    }
+
+    setLoading(true);
+    kbApi
+      .suggest(query)
+      .then((result) => {
+        if (id === requestId.current) setArticles(result.articles);
+      })
+      .catch(() => {
+        if (id === requestId.current) setArticles([]);
+      })
+      .finally(() => {
+        if (id === requestId.current) setLoading(false);
+      });
+  }, [query]);
+
+  if (search.trim().length < 3) return null;
+
+  return (
+    <div
+      className="absolute z-20 mt-2 w-full overflow-hidden rounded-xl border border-slate-200 bg-white shadow-xl"
+      aria-live="polite"
+    >
+      <div className="flex items-center gap-2 border-b border-slate-100 px-3 py-2 text-xs font-medium text-slate-500">
+        <BookOpen className="h-3.5 w-3.5 text-brand" aria-hidden />
+        Knowledge Base matches
+      </div>
+      {loading ? (
+        <p className="px-3 py-3 text-sm text-slate-500">Searching articles…</p>
+      ) : articles.length ? (
+        <ul className="max-h-72 overflow-y-auto py-1">
+          {articles.map((article) => (
+            <li key={article.id}>
+              <button
+                type="button"
+                onClick={onViewResults}
+                className="w-full px-3 py-2.5 text-left transition hover:bg-slate-50"
+              >
+                <span className="block truncate text-sm font-medium text-slate-900">
+                  {article.title}
+                </span>
+                <span className="mt-0.5 block truncate text-xs text-slate-500">
+                  {ARTICLE_CATEGORY_META[article.category]} · {article.excerpt}
+                </span>
+              </button>
+            </li>
+          ))}
+        </ul>
+      ) : (
+        <p className="px-3 py-3 text-sm text-slate-500">No matching articles yet.</p>
+      )}
+      <button
+        type="button"
+        onClick={onViewResults}
+        className="w-full border-t border-slate-100 px-3 py-2.5 text-left text-sm font-medium text-brand transition hover:bg-slate-50"
+      >
+        View all results for “{search.trim()}”
+      </button>
+    </div>
+  );
+}
+
 function RequesterPortal({ user, version, onOpen, onShowTickets, onSearchKnowledgeBase, onCreate }: {
   user: User; version: number; onOpen: (id: number) => void;
   onShowTickets: (filters: Partial<TicketQuery>) => void;
@@ -85,7 +168,7 @@ function RequesterPortal({ user, version, onOpen, onShowTickets, onSearchKnowled
   ];
   const step = (status: TicketStatus) => status === "OPEN" ? 1 : status === "IN_PROGRESS" ? 2 : 3;
   return <div className="space-y-6">
-    <section className="overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm">
+    <section className="relative z-10 overflow-visible rounded-2xl border border-slate-200 bg-white shadow-sm">
       <div className="grid gap-6 bg-[linear-gradient(115deg,var(--surface)_0%,color-mix(in_srgb,var(--brand)_7%,var(--surface))_100%)] px-6 py-7 sm:px-8 lg:grid-cols-[1fr_auto] lg:items-end">
         <div>
           <p className="mb-2 text-xs font-semibold uppercase tracking-[0.14em] text-brand">Service portal</p>
@@ -94,6 +177,10 @@ function RequesterPortal({ user, version, onOpen, onShowTickets, onSearchKnowled
           <form className="relative mt-5 max-w-xl" onSubmit={(event) => { event.preventDefault(); onSearchKnowledgeBase(search); }}>
             <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-400" />
             <input aria-label="Search the knowledge base" type="search" value={search} maxLength={100} onChange={(event) => setSearch(event.target.value)} placeholder="Search common issues and guides" className="h-11 w-full rounded-xl border border-slate-200 bg-white pl-10 pr-3 text-sm shadow-sm outline-none focus:border-brand focus:ring-2 focus:ring-brand/20" />
+            <KnowledgeBaseQuickSearch
+              search={search}
+              onViewResults={() => onSearchKnowledgeBase(search)}
+            />
           </form>
         </div>
         <Button onClick={() => onCreate()} icon={<TicketIcon className="h-4 w-4" />}>Submit new ticket</Button>

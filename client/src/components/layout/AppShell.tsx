@@ -39,6 +39,13 @@ const TAB_PATHS: Record<TabKey, string> = {
   settings: "/settings",
 };
 
+/** Keep a KB search in the URL so dashboard searches survive refresh and browser navigation. */
+function kbSearchFromLocation(): string {
+  return (new URLSearchParams(window.location.search).get("q") ?? "")
+    .trim()
+    .slice(0, 100);
+}
+
 function routeFromLocation(
   tabs: Array<{ key: TabKey }>,
   fallback: TabKey,
@@ -78,7 +85,7 @@ export default function AppShell({ user }: { user: User }) {
   const [pendingTicketFilters, setPendingTicketFilters] =
     useState<Partial<TicketQuery> | null>(null);
   const [pendingKnowledgeBaseSearch, setPendingKnowledgeBaseSearch] =
-    useState("");
+    useState(() => kbSearchFromLocation());
 
   // Ticket windows + "reload the data" counter (the list and the dashboard both listen to it)
   const [createOpen, setCreateOpen] = useState(false);
@@ -194,6 +201,9 @@ export default function AppShell({ user }: { user: User }) {
       }
       setTab(route.tab);
       setSelectedId(route.ticketId);
+      setPendingKnowledgeBaseSearch(
+        route.tab === "kb" ? kbSearchFromLocation() : "",
+      );
     }
     window.addEventListener("popstate", syncRoute);
     return () => window.removeEventListener("popstate", syncRoute);
@@ -210,6 +220,7 @@ export default function AppShell({ user }: { user: User }) {
   }
 
   function selectTab(key: TabKey) {
+    if (key === "kb") setPendingKnowledgeBaseSearch("");
     setTab(key);
     setSelectedId(null);
     if (window.location.pathname !== TAB_PATHS[key]) {
@@ -265,7 +276,6 @@ export default function AppShell({ user }: { user: User }) {
           <KnowledgeBasePage
             user={user}
             initialSearch={pendingKnowledgeBaseSearch}
-            onInitialSearchApplied={() => setPendingKnowledgeBaseSearch("")}
           />
         );
       case "users":
