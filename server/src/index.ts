@@ -34,6 +34,7 @@ import auditRoutes from "./routes/audit";
 import historyRoutes from "./routes/history";
 import kbSearchRoutes from "./routes/kbSearch";
 import notificationRoutes from "./routes/notifications";
+import announcementRoutes from "./routes/announcements";
 
 const app = express();
 const AUDIT_LOG_CLEANUP_INTERVAL_MS = 24 * 60 * 60 * 1000;
@@ -114,6 +115,7 @@ app.use(
 );
 
 app.use("/api/notifications", requireAuth, notificationRoutes);
+app.use("/api/announcements", requireAuth, announcementRoutes);
 app.use("/api/files", requireAuth, itClosedFileGuard, fileRoutes);
 
 app.use("/api/stats", requireAuth, requireRole("ADMIN", "IT"), statsRoutes);

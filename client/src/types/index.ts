@@ -255,6 +255,14 @@ export interface UnitBranding {
   has_logo: boolean;
 }
 
+export interface UnitAnnouncement {
+  id: number;
+  code: string;
+  name: string;
+  announcement_text: string | null;
+  announcement_updated_at: string | null;
+}
+
 // ---------------- Knowledge Base ----------------
 
 export type ArticleStatus = "DRAFT" | "PUBLISHED" | "ARCHIVED";

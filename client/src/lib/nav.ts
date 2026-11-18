@@ -61,7 +61,7 @@ export const TABS: TabDef[] = [
     key: "settings",
     label: "Settings",
     icon: Settings,
-    roles: ["ADMIN"],
+    roles: ["ADMIN", "IT"],
     soon: "Business unit branding will appear here in a later step.",
   },
 ];

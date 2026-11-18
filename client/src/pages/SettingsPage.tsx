@@ -5,17 +5,20 @@ import type { User } from "../types";
 import AuditLogViewer from "../components/settings/AuditLogViewer";
 import BrandingSettings from "../components/settings/BrandingSettings";
 import DepartmentsSettings from "../components/settings/DepartmentsSettings";
+import AnnouncementSettings from "../components/settings/AnnouncementSettings";
 
-type Section = "branding" | "departments" | "audit";
+type Section = "announcements" | "branding" | "departments" | "audit";
 
 const SECTIONS: Array<{ key: Section; label: string }> = [
+  { key: "announcements", label: "Announcements" },
   { key: "branding", label: "Branding" },
   { key: "departments", label: "Departments" },
   { key: "audit", label: "Audit log" },
 ];
 
 export default function SettingsPage({ user }: { user: User }) {
-  const [section, setSection] = useState<Section>("branding");
+  const [section, setSection] = useState<Section>("announcements");
+  const sections = user.role === "ADMIN" ? SECTIONS : SECTIONS.filter((s) => s.key === "announcements");
 
   return (
     <div className="space-y-5">
@@ -24,7 +27,7 @@ export default function SettingsPage({ user }: { user: User }) {
         role="group"
         aria-label="Settings section"
       >
-        {SECTIONS.map((s) => (
+        {sections.map((s) => (
           <button
             key={s.key}
             type="button"
@@ -44,7 +47,9 @@ export default function SettingsPage({ user }: { user: User }) {
 
       {/* key={section}: switching replays a soft fade-in */}
       <div key={section} className="animate-fade-in">
-        {section === "branding" ? (
+        {section === "announcements" ? (
+          <AnnouncementSettings user={user} />
+        ) : section === "branding" ? (
           <BrandingSettings user={user} />
         ) : section === "departments" ? (
           <DepartmentsSettings />

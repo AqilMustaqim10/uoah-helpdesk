@@ -19,6 +19,8 @@ CREATE TABLE business_units (
                 CHECK (brand_color ~ '^#[0-9A-Fa-f]{6}$'),
   brand_text    TEXT NOT NULL                           -- 2-40 chars, no < or >
                 CHECK (char_length(brand_text) BETWEEN 2 AND 40 AND brand_text !~ '[<>]'),
+  announcement_text TEXT,                               -- active dashboard notice; NULL = no notice
+  announcement_updated_at TIMESTAMPTZ,
   created_at    TIMESTAMPTZ NOT NULL DEFAULT now()
 );
 

@@ -36,6 +36,7 @@ import Button from "../components/ui/Button";
 import { loadGsap } from "../lib/gsapRuntime";
 import { useDebounce } from "../hooks/useDebounce";
 import { ARTICLE_CATEGORY_META } from "../lib/kbMeta";
+import AnnouncementBanner from "../components/dashboard/AnnouncementBanner";
 
 interface Props {
   user: User;
@@ -168,6 +169,7 @@ function RequesterPortal({ user, version, onOpen, onShowTickets, onSearchKnowled
   ];
   const step = (status: TicketStatus) => status === "OPEN" ? 1 : status === "IN_PROGRESS" ? 2 : 3;
   return <div className="space-y-6">
+    <AnnouncementBanner />
     <section className="relative z-10 overflow-visible rounded-2xl border border-slate-200 bg-white shadow-sm">
       <div className="grid gap-6 bg-[linear-gradient(115deg,var(--surface)_0%,color-mix(in_srgb,var(--brand)_7%,var(--surface))_100%)] px-6 py-7 sm:px-8 lg:grid-cols-[1fr_auto] lg:items-end">
         <div>
@@ -409,6 +411,7 @@ export default function DashboardPage({
   if (error && !data) {
     return (
       <div className="space-y-4">
+        <AnnouncementBanner />
         {filterBar}
         <FormError message={error} />
       </div>
@@ -424,7 +427,7 @@ export default function DashboardPage({
         aria-busy="true"
         aria-label="Loading dashboard"
       >
-        <DashboardSkeleton />
+        <div className="space-y-4"><AnnouncementBanner /><DashboardSkeleton /></div>
       </m.div>
     );
   }
@@ -435,6 +438,7 @@ export default function DashboardPage({
         className={`space-y-4 transition-opacity ${loading ? "opacity-60" : ""}`}
         aria-busy={loading}
       >
+        <AnnouncementBanner />
         {filterBar}
         {error && <FormError message={error} />}
         <EmptyState
@@ -533,6 +537,7 @@ export default function DashboardPage({
       className={`space-y-4 transition-opacity ${loading ? "opacity-60" : ""}`}
       aria-busy={loading}
     >
+      <AnnouncementBanner />
       <div className="dashboard-entrance">{filterBar}</div>
       {error && <FormError message={error} />}
       <div className="dashboard-entrance">
