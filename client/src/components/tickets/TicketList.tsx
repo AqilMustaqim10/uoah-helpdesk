@@ -60,7 +60,7 @@ function SlaCountdown({ ticket }: { ticket: TicketSummary }) {
     <span
       title={`SLA deadline ${new Date(deadline).toLocaleString()}`}
       className={cn(
-        "inline-flex rounded-full px-2 py-0.5 text-xs font-medium",
+        "inline-flex whitespace-nowrap rounded-full px-2 py-0.5 text-xs font-medium",
         urgent
           ? "bg-rose-50 text-rose-700 ring-1 ring-rose-200"
           : warning
@@ -143,7 +143,7 @@ export default function TicketList({
             className="h-4 w-4 rounded border-slate-300 text-brand focus:ring-brand"
           />
         )}
-        <div className="hidden flex-1 grid-cols-[minmax(15rem,1.65fr)_minmax(8rem,1fr)_6.5rem_10.5rem_10rem] items-center gap-4 xl:grid">
+        <div className="hidden flex-1 grid-cols-[minmax(15rem,1.65fr)_minmax(8rem,1fr)_6.5rem_10.5rem_minmax(13.5rem,1.1fr)] items-center gap-4 xl:grid">
           <span className="text-xs font-semibold uppercase tracking-wide text-slate-500">Requester</span>
           {sortable.map(({ key, label }) => (
             <button
@@ -230,7 +230,7 @@ export default function TicketList({
                   event.preventDefault();
                   onOpen(t.id);
                 }}
-                className="grid min-w-0 flex-1 grid-cols-1 items-center gap-3 text-left xl:grid-cols-[minmax(15rem,1.65fr)_minmax(8rem,1fr)_6.5rem_10.5rem_10rem] xl:gap-4"
+                className="grid min-w-0 flex-1 grid-cols-1 items-center gap-3 text-left xl:grid-cols-[minmax(15rem,1.65fr)_minmax(8rem,1fr)_6.5rem_10.5rem_minmax(13.5rem,1.1fr)] xl:gap-4"
               >
                 <div className="min-w-0">
                   <div className="flex items-baseline gap-2">
@@ -284,14 +284,28 @@ export default function TicketList({
                   </span>
                   <StatusBadge status={t.status} />
                 </div>
-                <div className="flex min-w-0 items-center gap-2">
-                  <span className="text-[11px] text-slate-400 sm:hidden">
-                    SLA
+                <div className="flex min-w-0 items-center gap-3">
+                  <span className="text-[11px] text-slate-400 xl:hidden">
+                    Assignee &amp; SLA
                   </span>
-                  <SlaCountdown ticket={t} />
-                  {t.assignee_name && (
-                    <><Avatar name={t.assignee_name} size="sm" /><span className="hidden truncate text-xs text-slate-600 2xl:inline">{t.assignee_name}</span></>
-                  )}
+                  <div className="flex min-w-0 items-center gap-2">
+                    {t.assignee_name ? (
+                      <>
+                        <Avatar name={t.assignee_name} size="sm" />
+                        <span
+                          className="truncate text-xs font-medium text-slate-700"
+                          title={t.assignee_name}
+                        >
+                          {t.assignee_name}
+                        </span>
+                      </>
+                    ) : (
+                      <span className="text-xs text-slate-400">Unassigned</span>
+                    )}
+                  </div>
+                  <div className="shrink-0">
+                    <SlaCountdown ticket={t} />
+                  </div>
                 </div>
               </a>
             </div>
