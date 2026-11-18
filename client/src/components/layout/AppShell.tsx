@@ -315,7 +315,11 @@ export default function AppShell({ user }: { user: User }) {
         onCloseMobile={() => setMobileOpen(false)}
       />
 
-      <div className="flex min-w-0 flex-1 flex-col">
+      <div
+        className={`flex min-w-0 flex-1 flex-col transition-[margin] duration-200 ${
+          collapsed ? "md:ml-[72px]" : "md:ml-64"
+        }`}
+      >
         <TopBar
           title={current.label}
           user={user}

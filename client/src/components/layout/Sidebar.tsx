@@ -67,7 +67,7 @@ export default function Sidebar({
       }
       className={cn(
         "fixed inset-y-0 left-0 z-40 flex w-64 flex-col border-r border-slate-200 bg-white/95 shadow-sm backdrop-blur transition-[width] duration-200",
-        "md:sticky md:top-0 md:h-dvh md:z-auto",
+        "md:fixed md:inset-y-0 md:left-0 md:h-dvh md:z-40",
         mobileOpen && isMobile && "shadow-xl",
         collapsed ? "md:w-[72px]" : "md:w-64",
       )}
@@ -133,7 +133,7 @@ export default function Sidebar({
       </nav>
 
       {/* Collapse button (desktop only) */}
-      <div className="hidden shrink-0 border-t border-slate-200 p-3 md:block">
+      <div className="hidden shrink-0 border-t border-slate-200 p-3 pb-0 md:block">
         <m.button
           type="button"
           data-motion-button="true"
