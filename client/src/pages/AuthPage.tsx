@@ -150,7 +150,7 @@ export default function AuthPage() {
   }, []);
 
   return (
-    <main ref={pageRef} className="min-h-dvh bg-slate-50 lg:grid lg:grid-cols-2">
+    <main ref={pageRef} className="min-h-dvh lg:grid lg:grid-cols-2">
       <section
         aria-label="UDESK business units"
         className="auth-brand-panel relative hidden min-h-dvh overflow-hidden bg-[#080b14] text-[#f8fafc] lg:flex lg:flex-col lg:justify-between lg:px-10 lg:py-9 xl:px-16 xl:py-12"
@@ -250,13 +250,21 @@ export default function AuthPage() {
         </footer>
       </section>
 
-      <section className="auth-form-panel relative flex min-h-dvh items-center justify-center px-4 py-10 sm:px-8 lg:px-10">
-        <div className="absolute right-4 top-4 sm:right-6 sm:top-6">
+      <section className="auth-form-panel relative flex min-h-dvh items-center justify-center overflow-hidden bg-[#cbd9e8] px-4 py-10 dark:bg-[#0b1020] sm:px-8 lg:px-10">
+        <div
+          aria-hidden="true"
+          className="pointer-events-none absolute inset-0 bg-[radial-gradient(circle_at_12%_18%,rgba(99,102,241,0.42),transparent_40%),radial-gradient(circle_at_88%_86%,rgba(14,165,233,0.36),transparent_44%),radial-gradient(circle_at_55%_38%,rgba(255,255,255,0.8),transparent_36%),linear-gradient(135deg,#e0e9f3_0%,#b9cde2_100%)] dark:bg-[radial-gradient(circle_at_10%_16%,rgba(79,70,229,0.32),transparent_42%),radial-gradient(circle_at_90%_84%,rgba(14,116,144,0.25),transparent_44%),radial-gradient(circle_at_52%_40%,rgba(30,41,89,0.62),transparent_40%),linear-gradient(135deg,#0b1020_0%,#111b35_100%)]"
+        />
+        <div
+          aria-hidden="true"
+          className="pointer-events-none absolute inset-0 opacity-[0.3] [background-image:linear-gradient(rgba(71,85,105,0.12)_1px,transparent_1px),linear-gradient(90deg,rgba(71,85,105,0.12)_1px,transparent_1px)] [background-size:48px_48px] [mask-image:linear-gradient(135deg,black,transparent_72%)] dark:opacity-[0.12]"
+        />
+        <div className="absolute right-4 top-4 z-20 sm:right-6 sm:top-6">
           <ThemeToggle />
         </div>
 
         <div
-          className={`w-full ${
+          className={`relative z-10 w-full ${
             view === "signup" ? "max-w-2xl" : "max-w-md"
           }`}
         >
