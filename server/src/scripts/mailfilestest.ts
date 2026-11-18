@@ -87,6 +87,18 @@ assert.equal(r.files.length, 0);
 assert.equal(r.skipped, 0);
 assert.equal(r.ignoredSmall, 0);
 
+// 5b) Some mail clients remove the CID from a quoted inline logo. Its known
+// filename still identifies it as a helpdesk template image, not a reply file.
+r = pickMailFiles(
+  mailWith({
+    filename: "email-reply-logo.jpeg",
+    contentDisposition: "attachment",
+    content: png(66 * 1024),
+  }),
+);
+assert.equal(r.files.length, 0);
+assert.equal(r.skipped, 0);
+
 // 6) A program disguised as a picture is refused
 r = pickMailFiles(
   mailWith({

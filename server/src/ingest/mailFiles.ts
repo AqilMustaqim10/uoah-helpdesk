@@ -14,6 +14,7 @@ export const MIN_INLINE_PICTURE_BYTES = 50 * 1024;
 // This is the CID used by services/mailer.ts for the image in every helpdesk email.
 // A reply can include that image again as part of the quoted original email.
 const HELPDESK_LOGO_CID = "uoa-helpdesk-logo";
+const HELPDESK_LOGO_FILENAME = "email-reply-logo.jpeg";
 
 export interface PickedFiles {
   files: PreparedFile[]; // ready to be saved
@@ -31,7 +32,13 @@ function isInline(a: Attachment): boolean {
 
 /** Do not turn our own email template image, quoted back by a mail client, into a ticket file. */
 function isQuotedHelpdeskLogo(a: Attachment): boolean {
-  return a.cid?.replace(/[<>]/g, "").toLowerCase() === HELPDESK_LOGO_CID;
+  // Some mail clients strip the CID while quoting an HTML email, but retain
+  // the filename. Check both forms so our template logo is never saved as a
+  // ticket attachment on a reply.
+  return (
+    a.cid?.replace(/[<>]/g, "").toLowerCase() === HELPDESK_LOGO_CID ||
+    a.filename?.trim().toLowerCase() === HELPDESK_LOGO_FILENAME
+  );
 }
 
 /** A safe name to SHOW (it is never used as a path; the file is stored under a random name). */

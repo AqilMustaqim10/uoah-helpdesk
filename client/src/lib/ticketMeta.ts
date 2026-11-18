@@ -43,7 +43,7 @@ export const STATUS_META: Record<
   CLOSED: {
     label: "Closed",
     chip: "bg-slate-100 text-slate-600 ring-slate-200",
-    step: "bg-slate-200 text-slate-700",
+    step: "bg-amber-100 text-amber-900",
     icon: Lock,
   },
 };

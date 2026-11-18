@@ -12,7 +12,9 @@ export default function ProgressSteps({ status }: { status: TicketStatus }) {
   return (
     <ol className="flex items-start" aria-label="Ticket progress">
       {STATUS_ORDER.map((s, i) => {
-        const done = i < current;
+        // A ticket has reached its current status too. This makes the final
+        // Closed step display a completion tick instead of its step number.
+        const done = i <= current;
         const active = i === current;
         return (
           <li
