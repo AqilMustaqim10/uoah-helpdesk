@@ -85,11 +85,22 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     async (email: string, password: string): Promise<LoginOutcome> => {
       const r = await authApi.login(email, password);
       if ("mfa" in r) return r.mfa; // the second step is still needed; nobody is signed in yet
+      // A new sign-in should start from the dashboard, not from the route that
+      // was open when a previous session ended.
+      window.history.replaceState({}, "", "/dashboard");
       setUserState(r.user);
       return "ok";
     },
     [],
   );
+
+  // MFA and sign-up finish a sign-in outside login(), so keep their landing
+  // page consistent with password-only sign-ins. Session restoration and
+  // refreshes use setUserState directly and therefore preserve deep links.
+  const setUser = useCallback((nextUser: User) => {
+    window.history.replaceState({}, "", "/dashboard");
+    setUserState(nextUser);
+  }, []);
 
   const logout = useCallback(async () => {
     try {
@@ -111,8 +122,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   }, []);
 
   const value = useMemo<AuthValue>(
-    () => ({ user, loading, login, logout, setUser: setUserState, refresh }),
-    [user, loading, login, logout, refresh],
+    () => ({ user, loading, login, logout, setUser, refresh }),
+    [user, loading, login, logout, setUser, refresh],
   );
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;
 }
