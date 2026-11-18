@@ -323,7 +323,7 @@ export default function TicketsPage({
       {data && data.tickets.length > 0 ? (
         <>
           {/* Ticket count on the left, export button (IT/ADMIN) on the right */}
-          <div className="flex items-center justify-between">
+          <div className="mb-3 flex items-center justify-between">
             <p className="text-sm text-slate-500">
               {data.total} ticket{data.total === 1 ? "" : "s"}
             </p>

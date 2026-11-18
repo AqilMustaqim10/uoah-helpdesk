@@ -116,24 +116,26 @@ export interface HtmlParts {
  * so user-supplied text can never turn into HTML or scripts.
  */
 export function renderHtml(p: HtmlParts): string {
+  // Keep deliberate line breaks in ticket replies, while escaping the source text first.
+  const formattedText = (text: string) => escapeHtml(text).replace(/\r?\n/g, "<br>");
   const paras = p.paragraphs
     .map(
       (t) =>
-        `<p style="margin:0 0 12px;color:#334155;font-size:14px;line-height:1.5">${escapeHtml(t)}</p>`,
+        `<p style="margin:0 0 16px;color:#334155;font-size:15px;line-height:1.6">${formattedText(t)}</p>`,
     )
     .join("");
 
   const code = p.code
-    ? `<p style="margin:16px 0;padding:12px;background:#f1f5f9;border-radius:8px;text-align:center;` +
-      `font-family:Consolas,monospace;font-size:28px;letter-spacing:6px;color:#0f172a">${escapeHtml(p.code)}</p>`
+    ? `<div style="margin:24px 0;padding:18px 16px;background:#f1f5f9;border:1px solid #dbe5ef;border-radius:8px;text-align:center;` +
+      `font-family:Consolas,Menlo,monospace;font-size:30px;font-weight:700;letter-spacing:7px;color:#0f172a">${escapeHtml(p.code)}</div>`
     : "";
 
   // Only http(s) links are allowed
   const link =
     p.link && /^https?:\/\//.test(p.link.url)
-      ? `<p style="margin:16px 0"><a href="${escapeHtml(p.link.url)}" style="display:inline-block;padding:10px 16px;` +
-        `background:#2563eb;color:#ffffff;text-decoration:none;border-radius:8px;font-size:14px">` +
-        `${escapeHtml(p.link.label)}</a></p>`
+      ? `<table role="presentation" cellspacing="0" cellpadding="0" border="0" style="margin:24px 0"><tr><td style="border-radius:7px;background:#0f5c4b">` +
+        `<a href="${escapeHtml(p.link.url)}" style="display:inline-block;padding:12px 20px;background:#0f5c4b;color:#ffffff;text-decoration:none;border-radius:7px;font-size:14px;font-weight:700;line-height:20px">` +
+        `${escapeHtml(p.link.label)}</a></td></tr></table>`
       : "";
 
   const footer = escapeHtml(
@@ -142,14 +144,21 @@ export function renderHtml(p: HtmlParts): string {
   );
 
   return (
-    `<!doctype html><html><body style="margin:0;padding:24px;background:#f8fafc;font-family:Segoe UI,Arial,sans-serif">` +
-    `<div${p.logo ? ` align="center"` : ""} style="max-width:600px;margin:0 auto;background:#ffffff;border:1px solid #e2e8f0;border-radius:12px;padding:24px${p.logo ? ";text-align:center" : ""}">` +
+    `<!doctype html><html lang="en"><head><meta name="viewport" content="width=device-width, initial-scale=1.0">` +
+    `<meta name="x-apple-disable-message-reformatting"></head><body style="margin:0;padding:0;background:#f3f6f8;font-family:Segoe UI,Arial,sans-serif">` +
+    `<div style="display:none;max-height:0;overflow:hidden;opacity:0;color:transparent">UOA IT Helpdesk — ${escapeHtml(p.heading)}</div>` +
+    `<table role="presentation" width="100%" cellspacing="0" cellpadding="0" border="0" style="width:100%;background:#f3f6f8"><tr><td style="padding:32px 16px">` +
+    `<table role="presentation" width="100%" cellspacing="0" cellpadding="0" border="0" style="width:100%;max-width:600px;margin:0 auto;background:#ffffff;border:1px solid #dfe7eb;border-radius:12px">` +
+    `<tr><td style="height:5px;background:#0f5c4b;border-radius:12px 12px 0 0;font-size:0;line-height:5px">&nbsp;</td></tr>` +
+    `<tr><td style="padding:28px 32px 12px">` +
     (p.logo
-      ? `<p style="margin:0 0 16px;text-align:center"><img src="cid:${EMAIL_LOGO_CID}" alt="UOA" width="600" style="display:block;width:600px;max-width:100%;height:auto;margin:0 auto"></p>`
+      ? `<p style="margin:0 0 22px;text-align:center"><img src="cid:${EMAIL_LOGO_CID}" alt="UOA IT Helpdesk" width="536" style="display:block;width:100%;max-width:536px;height:auto;margin:0 auto"></p>`
       : "") +
-    `<h2 style="margin:0 0 16px;font-size:18px;color:#0f172a">${escapeHtml(p.heading)}</h2>` +
+    `<p style="margin:0 0 8px;color:#0f5c4b;font-size:12px;font-weight:700;letter-spacing:.8px;text-transform:uppercase">UOA IT Helpdesk</p>` +
+    `<h1 style="margin:0 0 20px;color:#102a43;font-size:24px;font-weight:700;line-height:1.3">${escapeHtml(p.heading)}</h1>` +
     `${paras}${code}${link}` +
-    `<p style="margin:16px 0 0;color:#94a3b8;font-size:12px">${footer}</p>` +
-    `</div></body></html>`
+    `<div style="height:1px;background:#e5ebee;margin:24px 0 16px;font-size:0;line-height:1px">&nbsp;</div>` +
+    `<p style="margin:0;color:#6b7c8f;font-size:12px;line-height:1.5">${footer}</p>` +
+    `</td></tr></table></td></tr></table></body></html>`
   );
 }

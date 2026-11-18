@@ -239,11 +239,20 @@ async function reportFailure(message: string): Promise<void> {
   const to = (process.env.BACKUP_ALERT_EMAIL ?? "").trim();
   if (!to) return;
   try {
-    const { sendMail } = await import("../services/mailer");
+    const { renderHtml, sendMail } = await import("../services/mailer");
+    const heading = "Nightly backup needs attention";
+    const details = `The nightly backup did not finish on ${os.hostname()}.`;
+    const action = "Please investigate as soon as possible, as there may not be a current backup available.";
     await sendMail({
       to,
       subject: "UOA IT Helpdesk: the nightly backup FAILED",
-      text: `The nightly backup did not finish on ${os.hostname()}.\n\nReason: ${message}\n\nPlease fix this soon, because without it there is no recent backup.`,
+      text: `${details}\n\nReason: ${message}\n\n${action}`,
+      html: renderHtml({
+        heading,
+        paragraphs: [details, `Reason: ${message}`, action],
+        logo: true,
+      }),
+      logo: true,
     });
   } catch {
     /* the mail itself failed: the failure is still printed below */
