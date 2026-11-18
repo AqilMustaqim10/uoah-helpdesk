@@ -141,6 +141,7 @@ export default function Modal({
           aria-modal="true"
           aria-label={label}
           tabIndex={-1}
+          data-lenis-prevent
           onKeyDown={onKeyDown}
           initial={
             reduceMotion
@@ -178,7 +179,8 @@ export default function Modal({
             "relative w-full rounded-2xl border border-slate-200 bg-white shadow-xl outline-none",
             presentation === "drawer"
               ? "h-dvh max-w-none rounded-none sm:max-w-6xl sm:rounded-l-2xl"
-              : SIZES[size],
+              : "max-h-[calc(100dvh-2rem)] overflow-y-auto overscroll-contain sm:max-h-[calc(100dvh-3rem)] " +
+                SIZES[size],
           )}
         >
           <button

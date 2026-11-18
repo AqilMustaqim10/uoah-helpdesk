@@ -31,7 +31,9 @@ export default function SuggestedArticles({ title, onSolved }: Props) {
   // Look for articles whenever the title (after a pause) changes
   useEffect(() => {
     const id = ++requestId.current;
-    if (debounced.length < 4) {
+    // The API can match meaningful three-character terms such as "VPN".
+    // Keep this non-blocking: an empty result simply leaves the form unchanged.
+    if (debounced.length < 3) {
       setItems([]);
       setOpenId(null);
       return;
@@ -79,6 +81,9 @@ export default function SuggestedArticles({ title, onSolved }: Props) {
       <p className="mb-2 flex items-center gap-2 text-sm font-medium text-slate-700">
         <BookOpen className="h-4 w-4 shrink-0" aria-hidden />
         These articles might already answer your question
+      </p>
+      <p className="mb-2 text-xs text-slate-500">
+        You can ignore these suggestions and continue creating your ticket below.
       </p>
 
       <ul className="space-y-1.5">
