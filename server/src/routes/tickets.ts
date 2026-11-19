@@ -16,6 +16,8 @@ import {
   TRANSITIONS,
   type Status,
 } from "../config/constants";
+import { config } from "../config/env";
+import { classifyTicketPriority } from "../ingest/priority";
 import type { AuthUser } from "../middleware/auth";
 import { writeLimiter } from "../middleware/rateLimit";
 import {
@@ -205,15 +207,26 @@ router.post(
       multiline: true,
     });
 
-    // Only IT/ADMIN may choose a priority. A USER's ticket is always MEDIUM,
-    // whatever the request says.
+    // IT/ADMIN can explicitly choose a priority. Otherwise, use Gemini when
+    // configured; failures retain the safe MEDIUM default.
     const staff = canSeeInternal(user);
     const wantsPriority =
       req.body?.priority !== undefined && req.body?.priority !== "";
-    const priority =
+    let priority =
       staff && wantsPriority
         ? oneOf(req.body.priority, PRIORITIES, "priority")
         : DEFAULT_PRIORITY;
+
+    if (!(staff && wantsPriority) && config.geminiPriorityApiKey) {
+      try {
+        priority = await classifyTicketPriority(title, description);
+      } catch (error) {
+        const reason = error instanceof Error ? error.message : "Unknown classification error";
+        console.warn(
+          `[tickets] Gemini priority classification failed (${reason}); defaulting to MEDIUM`,
+        );
+      }
+    }
 
     // The ticket goes to the creator's own unit. Only ADMIN may pick another unit.
     let unitId = user.business_unit_id;

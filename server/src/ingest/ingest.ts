@@ -26,7 +26,7 @@ import {
 import { classifyMessage } from "./classify";
 import { cleanBody, cleanSubject, sanitizeBody } from "./cleaner";
 import { pickMailFiles, type PickedFiles } from "./mailFiles";
-import { classifyEmailPriority } from "./priority";
+import { classifyTicketPriority } from "./priority";
 import {
   closeAfterRequesterConfirmation,
   isResolutionConfirmation,
@@ -285,7 +285,7 @@ async function priorityForMessage(
   }
 
   try {
-    return await classifyEmailPriority(subject, text);
+    return await classifyTicketPriority(subject, text);
   } catch (error) {
     const reason = priorityErrorDetails(error);
     console.warn(

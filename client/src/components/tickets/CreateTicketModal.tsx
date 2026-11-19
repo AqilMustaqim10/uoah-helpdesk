@@ -1,7 +1,7 @@
 // The "Create Ticket" window.
 //  - everyone: title + description (+ optional pictures or PDFs; you can paste a screenshot with Ctrl+V)
 //  - while you type the title, matching knowledge base articles are suggested
-//  - IT / ADMIN: can also choose a priority (a USER's ticket is always Medium; the server enforces it)
+//  - IT / ADMIN: can also choose a priority; otherwise the server may classify it with Gemini
 //  - ADMIN: can also choose the business unit (everyone else uses their own unit)
 // Files are sent right after the ticket exists (two requests), so the server needs no special "create with files" route.
 import { useEffect, useState, type FormEvent } from "react";
